@@ -1,0 +1,38 @@
+{
+	"header": {
+		"home": "Home",
+		"about": "About",
+		"contact": "Contact",
+		"login": "Login",
+		"signup": "Register",
+		"logout": "Logout",
+		"profile": "Profile",
+		"title": "Ping Pong",
+		"game": "Game"
+	},
+	"main": {
+		"welcome": "Ready to take your ping pong game to the next level?  [Your App Name] connects you with players of all skill levels, allows you to track your wins and losses, and provides a fun and competitive environment to improve your skills.  Join the community and experience the thrill of the game!"
+	},
+
+	"login": {
+		"title": "Login",
+		"email": "Email",
+		"password": "Password",
+		"submit": "Submit",
+		"signup": "signup",
+		"forgot": "Forgot password?"
+	},
+	"register": {
+		"title": "Register",
+		"email": "Email",
+		"password": "Password",
+		"repeat-password": "Password confirmation",
+		"submit": "Submit",
+		"login": "Login"
+	},
+	"lang": {
+		"en": "English",
+		"ger": "German",
+		"title": "Change language"
+	}
+}
