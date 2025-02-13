@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
-// import "@babylonjs/loaders/glTF";
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, Mesh, MeshBuilder, Color4, FreeCamera, Matrix, Quaternion, StandardMaterial, Color3, SceneLoader, EngineFactory } from "@babylonjs/core";
+import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory } from "@babylonjs/core";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
 import { Button } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
@@ -205,8 +204,10 @@ export default class App {
 		});
 
 		//temporary scene objects
-		const light1: HemisphericLight = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-		const sphere: Mesh = MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
+		// const light1: HemisphericLight = 
+		new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
+		// const sphere: Mesh = 
+		MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
 
 		//get rid of start scene, switch to gamescene and change states
 		this._scene.dispose();
