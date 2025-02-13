@@ -13,7 +13,9 @@ class Router {
 		'/login': ['login'],
 		'/signup': ['signup'],
 		'/profile': ['header', 'profile', 'footer'],
-		'/game': ['header', 'game', 'footer']
+		// '/game': ['header', 'game', 'footer'],
+		'/game': ['game']
+
 	}
 	currentRoute = '/';
 	constructor() {
@@ -55,7 +57,7 @@ export class SPA {
 		this.parent = parent;
 		this.dictionary = dictionary;
 		this.container = parent;
-		this.container.classList.add("h-screen", "flex", "flex-col", "bg-(--color-paper-base)");
+		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
 
 		this.update();
 		this.initSubscriptions();

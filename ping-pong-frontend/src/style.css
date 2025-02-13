@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+body, html {
+  height: 100%;
+  width: 100%;
+}
+
 @layer base {
   :root, .light {
     --color-text-base: #4f46e5;

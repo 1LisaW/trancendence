@@ -1,0 +1,10 @@
+services:
+  ping-pong-frontend:
+    image: ping-pong-frontend
+    build:
+      context: ./ping-pong-frontend
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
