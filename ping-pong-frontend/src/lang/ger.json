@@ -1,0 +1,38 @@
+{
+	"header": {
+		"home": "Startseite",
+		"about": "Über uns",
+		"contact": "Kontakt",
+		"login": "Anmelden",
+		"signup": "Registrieren",
+		"logout": "Abmelden",
+		"profile": "Profil",
+		"title": "Ping Pong",
+		"game": "Spiel"
+
+	},
+	"main": {
+		"welcome": "Sind Sie bereit, Ihr Tischtennisspiel auf die nächste Stufe zu bringen?  [Ihr App-Name] verbindet Sie mit Spielern aller Spielstärken, lässt Sie Ihre Siege und Niederlagen verfolgen und bietet Ihnen eine unterhaltsame und wettbewerbsorientierte Umgebung, um Ihre Fähigkeiten zu verbessern.  Werden Sie Teil der Community und erleben Sie den Nervenkitzel des Spiels!"
+	},
+	"login": {
+		"title": "Anmelden",
+		"email": "Email",
+		"password": "Passwort",
+		"submit": "Einreichen",
+		"signup": "Registrieren",
+		"forgot": "Passwort vergessen?"
+	},
+	"register": {
+		"title": "Registrieren",
+		"email": "Email",
+		"password": "Passwort",
+		"repeat-password": "Passwortbestätigung",
+		"submit": "Einreichen",
+		"login": "Anmelden"
+	},
+	"lang": {
+		"en": "Englisch",
+		"ger": "Deutsch",
+		"title": "Sprache ändern"
+	}
+}
