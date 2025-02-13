@@ -80,6 +80,7 @@ export default class Environment {
         this._scene.beginAnimation(box2, 10, 0, true);
 
         const MoveBat = (bat: Mesh, key: string) => {
+            console.log(bat.position.x);
             const boundry = (sceneParams.ground.height - sceneParams.bat.width) / 2;
             if (key == 'ArrowUp')
             {
