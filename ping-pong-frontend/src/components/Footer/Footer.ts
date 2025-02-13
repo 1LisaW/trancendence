@@ -6,7 +6,7 @@ export default class Footer extends Component {
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType)
 	{
 		super(tag, parent, dictionary);
-		this.container.className = 'flex rounded-lg items-center justify-between flex-wrap bg-(--color-accent) text-(--color-text-accent) p-6 h-25';
+		this.container.className = 'flex rounded-lg items-center justify-between flex-wrap bg-(--color-accent) text-(--color-text-accent) p-6 h-0 lg:h-25';
 		this.init();
 	}
 	createChildren(): void {
