@@ -1,5 +1,6 @@
 services:
   ping-pong-frontend:
+    container_name: ping-pong-frontend
     image: ping-pong-frontend
     build:
       context: ./ping-pong-frontend
@@ -8,3 +9,28 @@ services:
       NODE_ENV: production
     ports:
       - 3000:3000
+
+  backend:
+    container_name: backend
+    image: backend
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: backend
+    ports:
+      - 8082:8082
+
+  game-service:
+    container_name: game-service
+    image: game-service
+    build:
+      context: ./game-service
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: game-service
+    ports:
+      - 8081:8081
+
