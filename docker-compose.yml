@@ -7,6 +7,7 @@ services:
       dockerfile: ./Dockerfile
     environment:
       NODE_ENV: production
+    hostname: ping-pong-frontend
     ports:
       - 3000:3000
 
@@ -33,4 +34,53 @@ services:
     hostname: game-service
     ports:
       - 8081:8081
+  nginx:
+    container_name: nginx
+    image: nginx
+    build:
+      context: ./nginx
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: nginx
+    ports:
+      - 80:80
+      - 443:443
+    links:
+      - "ping-pong-frontend:ping-pong-frontend"
+      - auth:auth
+    depends_on:
+      - ping-pong-frontend
+      - backend
+      - game-service
+      - auth
 
+
+  auth:
+    container_name: auth
+    image: auth
+    # image: alpine:latest
+    build:
+      context: ./auth
+      # args:
+      #   DB_NAME: ${DB_NAME:-}
+      #   DB_USER: ${DB_USER}
+      #   DB_USER_PASS: ${DB_USER_PASS}
+      #   DB_ROOT_PASS: ${DB_ROOT_PASS}
+    # restart: always
+    # command: ["sh", "-c", "sqlite3", "./data/db.sqlite", "<", "./data/init.sql", "&&", "tail", "-f", "/dev/null"]
+    # command: ["sh","-c", "tail", "-f", "/dev/null"]
+    # command: ["tail", "-f", "/dev/null"]
+    volumes:
+      - db:/db
+    ports:
+      - 8083:8083
+
+volumes:
+  db:
+    name: db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: C:\Projects\_mariadb_volume

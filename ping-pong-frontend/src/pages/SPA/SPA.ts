@@ -64,10 +64,10 @@ export class SPA {
 	}
 	initSubscriptions(){
 		this.container.addEventListener("click", (e) => {
-			e.preventDefault()
+			// e.preventDefault()
 		const anchor = (e.target as Element).closest('a') as HTMLAnchorElement;
 		if (anchor) {
-
+			e.preventDefault();
 			this.router.navigateTo(anchor.href);
 			this.router.currentRoute = location.pathname;
 			this.update();
@@ -83,7 +83,7 @@ export class SPA {
 				this.outlets["login"] = new Login("div",this.container, this.dictionary);
 				break;
 			case "signup":
-				this.outlets["signup"] = new SignUp("div",this.container, this.dictionary);
+				this.outlets["signup"] = new SignUp("div",this.container, this.dictionary, this.navigate);
 				break;
 			case "footer":
 				this.outlets["footer"] = new Footer("footer",this.container, this.dictionary);
@@ -98,8 +98,13 @@ export class SPA {
 				break;
 		}
 	}
-	update() {
-		console.log("appliedOtlets ", this.appliedOutlets);
+	navigate = (route: string) => {
+		this.router.navigateTo(route);
+		this.router.currentRoute = location.pathname;
+		this.update();
+	}
+	update = () => {
+		// console.log("appliedOtlets ", this.appliedOutlets);
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();

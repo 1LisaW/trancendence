@@ -11,5 +11,7 @@ RUN mkdir -p /etc/nginx/ssl/ && \
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/nginx/ssl/nginx.key -out /etc/nginx/ssl/nginx.crt -sha256 -subj "/CN=${WP_URL}"
 
 EXPOSE 443
+EXPOSE 80
 
+# CMD ["tail", "-f", "/dev/null"]
 CMD ["nginx", "-g", "daemon off;"]

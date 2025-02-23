@@ -24,9 +24,10 @@ export default abstract class Component {
 
 	init() {
 		this.createChildren();
-		this.addSubscriptions();
+		// this.addSubscriptions();
 		this.render();
 		this.addToDOM(this.parent);
+		console.log(this.container)
 		this.parent.appendChild(this.container);
 		// console.log('init constructor before', this	);
 	}
