@@ -8,11 +8,11 @@ export class Header extends Component {
 	logo: HTMLElement| null = null;
 	title: HTMLElement | null = null;
 	userSettings: UserSettings | null = null;
-	constructor(tag:string, parent: HTMLElement, dictionary: DictionaryType) {
+	constructor(tag:string, parent: HTMLElement, dictionary: DictionaryType, getIsAuth: ()=>boolean, navigate: (route:string)=>void) {
 		super(tag, parent, dictionary);
 		this.container.className = 'flex items-center justify-between flex-wrap bg-(--color-accent) p-6 h-25 relative rounded-lg';
 		this.init();
-		this.userSettings = new UserSettings(this.container, dictionary);
+		this.userSettings = new UserSettings(this.container, dictionary, getIsAuth, navigate);
 	}
 
 	createLogo() {
@@ -48,5 +48,9 @@ export class Header extends Component {
 
 	}
 	removeSubscriptions(): void {
+	}
+
+	update(){
+		this.userSettings?.update();
 	}
 }

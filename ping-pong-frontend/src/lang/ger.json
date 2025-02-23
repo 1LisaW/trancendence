@@ -24,6 +24,7 @@
 	},
 	"register": {
 		"title": "Registrieren",
+		"name": "Nutzername",
 		"email": "Email",
 		"password": "Passwort",
 		"repeat-password": "Passwortbestätigung",
@@ -34,5 +35,13 @@
 		"en": "Englisch",
 		"ger": "Deutsch",
 		"title": "Sprache ändern"
+	},
+	"validation": {
+		"warning": "GWarning alert!",
+		"password-not-match": "GPasswords not match",
+		"name-not-unique": "GThe name is not unique",
+		"already-registered": "GAlready registered",
+		"login-and-password-not-match": "GLogin and password does not match",
+		"server-error": "Gserver-error"
 	}
 }
