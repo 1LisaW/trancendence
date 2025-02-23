@@ -41,7 +41,7 @@
 		"password-not-match": "Passwords not match",
 		"name-not-unique": "The name is not unique",
 		"already-registered": "Already registered",
-		"login-and-password-nor-match": "Login and password does not match",
+		"login-and-password-not-match": "Login and password does not match",
 		"server-error": "server-error"
 	}
 

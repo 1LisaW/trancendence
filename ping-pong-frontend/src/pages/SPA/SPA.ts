@@ -6,6 +6,7 @@ import Main from "../Main/Main";
 import Login from "../Login/Login";
 import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
+import { isAuthenticated } from "../../utils/auth";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -53,14 +54,16 @@ export class SPA {
 		"header": null, "main": null, "footer": null, "login": null, "signup": null, "game": null
 	};
 	appliedOutlets: AppliedOutlets[] = [];
+	isAuth = false;
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
 		this.dictionary = dictionary;
 		this.container = parent;
 		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
 
-		this.update();
-		this.initSubscriptions();
+		this.update().then(()=>{
+			this.initSubscriptions();
+		});
 	}
 	initSubscriptions(){
 		this.container.addEventListener("click", (e) => {
@@ -77,10 +80,10 @@ export class SPA {
 	initOutlet(outletName: string){
 		switch (outletName) {
 			case "header":
-				this.outlets["header"] = new Header('nav', this.container, this.dictionary);
+				this.outlets["header"] = new Header('nav', this.container, this.dictionary, this.getIsAuth, this.navigate);
 				break;
 			case "login":
-				this.outlets["login"] = new Login("div",this.container, this.dictionary);
+				this.outlets["login"] = new Login("div",this.container, this.dictionary, this.navigate);
 				break;
 			case "signup":
 				this.outlets["signup"] = new SignUp("div",this.container, this.dictionary, this.navigate);
@@ -98,12 +101,17 @@ export class SPA {
 				break;
 		}
 	}
-	navigate = (route: string) => {
+	navigate = async (route: string) => {
 		this.router.navigateTo(route);
 		this.router.currentRoute = location.pathname;
-		this.update();
+		await this.update();
 	}
-	update = () => {
+	getIsAuth = () => {
+		return (this.isAuth);
+	}
+	update = async() => {
+		this.isAuth = !!(await isAuthenticated());
+		this.outlets["header"]?.update();
 		// console.log("appliedOtlets ", this.appliedOutlets);
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];

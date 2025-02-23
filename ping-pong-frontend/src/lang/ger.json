@@ -41,7 +41,7 @@
 		"password-not-match": "GPasswords not match",
 		"name-not-unique": "GThe name is not unique",
 		"already-registered": "GAlready registered",
-		"login-and-password-nor-match": "GLogin and password does not match",
+		"login-and-password-not-match": "GLogin and password does not match",
 		"server-error": "Gserver-error"
 	}
 }

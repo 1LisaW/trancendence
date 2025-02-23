@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import { execute, fetchFirst } from "./sql";
+import { execute, fetchAll, fetchFirst } from "./sql";
 
 export const DB_PATH ="/db/users.db";
 export interface UserDTO {
@@ -171,6 +171,22 @@ export const getUserByEmailAndPassword = async (email:string, password: string) 
 	  return (user);
 	} catch (err) {
 	  console.log(err);
+	} finally {
+	  db.close();
+	}
+};
+
+export const getUserById = async (id:number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	let sql = `SELECT * FROM users WHERE id = ?`;
+
+	try {
+	  const user = await fetchFirst(db, sql, [id]);
+	  return (user);
+	} catch (err) {
+	  console.log(err);
+	  throw err;
+	//   return ({});
 	} finally {
 	  db.close();
 	}

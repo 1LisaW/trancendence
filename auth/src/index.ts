@@ -1,10 +1,11 @@
 import sqlite3 from "sqlite3";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import fastify from "fastify";
 import { fetchAll, fetchFirst, execute } from "./sql";
-import { createNewUser, createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, UserDTO, initDB } from "./sqlite";
+import { createNewUser, createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, UserDTO, initDB, getUserById } from "./sqlite";
+import { request } from "http";
 
 dotenv.config();
 
@@ -39,7 +40,7 @@ const try_do = async () => {
 // 	}
 // })();
 
-const Fastify = fastify();
+const Fastify = fastify({logger: true});
 
 interface SignInBody {
 	name: string,
@@ -75,17 +76,35 @@ Fastify.register(async function (fastify) {
 	Fastify.post<{ Body: LoginBody }>('/login', async (request, reply) => {
 		try {
 			const user = await getUserByEmail(request.body.email);
+			console.log("auth Login: user:", user)
 			if (user) {
 				const user_ = user as UserDTO;
 				const match = await bcrypt.compare(request.body.password, user_.password);
+				console.log("auth Login: match:", match)
+
 				if (!match)
 					return reply.status(401).send({ error: 'Invalid credentials' });
-				const token = jwt.sign({ userId: user_.id }, process.env.TOKEN_SECRET, { expiresIn: '1h' });
+				const token = jwt.sign({ userId: user_.id }, process.env.TOKEN_SECRET || "", { expiresIn: '1h' });
 				reply.send({ token });
 			}
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		} catch (e) {
 			reply.status(500).send({ error: "Server error" });
+		}
+	})
+	Fastify.get('/user', async(request, reply) => {
+		const token = request.headers.authorization;
+
+		console.log("Auth /user: ")
+
+		if (!token) return reply.status(401).send({ error: 'Access denied' });
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			const user = await getUserById(decoded.userId);
+			reply.send(user);
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
 		}
 	})
 })

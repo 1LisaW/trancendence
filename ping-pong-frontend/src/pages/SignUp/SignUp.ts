@@ -24,7 +24,6 @@ export default class SignUp extends Component {
 		e.preventDefault(); // Prevents the page from refreshing on form submission
 		this.warnings.forEach(warning=> warning.removeFromDom());
 		this.warnings = [];
-		console.log("Event catched");
 		try {
 			const name = (this.form?.querySelector('#name') as HTMLInputElement).value;
 			const email = (this.form?.querySelector('#email') as HTMLInputElement).value;
