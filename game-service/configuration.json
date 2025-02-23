@@ -1,0 +1,27 @@
+{
+	"ground": {
+		"name" : "ground",
+		"width": 100,
+		"height": 70
+	},
+	"bat": {
+		"width": 15,
+		"height": 10,
+		"depth": 4
+	},
+	"ball": {
+		"name": "Sphere1",
+		"diameter": 2
+	},
+	"player": {
+		"name": "Box1",
+		"vector": [1, 0, 0],
+		"startPosition": [-45, 5, 0]
+
+	},
+	"opponent": {
+		"name": "Box2",
+		"vector": [1, 0, 0],
+		"startPosition": [45, 5, 0]
+	}
+}

@@ -81,19 +81,19 @@ export default class Environment {
 
         const MoveBat = (bat: Mesh, key: string) => {
             console.log(bat.position.x);
-            const boundry = (sceneParams.ground.height - sceneParams.bat.width) / 2;
+            const boundary = (sceneParams.ground.height - sceneParams.bat.width) / 2;
             if (key == 'ArrowUp')
             {
-                if (box1.position.z - 10  >= -1 * boundry)
+                if (box1.position.z - 10  >= -1 * boundary)
                     box1.position.z -= 10;
                 else
-                    box1.position.z = -1 * boundry;
+                    box1.position.z = -1 * boundary;
             }
             else if (key == 'ArrowDown')
-                if (box1.position.z + 10 <= boundry)
+                if (box1.position.z + 10 <= boundary)
                     box1.position.z += 10;
                  else
-                    box1.position.z = boundry;
+                    box1.position.z = boundary;
 
         }
         this._scene.onKeyboardObservable.add((kbInfo) => {

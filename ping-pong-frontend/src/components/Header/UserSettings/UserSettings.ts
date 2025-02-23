@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { DictionaryType } from "../../../lang/dictionary";
 import { LanguageSelector } from "../langSelector/langSelector";
-import { isAuthenticated } from "../../../utils/auth";
 import { setI18nData } from "../../../utils/i18n";
 import { ThemeSelector } from "../../Theme/Theme";
 import Component from "../../Component";
+import { removeToken } from "../../../utils/auth";
 
-interface MenuListType {key: string, link: string, isAuth: boolean, component: HTMLElement | null};
+interface MenuListType {key: string, link: string, isAuth: boolean, component: HTMLElement | null, class: string};
 export class UserSettings extends Component {
 	profileDropdown: HTMLElement | null = null;
 	avatar: HTMLElement | null = null;
@@ -14,9 +14,14 @@ export class UserSettings extends Component {
 	iconUnauth: SVGSVGElement | null = null;
 	menuList: MenuListType[] = [];
 
-	constructor(parent: HTMLElement, dictionary: DictionaryType) {
+	getIsAuth: ()=>boolean;
+	navigate: (route:string)=>void;
+
+	constructor(parent: HTMLElement, dictionary: DictionaryType, getIsAuth: ()=>boolean, navigate: (route:string)=>void) {
 		super('div', parent, dictionary);
 		this.container.className = '';
+		this.getIsAuth = getIsAuth;
+		this.navigate = navigate;
 		this.init();
 	}
 	initIcons(iconAuth: SVGSVGElement,iconUnauth: SVGSVGElement){
@@ -31,15 +36,16 @@ export class UserSettings extends Component {
 		iconAuth.innerHTML = `<defs><style>.cls-3{fill:#6fabe6}.cls-4{fill:#82bcf4}</style></defs><g id="User_profile" data-name="User profile"><path d="M47 24A23 23 0 1 1 12.81 3.91 23 23 0 0 1 47 24z" style="fill:#374f68"/><path d="M47 24a22.91 22.91 0 0 1-8.81 18.09A22.88 22.88 0 0 1 27 45C5.28 45-4.37 17.34 12.81 3.91A23 23 0 0 1 47 24z" style="fill:var(--color-accent2)"/><path class="cls-3" d="M39.2 35.39a19 19 0 0 1-30.4 0 17 17 0 0 1 10.49-8.73 8.93 8.93 0 0 0 9.42 0 17 17 0 0 1 10.49 8.73z"/><path class="cls-4" d="M39.2 35.39a19 19 0 0 1-4.77 4.49 19 19 0 0 1-15.13-1 7.08 7.08 0 0 1-.51-12.18c.1-.07 0-.05.5-.05a9 9 0 0 0 9.42 0 17 17 0 0 1 10.49 8.74z"/><path class="cls-3" d="M33 19a9 9 0 1 1-12.38-8.34A9 9 0 0 1 33 19z"/><path class="cls-4" d="M33 19a9 9 0 0 1-2.6 6.33c-9.13 3.74-16.59-7.86-9.78-14.67A9 9 0 0 1 33 19z"/></g>`;
 
 	}
-	initDropdownMenu(){
+	initDropdownMenu = () => {
 		if (!this.profileDropdown)
 			return ;
 		this.profileDropdown.className = 'z-2 dropdown-menu absolute right-2 hidden bg-(--color-form-base) text-(--color-text-form) rounded-b-lg pb-7 pt-3 w-48';
-		const isAuth = isAuthenticated();
+		const isAuth = this.getIsAuth();
 
 		this.menuList.forEach((item) => {
 			item.component = document.createElement('a');
 			item.component.className = 'block px-6 py-2 hover:bg-(--color-form-accent) hover:text-(--color-text-form)';
+			item.component.classList.add(item.class);
 			if ( isAuth && !item.isAuth || !isAuth && item.isAuth ) {
 				item.component.classList.add('hidden');
 			}
@@ -55,13 +61,13 @@ export class UserSettings extends Component {
 		console.log(this.avatar, this.profileDropdown);
 
 	}
-	createChildren(): void {
+	createChildren = async (): Promise<void>=> {
 		this.menuList = [
-			{"key": "login", "link": "/login", "isAuth": false, "component": null},
-			{"key": "signup", "link": "/signup", "isAuth": false, "component": null},
-			{"key": "logout", "link": "/logout", "isAuth": true, "component": null},
-			{"key": "profile", "link": "/profile", "isAuth": true, "component": null},
-			{"key": "game", "link": "/game", "isAuth": false, "component": null}
+			{"key": "login", "link": "/login", "isAuth": false, "component": null, class: "if-auth-invisible"},
+			{"key": "signup", "link": "/signup", "isAuth": false, "component": null,  class: "if-auth-invisible"},
+			{"key": "logout", "link": "/", "isAuth": true, "component": null, class: "if-auth-visible"},
+			{"key": "profile", "link": "/profile", "isAuth": true, "component": null, class: "if-auth-visible"},
+			{"key": "game", "link": "/game", "isAuth": true, "component": null, class: "if-auth-visible"}
 		];
 		this.avatar = document.createElement('div');
 		// console.log('crete children	', this, this.avatar);
@@ -72,7 +78,7 @@ export class UserSettings extends Component {
 		this.iconUnauth =document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
 		this.initIcons(this.iconAuth, this.iconUnauth);
-		this.initDropdownMenu();
+		await this.initDropdownMenu();
 		this.avatar.addEventListener('click', this.profileDropDownHandler);
 		this.container.appendChild(this.profileDropdown);
 		window.addEventListener('click', (e) => {
@@ -82,18 +88,54 @@ export class UserSettings extends Component {
 		});
 	}
 	addSubscriptions(): void {
+		const logout = this.menuList.find(item=> item.key === 'logout')?.component as HTMLElement;
+		logout.addEventListener('click',(event) => {
+			event.preventDefault();
+			removeToken();
+			this.navigate('/');
+		})
+
 	}
 	removeSubscriptions(): void {
 
 	}
 	destroy(){}
-	render(){
-		if (isAuthenticated() && this.iconAuth) {
+	render = () => {
+		if (this.getIsAuth() && this.iconAuth) {
 			this.avatar?.appendChild(this.iconAuth);
 		} else if (this.iconUnauth) {
 			this.avatar?.appendChild(this.iconUnauth);
 		}
 		if (this.parent)
 			this.parent.appendChild(this.container);
+	}
+	update = () => {
+		const isAuth = this.getIsAuth();
+		const authComponents = this.profileDropdown?.querySelectorAll('.if-auth-visible');
+		const unAuthComponents = this.profileDropdown?.querySelectorAll('.if-auth-invisible');
+		authComponents?.forEach(component => {
+			if (isAuth)
+				component.classList.remove('hidden');
+			else
+				component.classList.add('hidden');
+		})
+		unAuthComponents?.forEach(component => {
+			if (!isAuth)
+				component.classList.remove('hidden');
+			else
+				component.classList.add('hidden');
+		})
+		if (!isAuth && this.iconAuth && this.iconUnauth)
+		{
+			if (this.iconAuth.parentElement)
+				this.avatar?.removeChild(this.iconAuth);
+			this.avatar?.appendChild(this.iconUnauth);
+		}
+		if (isAuth && this.iconAuth && this.iconUnauth)
+		{
+			if (this.iconUnauth.parentElement)
+				this.avatar?.removeChild(this.iconUnauth);
+			this.avatar?.appendChild(this.iconAuth);
+		}
 	}
 }

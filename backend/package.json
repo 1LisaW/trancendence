@@ -1,0 +1,25 @@
+{
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node ./build/index.js"
+  },
+  "dependencies": {
+    "@fastify/websocket": "^11.0.2",
+    "fastify": "^5.2.1",
+    "nanoid": "^3.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.2",
+    "@types/ws": "^8.5.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

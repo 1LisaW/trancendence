@@ -6,6 +6,38 @@ export const setUser = (user: string) => {
   localStorage.setItem('user', user);
 }
 
-export const isAuthenticated = () => {
-  return (false);
+export const setToken = (token:string) =>
+{
+  localStorage.setItem('token', token);
+}
+
+export const removeToken = () => {
+  localStorage.removeItem('token');
+}
+
+const getToken = () => {
+  return (localStorage.getItem('token') || '');
+
+}
+
+export const isAuthenticated = async () => {
+  let name = undefined;
+  await fetch(`/api/auth/user`, {
+    method: "GET",
+    headers: {
+      "Authorization": getToken(),
+      "Content-Type": "application/json",
+    },
+  }).then((res) => res.json()
+  ).then(res => {
+    console.log(res);
+    name = (res.name);
+    if (!name)
+      removeToken();
+    // if (res.status)
+    // let container;
+    // switch (res.status) {
+  });
+  return (name);
+  // return (false);
 }

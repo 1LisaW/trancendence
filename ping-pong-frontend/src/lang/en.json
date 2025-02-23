@@ -24,6 +24,7 @@
 	},
 	"register": {
 		"title": "Register",
+		"name": "Username",
 		"email": "Email",
 		"password": "Password",
 		"repeat-password": "Password confirmation",
@@ -34,5 +35,15 @@
 		"en": "English",
 		"ger": "German",
 		"title": "Change language"
+	},
+	"validation": {
+		"warning": "Warning alert!",
+		"password-not-match": "Passwords not match",
+		"name-not-unique": "The name is not unique",
+		"already-registered": "Already registered",
+		"login-and-password-not-match": "Login and password does not match",
+		"server-error": "server-error"
 	}
+
+
 }
