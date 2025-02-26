@@ -4,6 +4,7 @@ import { setI18nData } from "../../utils/i18n";
 import Component from "../../components/Component";
 import Warning from "../../components/Warning/Warning";
 import { setToken } from "../../utils/auth";
+// import { setSessionUserData } from "../../utils/api";
 
 const AUTH_HOSTNAME = "/api/auth";
 export default class Login extends Component {
@@ -32,8 +33,7 @@ export default class Login extends Component {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ name, email, password }),
-			// }).then((res) => res.json()
+				body: JSON.stringify({ email, password }),
 			});
 			let container;
 			console.log("Login: res:", res);
@@ -42,8 +42,18 @@ export default class Login extends Component {
 					{
 						//TODO: set token
 						const json = await res.json();
-						setToken(json.token);
-						this.navigate('/');
+						// const sessionData = await setSessionUserData('login');
+						// if (sessionData)
+						// {
+							setToken(json.token);
+							this.navigate('/');
+						// }
+						// else
+						// {
+						// 	container = this.form?.querySelector('#login-container-email') as HTMLElement;
+						// 	if (container)
+						// 		this.warnings.push(new Warning(container, this.dictionary[this.dictionary.currLang], 'server-error'));
+						// }
 					}
 					break;
 				case 401:

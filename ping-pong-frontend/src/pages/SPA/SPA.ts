@@ -6,7 +6,7 @@ import Main from "../Main/Main";
 import Login from "../Login/Login";
 import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
-import { isAuthenticated } from "../../utils/auth";
+import { getToken, isAuthenticated, removeToken } from "../../utils/auth";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -55,6 +55,9 @@ export class SPA {
 	};
 	appliedOutlets: AppliedOutlets[] = [];
 	isAuth = false;
+
+	chat_ws: WebSocket | null = null;
+
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
 		this.dictionary = dictionary;
@@ -109,9 +112,40 @@ export class SPA {
 	getIsAuth = () => {
 		return (this.isAuth);
 	}
+	init_chat_ws = () => {
+		if (this.chat_ws)
+			return ;
+		this.chat_ws = new WebSocket('/api/session-management/ws/chat', getToken());
+		this.chat_ws.onopen = () => console.log('WebSocket is connected!')
+		// 4
+		this.chat_ws.onmessage = (msg) => {
+		const message = msg.data
+		console.log('I got a message!', message)
+		//   message.innerHTML += `<br /> ${message}`
+		}
+		// 5
+		this.chat_ws.onerror = (error) => console.log('WebSocket error', error)
+		// 6
+		this.chat_ws.onclose = () => console.log('Disconnected from the WebSocket server')
+	}
+	close_chat_ws = () => {
+		if (!this.chat_ws)
+			return ;
+		this.chat_ws.close();
+		this.chat_ws = null;
+	}
 	update = async() => {
-		this.isAuth = !!(await isAuthenticated());
+		const userName = await isAuthenticated();
+		this.isAuth = !!(userName);
 		this.outlets["header"]?.update();
+		if (!this.isAuth)
+		{
+			removeToken();
+			this.close_chat_ws();
+			// setSessionUserData(userName || '', 'logout');
+		}
+		else
+			this.init_chat_ws();
 		// console.log("appliedOtlets ", this.appliedOutlets);
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];

@@ -102,7 +102,7 @@ Fastify.register(async function (fastify) {
 			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
 
 			const user = await getUserById(decoded.userId);
-			reply.send(user);
+			reply.send({user});
 		} catch (e) {
 			reply.status(500).send({ error: "Server error", details: e });
 		}

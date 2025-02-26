@@ -100,6 +100,7 @@ export class GameSession{
 	}
 
 	setBatMove(id: string, step: number){
+		console.log("Before: Bat of user ", id, " updated it's position: ", this._players[id].dest[1],", speed: ", this._players[id].speed);
 		let y = this._players[id].dest[1];
 		if (step > 0)
 			y = Math.min(y + batStep, batYTopPos);
@@ -108,6 +109,7 @@ export class GameSession{
 
 		this._players[id].dest[1] = y;
 		this._players[id].speed += step;
+		console.log("After: Bat of user ", id, " updated it's position: ", this._players[id].dest[1],", speed: ", this._players[id].speed);
 	}
 
 	private hasLoseRound(x: number, y: number, x_sign: number){
@@ -154,6 +156,21 @@ export class GameSession{
 		}
 		return false;
 	}
+	updateBatState(id:string){
+		const bat = this._players[id]
+		if (bat.speed === 0)
+			return ;
+		if (bat.pos[1] == bat.dest[1])
+		{
+			bat.speed = 0;
+			return;
+		}
+		bat.pos[1] += bat.speed * frameStep;
+		if (bat.pos[1] > batYTopPos)
+			bat.pos[1] = batYTopPos;
+		if (bat.pos[1] < -batYTopPos)
+			bat.pos[1] = -batYTopPos;
+	}
 	updateBallState(){
 		const step = this._ball.speed * frameStep;
 		const y_sign = this._ball.normal[1] / Math.abs(this._ball.normal[1]);
@@ -169,8 +186,29 @@ export class GameSession{
 			this.initBall();
 
 	}
-	updateState(){
 
+	getState(){
+		const player1Id = this._ids[0];
+		const player2Id = this._ids[2];
+		const player1 = this._players[player1Id];
+		const player2 = this._players[player2Id];
+		const res = {
+			[player1Id]: {
+				pos: player1.pos
+			},
+			[player2Id]: {
+				pos: player2.pos
+			},
+			ball: this._ball.pos
+		}
+		return (res);
+	}
+
+	updateState(){
+		this._ids.forEach(id => this.updateBatState(id));
+		this.updateBallState();
+		console.log(this.getState());
+		// return()
 	}
 	isFinished(){
 		return(this._score[0] >= 15 || this._score[1] >= 15);
