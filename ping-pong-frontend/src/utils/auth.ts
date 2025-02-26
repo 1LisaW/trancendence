@@ -15,18 +15,18 @@ export const removeToken = () => {
   localStorage.removeItem('token');
 }
 
-const getToken = () => {
+export const getToken = () => {
   return (localStorage.getItem('token') || '');
 
 }
 
-export const isAuthenticated = async () => {
-  let name = undefined;
+export const isAuthenticated = async (): Promise<string | undefined> => {
+  let name: string | undefined = undefined;
   await fetch(`/api/auth/user`, {
     method: "GET",
     headers: {
       "Authorization": getToken(),
-      "Content-Type": "application/json",
+      // "Content-Type": "application/json",
     },
   }).then((res) => res.json()
   ).then(res => {

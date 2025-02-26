@@ -82,13 +82,6 @@ Fastify.post<{Params:GamePostParams, Body:GamePostBody}>('/game/:gameId', (reque
     gameSessionFactory.updateGameSessionUserData(gameId, userId, step);
 })
 
-// Fastify.get('/handshake', (request, reply) => {
-// 	console.log(request.query);
-//     reply.send({
-//         message: 'Hello Fastify'
-//     });
-// });
-
 Fastify.listen({ port: 8081, host: '0.0.0.0' }, (err, address) => {
     if(err) {
         console.error(err);

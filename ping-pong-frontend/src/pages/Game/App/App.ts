@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
-import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory } from "@babylonjs/core";
+import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, StandardMaterial } from "@babylonjs/core";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
 import { Button } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import Environment from "./Environment";
+import { getToken } from "../../../utils/auth";
 
-enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3 }
+enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3, WAITING = 4 }
 
 
 
@@ -24,10 +25,39 @@ export default class App {
 	private _environment: Environment | null = null;
     // private _cutScene: Scene;
 
+	private game_ws: WebSocket | null = null;
+	private gameId: string | undefined;
+
     constructor() {
 		this._canvas = this._createCanvas();
 		this._init();
     }
+
+	init_game_ws = () => {
+			if (this.game_ws)
+				return ;
+			this.game_ws = new WebSocket('/api/session-management/ws/game', getToken());
+			this.game_ws.onopen = () => console.log('Game WebSocket is connected!')
+			// 4
+			this.game_ws.onmessage = (msg) => {
+			const message = msg.data
+			console.log('I got a message!', message);
+			console.log(this.gameId);
+			//   message.innerHTML += `<br /> ${message}`
+			}
+			// 5
+			this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
+			// 6
+			this.game_ws.onclose = () => console.log('Game: Disconnected from the WebSocket server')
+		}
+	close_game_ws = () => {
+		if (!this.game_ws)
+			return ;
+		this.game_ws.close();
+		this.game_ws = null;
+	}
+
+
 	appendTo(parent: HTMLElement)
 	{
 		parent.appendChild(this._canvas);
@@ -65,6 +95,9 @@ export default class App {
                 case State.CUTSCENE:
                     this._scene.render();
                     break;
+				case State.WAITING:
+					this._scene.render();
+						break;
                 case State.GAME:
                     //if 240seconds/ 4mins have have passed, go to the lose state
                     // if (this._ui.time >= 240 && !this._player.win) {
@@ -97,6 +130,7 @@ export default class App {
 	private async _goToStart() {
 		this._engine.displayLoadingUI();
 
+		await this.init_game_ws();
 		this._scene.detachControl();
 		const scene =new Scene(this._engine);
 		scene.clearColor = new Color4(0, 0, 0, 1);
@@ -131,17 +165,21 @@ export default class App {
 		guiMenu.addControl(multiSinglePlayerButton);
 
 		startSinglePlayerButton.onPointerDownObservable.add(() => {
+			this.game_ws?.send(JSON.stringify({"mode": "pvc"}));
 			this._goToGame();
 			scene.detachControl(); //observables disabled
 		})
 		multiSinglePlayerButton.onPointerDownObservable.add(() => {
 			// TODO: search for the opponent
+			this.game_ws?.send(JSON.stringify({"mode": "pvp"}));
+			this._goToWaitRoom();
 			scene.detachControl();
 		})
 
 	}
 	private async _goToLose(): Promise<void> {
 		this._engine.displayLoadingUI();
+		this.close_game_ws();
 
 		//--SCENE SETUP--
 		this._scene.detachControl();
@@ -169,6 +207,61 @@ export default class App {
 		this._scene.dispose();
 		this._scene = scene;
 		this._state = State.LOSE;
+	}
+
+	private async _goToWaitRoom() {
+
+		this._engine.displayLoadingUI();
+		this._scene.detachControl();
+		const scene = new Scene(this._engine);
+		scene.clearColor = new Color4(0, 0, 0, 1);
+
+
+
+		const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
+        const myText = MeshBuilder.CreateText(`pending`, `Waiting for the opponent`, fontData, {
+            size: 2,
+            resolution: 64,
+            depth: 10,
+
+        });
+		 const mat = new StandardMaterial(`mat`);
+		if (myText)
+		myText.material = mat;
+		const camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
+		camera.setTarget(Vector3.Zero());
+
+		// const textToAnimate = new TextBlock();
+		// textToAnimate.text = "Text To Animate";
+		// textToAnimate.color = "#FFFFFF";
+		// textToAnimate.fontSize = "100px";
+
+
+
+		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+		//dont detect any inputs from this ui while the game is loading
+		scene.detachControl();
+		//--GUI--
+		const loseBtn = Button.CreateSimpleButton("leave", "LEAVE");
+		loseBtn.width = 0.2
+		loseBtn.height = "40px";
+		loseBtn.color = "white";
+		loseBtn.top = "-14px";
+		loseBtn.thickness = 0;
+		loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+		playerUI.addControl(loseBtn);
+
+		//this handles interactions with the start button attached to the scene
+		loseBtn.onPointerDownObservable.add(() => {
+			this._goToLose();
+			scene.detachControl(); //observables disabled
+		});
+		await scene.whenReadyAsync();
+		this._engine.hideLoadingUI();
+		this._scene.dispose();
+		this._scene = scene;
+		this._state = State.WAITING;
+		this._scene.attachControl();
 	}
 
 	private async _goToGame() {
@@ -204,9 +297,9 @@ export default class App {
 		});
 
 		//temporary scene objects
-		// const light1: HemisphericLight = 
+		// const light1: HemisphericLight =
 		new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-		// const sphere: Mesh = 
+		// const sphere: Mesh =
 		MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
 
 		//get rid of start scene, switch to gamescene and change states

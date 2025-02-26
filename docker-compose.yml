@@ -47,8 +47,10 @@ services:
       - 80:80
       - 443:443
     links:
-      - "ping-pong-frontend:ping-pong-frontend"
+      - ping-pong-frontend:ping-pong-frontend
       - auth:auth
+      - backend:backend
+      - game-service:game-service
     depends_on:
       - ping-pong-frontend
       - backend
