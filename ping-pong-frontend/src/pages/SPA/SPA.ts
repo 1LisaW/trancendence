@@ -105,6 +105,8 @@ export class SPA {
 		}
 	}
 	navigate = async (route: string) => {
+		// if (route === '/game' && this.isAuth == false)
+		// 	route ='/login';
 		this.router.navigateTo(route);
 		this.router.currentRoute = location.pathname;
 		await this.update();
@@ -142,6 +144,13 @@ export class SPA {
 		{
 			removeToken();
 			this.close_chat_ws();
+			console.log('location.pathname ',location.pathname);
+			if (location.pathname === '/game')
+			{
+				this.navigate('/login');
+				location.pathname = '/login';
+				return ;
+			}
 			// setSessionUserData(userName || '', 'logout');
 		}
 		else

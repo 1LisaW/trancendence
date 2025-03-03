@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
-import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, StandardMaterial } from "@babylonjs/core";
+import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh } from "@babylonjs/core";
+import earcut from 'earcut';
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
 import { Button } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
@@ -27,6 +28,9 @@ export default class App {
 
 	private game_ws: WebSocket | null = null;
 	private gameId: string | undefined;
+	private order = 0;
+	private opponent = '';
+	private gameObjects: Mesh[] = [];
 
     constructor() {
 		this._canvas = this._createCanvas();
@@ -42,6 +46,25 @@ export default class App {
 			this.game_ws.onmessage = (msg) => {
 			const message = msg.data
 			console.log('I got a message!', message);
+			const data = JSON.parse(message);
+			if ('order' in data)
+			{
+				this.gameId = data.gameId;
+				this.order = data.order;
+				this.opponent = data.opponent;
+				this._goToGame();
+				console.log("order: ", this.order, " opponent: ", this.opponent);
+			}
+			else if ('pos' in data)
+			{
+				if (this.gameObjects.length === 3)
+				{
+					this.gameObjects[0].position.z = data.pos[0][1];
+					this.gameObjects[1].position.z = data.pos[1][1];
+					this.gameObjects[2].position.x = data.ball[0];
+					this.gameObjects[2].position.y = data.ball[1];
+				}
+			}
 			console.log(this.gameId);
 			//   message.innerHTML += `<br /> ${message}`
 			}
@@ -63,6 +86,15 @@ export default class App {
 		parent.appendChild(this._canvas);
 		// this._engine.resize();
 	}
+
+	addMeshToCollection = (object: Mesh) => {
+		this.gameObjects.push(object);
+	}
+
+	clearMeshToCollection = () => {
+		this.gameObjects = [];
+	}
+
 	private async _init(): Promise<void> {
         this._engine = (await EngineFactory.CreateAsync(this._canvas, undefined)) as Engine;
         this._scene = new Scene(this._engine);
@@ -169,10 +201,10 @@ export default class App {
 			this._goToGame();
 			scene.detachControl(); //observables disabled
 		})
-		multiSinglePlayerButton.onPointerDownObservable.add(() => {
+		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
 			// TODO: search for the opponent
+			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"mode": "pvp"}));
-			this._goToWaitRoom();
 			scene.detachControl();
 		})
 
@@ -208,64 +240,162 @@ export default class App {
 		this._scene = scene;
 		this._state = State.LOSE;
 	}
-
-	private async _goToWaitRoom() {
-
+	private async _goToWaitingRoom(): Promise<void> {
 		this._engine.displayLoadingUI();
+
+		//--SCENE SETUP--
 		this._scene.detachControl();
 		const scene = new Scene(this._engine);
 		scene.clearColor = new Color4(0, 0, 0, 1);
 
-
-
 		const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
-        const myText = MeshBuilder.CreateText(`pending`, `Waiting for the opponent`, fontData, {
-            size: 2,
-            resolution: 64,
-            depth: 10,
 
-        });
-		 const mat = new StandardMaterial(`mat`);
-		if (myText)
-		myText.material = mat;
-		const camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
-		camera.setTarget(Vector3.Zero());
+		MeshBuilder.CreateText('notification', "Waiting for match", fontData, {
+            size: 0.5,
+			depth: 0.05,
+			resolution: 32
+        }, scene, earcut);
 
-		// const textToAnimate = new TextBlock();
-		// textToAnimate.text = "Text To Animate";
-		// textToAnimate.color = "#FFFFFF";
-		// textToAnimate.fontSize = "100px";
+		const sphere = MeshBuilder.CreateSphere("sphere", { diameter: 0.5 }, scene);
+		const sphere2 = MeshBuilder.CreateSphere("sphere", { diameter: 0.5 }, scene);
+		const sphere3 = MeshBuilder.CreateSphere("sphere", { diameter: 0.5 }, scene);
+		sphere.position._y = -1;
+		sphere2.position._y = -1;
+		sphere3.position._y = -1;
+		sphere.position._x = -1;
+		sphere2.position._x = 0;
+		sphere3.position._x = 1;
+		let direction = true;
+		let direction2 = true;
+		let direction3 = true;
 
+		scene.onBeforeRenderObservable.add(() => {
+			if (sphere3.position.y < -1 && direction3) {
+				sphere3.position.y += 0.01;
+			}
+			else {
+				direction3 = false;
+			}
 
+			if (sphere3.position.y > -2 && !direction3) {
+				sphere3.position.y -= 0.01;
+			}
+			else {
+				direction3 = true;
+			}
+			setTimeout(()=>{
+				if (sphere2.position.y < -1 && direction2) {
+					sphere2.position.y += 0.01;
+				}
+				else {
+					direction2 = false;
+				}
 
-		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-		//dont detect any inputs from this ui while the game is loading
-		scene.detachControl();
-		//--GUI--
-		const loseBtn = Button.CreateSimpleButton("leave", "LEAVE");
-		loseBtn.width = 0.2
-		loseBtn.height = "40px";
-		loseBtn.color = "white";
-		loseBtn.top = "-14px";
-		loseBtn.thickness = 0;
-		loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-		playerUI.addControl(loseBtn);
+				if (sphere2.position.y > -2 && !direction2) {
+					sphere2.position.y -= 0.01;
+				}
+				else {
+					direction2 = true;
+				}
+			}, 200)
+			setTimeout(()=>{
+				if (sphere.position.y < -1 && direction) {
+					sphere.position.y += 0.01;
+				}
+				else {
+					direction = false;
+				}
 
-		//this handles interactions with the start button attached to the scene
-		loseBtn.onPointerDownObservable.add(() => {
-			this._goToLose();
-			scene.detachControl(); //observables disabled
+				if (sphere.position.y > -2 && !direction) {
+					sphere.position.y -= 0.01;
+				}
+				else {
+					direction = true;
+				}
+			}, 400)
 		});
+		scene.createDefaultCameraOrLight(true, false, true);
+		//--GUI--
+		const guiMenu = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+		const mainBtn = Button.CreateSimpleButton("leave", "LEAVE");
+		mainBtn.width = 0.2;
+		mainBtn.height = "40px";
+		mainBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+		mainBtn.top = "-14px";
+		mainBtn.color = "white";
+		guiMenu.addControl(mainBtn);
+		//this handles interactions with the start button attached to the scene
+		mainBtn.onPointerUpObservable.add(() => {
+			this._goToStart();
+		});
+
+		//--SCENE FINISHED LOADING--
 		await scene.whenReadyAsync();
-		this._engine.hideLoadingUI();
+		this._engine.hideLoadingUI(); //when the scene is ready, hide loading
+		//lastly set the current state to the lose state and set the scene to the lose scene
 		this._scene.dispose();
 		this._scene = scene;
 		this._state = State.WAITING;
-		this._scene.attachControl();
 	}
+	// private async _goToWaitRoom() {
+
+	// 	this._engine.displayLoadingUI();
+	// 	this._scene.detachControl();
+	// 	const scene = new Scene(this._engine);
+	// 	scene.clearColor = new Color4(0, 0, 0, 1);
+
+
+
+	// 	const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
+    //     const myText = MeshBuilder.CreateText(`pending`, `Waiting for the opponent`, fontData, {
+    //         size: 2,
+    //         resolution: 64,
+    //         depth: 10,
+
+    //     });
+	// 	 const mat = new StandardMaterial(`mat`);
+	// 	if (myText)
+	// 	myText.material = mat;
+	// 	const camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
+	// 	camera.setTarget(Vector3.Zero());
+
+	// 	// const textToAnimate = new TextBlock();
+	// 	// textToAnimate.text = "Text To Animate";
+	// 	// textToAnimate.color = "#FFFFFF";
+	// 	// textToAnimate.fontSize = "100px";
+
+
+
+	// 	const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+	// 	//dont detect any inputs from this ui while the game is loading
+	// 	scene.detachControl();
+	// 	//--GUI--
+	// 	const loseBtn = Button.CreateSimpleButton("leave", "LEAVE");
+	// 	loseBtn.width = 0.2
+	// 	loseBtn.height = "40px";
+	// 	loseBtn.color = "white";
+	// 	loseBtn.top = "-14px";
+	// 	loseBtn.thickness = 0;
+	// 	loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+	// 	playerUI.addControl(loseBtn);
+
+	// 	//this handles interactions with the start button attached to the scene
+	// 	loseBtn.onPointerDownObservable.add(() => {
+	// 		this._goToLose();
+	// 		scene.detachControl(); //observables disabled
+	// 	});
+	// 	await scene.whenReadyAsync();
+	// 	this._engine.hideLoadingUI();
+	// 	this._scene.dispose();
+	// 	this._scene = scene;
+	// 	this._state = State.WAITING;
+	// 	this._scene.attachControl();
+	// }
 
 	private async _goToGame() {
 		//--SETUP SCENE--
+		console.log("GO_TO_GAME");
 		this._engine.displayLoadingUI();
 		this._scene.detachControl();
 		this._setUpGame();
@@ -318,9 +448,14 @@ export default class App {
 		this._gamescene = scene;
 
 		//--CREATE ENVIRONMENT--
-		const environment = new Environment(scene);
-		this._environment = environment; //class variable for App
-		await this._environment.load(); //environment
+		if (this.game_ws) {
+			const environment = new Environment(scene, this.game_ws, this.gameId || '', this.addMeshToCollection, this.clearMeshToCollection);
+			this._environment = environment; //class variable for App
+			await this._environment.load(); //environment
+		} else {
+			console.error("WebSocket is not initialized.");
+		}
+
 	}
 
 }
