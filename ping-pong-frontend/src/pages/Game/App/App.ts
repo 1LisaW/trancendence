@@ -59,10 +59,10 @@ export default class App {
 			{
 				if (this.gameObjects.length === 3)
 				{
-					this.gameObjects[0].position.z = data.pos[0][1];
-					this.gameObjects[1].position.z = data.pos[1][1];
+					this.gameObjects[0].position.z = data.pos[0][2];
+					this.gameObjects[1].position.z = data.pos[1][2];
 					this.gameObjects[2].position.x = data.ball[0];
-					this.gameObjects[2].position.y = data.ball[1];
+					this.gameObjects[2].position.z = data.ball[2];
 				}
 			}
 			console.log(this.gameId);
@@ -77,6 +77,7 @@ export default class App {
 		if (!this.game_ws)
 			return ;
 		this.game_ws.close();
+
 		this.game_ws = null;
 	}
 

@@ -25,6 +25,16 @@ export const post_bat_move__game_service = (gameSessionId: string, socketId: str
 	);
 }
 
+export const post_terminate_game = (gameId: string): Promise<Response> => {
+	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/terminate/${gameId}`, {
+		method: "POST",
+		// headers: {
+		//   'Content-Type': 'application/json',
+		// },
+	  })
+	);
+}
+
 
 //auth
 export interface Auth_UserDTO {

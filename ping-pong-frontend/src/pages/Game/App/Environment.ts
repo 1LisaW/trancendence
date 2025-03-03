@@ -99,7 +99,7 @@ export default class Environment {
             console.log(bat.position.x);
             // const boundary = (sceneParams.ground.height - sceneParams.bat.width) / 2;
             if (key == 'ArrowUp') {
-                this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: 1 }));
+                this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: -1 }));
 
                 // if (box1.position.z - 10  >= -1 * boundary)
                 //     box1.position.z -= 10;
@@ -107,7 +107,7 @@ export default class Environment {
                 //     box1.position.z = -1 * boundary;
             }
             else if (key == 'ArrowDown')
-                this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: -1 }));
+                this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: 1 }));
 
             // if (box1.position.z + 10 <= boundary)
             //     box1.position.z += 10;
