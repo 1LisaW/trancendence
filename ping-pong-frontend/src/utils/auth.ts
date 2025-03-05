@@ -26,18 +26,14 @@ export const isAuthenticated = async (): Promise<string | undefined> => {
     method: "GET",
     headers: {
       "Authorization": getToken(),
-      // "Content-Type": "application/json",
     },
   }).then((res) => res.json()
   ).then(res => {
     console.log(res);
-    name = (res.name);
-    if (!name)
+    if (res.error)
       removeToken();
-    // if (res.status)
-    // let container;
-    // switch (res.status) {
+    else
+      name = res.user.name;
   });
   return (name);
-  // return (false);
 }
