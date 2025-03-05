@@ -55,7 +55,7 @@ const batZTopPos = (sceneParams.ground.height - sceneParams.bat.width) / 2;
 const ballZTopPos = (sceneParams.ground.height - sceneParams.ball.diameter) / 2;
 const ballXRightBatPos = sceneParams.opponent.startPosition[0] - (sceneParams.bat.depth + sceneParams.ball.diameter) / 2;
 const ballXRightPos = (sceneParams.ground.width + sceneParams.ball.diameter) / 2;
-const batZToEdge = sceneParams.bat.height / 2;
+const batZToEdge = sceneParams.bat.width / 2;
 
 const batStep = sceneParams.bat.width / 2;
 const frameStep = 0.8;
@@ -173,6 +173,10 @@ export class GameSession {
 	}
 	updateBatState(id: string) {
 		const bat = this._players[id]
+		if (bat.pos[2] > bat.dest[2] && bat.speed > 0)
+			bat.speed = -1;
+		if (bat.pos[2] < bat.dest[2] && bat.speed < 0)
+			bat.speed = 1;
 		if (bat.speed === 0)
 			return;
 		if (bat.pos[2] == bat.dest[2]) {
@@ -180,6 +184,10 @@ export class GameSession {
 			return;
 		}
 		bat.pos[2] += bat.speed * frameStep;
+		if (bat.speed > 0)
+		bat.pos[2] = Math.min(bat.dest[2], bat.pos[2]);
+		if (bat.speed < 0)
+			bat.pos[2] = Math.max(bat.dest[2], bat.pos[2]);
 		if (bat.pos[2] > batZTopPos)
 			bat.pos[2] = batZTopPos;
 		if (bat.pos[2] < -batZTopPos)
