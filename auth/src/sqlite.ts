@@ -46,7 +46,7 @@ export const getUserByName = async (name:string) => {
 	let sql = `SELECT * FROM users WHERE name = ?`;
 
 	try {
-	  const user = await fetchFirst(db, sql, [name]);
+	  const user = await fetchFirst(db, sql, [name]) as UserDTO;
 	  console.log(name);
 	  return (user);
 	} catch (err) {
@@ -84,8 +84,9 @@ export const getUserByEmail = async (email:string) => {
 	let sql = `SELECT * FROM users WHERE email = ?`;
 
 	try {
-	  const user = await fetchFirst(db, sql, [email]);
-	  console.log(email);
+	  const user = await fetchFirst(db, sql, [email]) as UserDTO;
+	//   const response = {name: user.name, email: user.email};
+	//   console.log(email);
 	  return (user);
 	} catch (err) {
 	  console.log(err);
@@ -119,7 +120,7 @@ export const createUser = async (name:string, email:string, password: string): P
 			status: 400
 		})
 	}
-	collision = await getUserByEmail(email);
+	collision = await getUserByEmail(email) as UserDTO;
 	if (collision)
 	{
 		return ({
@@ -181,7 +182,7 @@ export const getUserById = async (id:number) => {
 	let sql = `SELECT * FROM users WHERE id = ?`;
 
 	try {
-	  const user = await fetchFirst(db, sql, [id]);
+	  const user = await fetchFirst(db, sql, [id]) as UserDTO;
 	  return (user);
 	} catch (err) {
 	  console.log(err);

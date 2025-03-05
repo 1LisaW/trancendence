@@ -35,8 +35,8 @@ services:
     ports:
       - 8081:8081
   nginx:
-    container_name: nginx
-    image: nginx
+    container_name: reverse-proxy-nginx
+    image: reverse-proxy-nginx
     build:
       context: ./nginx
       dockerfile: ./Dockerfile
@@ -44,8 +44,8 @@ services:
       NODE_ENV: production
     hostname: nginx
     ports:
-      - 80:80
-      - 443:443
+      # - 80:80
+      - 8443:443
     links:
       - ping-pong-frontend:ping-pong-frontend
       - auth:auth
