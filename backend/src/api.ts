@@ -38,9 +38,11 @@ export const post_terminate_game = (gameId: string): Promise<Response> => {
 
 //auth
 export interface Auth_UserDTO {
-	id: number,
-	name: string,
-	email: string
+	user: {
+		id: number,
+		name: string,
+		email: string
+	}
 }
 export interface AuthUserErrorDTO {
 	error: string,

@@ -26,6 +26,7 @@ class Users {
     this.userPool.add(login);
     this.setStatus(login, Status.ONLINE);
     this.usersTokens.set(token, login);
+    console.log("user added: ", this.usersTokens.get(token), " by token ", token);
   }
   addGameSocket(socket: WSocket) {
     if (socket.id)
@@ -59,6 +60,7 @@ class Users {
   }
   getUserByGameSocketId(gameSocketId: string) {
     const token = this.gameUserSockets.get(gameSocketId)?.token || '';
+    console.log("getUserByGameSocketId gameSocketId:", gameSocketId, " token:",token, " login: ", this.usersTokens.get(token));
     return (this.usersTokens.get(token));
   }
   remove(login: string) {
@@ -104,7 +106,7 @@ const addUser = async (token: string) => {
   const json: Auth_UserDTO = await data.json();
   console.log("Backend add user: json", json);
 
-  const userName = json.name;
+  const userName = json.user.name;
   users.add(userName, token);
   console.log("User ", userName, " has status ", users.getUserStatus(userName));
   return (json);
@@ -114,7 +116,7 @@ const removeUser = async (token: string) => {
   const data = await get_user__auth(token);
   const json: Auth_UserDTO = await data.json();
   console.log("Backend remove user: json", json);
-  const userName = json.name;
+  const userName = json.user.name;
   users.remove(userName);
   console.log("User ", userName, " has status ", users.getUserStatus(userName));
 }
@@ -215,7 +217,8 @@ Fastify.register(async function (fastify) {
           console.log("Backend json: ", json);
           if ('gameId' in json) {
             const gameUsers: string[] = json.users;
-            const opponentNames = [users.getUserByGameSocketId(gameUsers[1]), users.getUserByGameSocketId(gameUsers[0])]
+            const opponentNames = [users.getUserByGameSocketId(gameUsers[1]), users.getUserByGameSocketId(gameUsers[0])];
+            console.log("opponentNames: ",opponentNames);
             gameUsers.forEach((gameSocketId, id) => {
               const reply = {
                 gameId: json.gameId,
