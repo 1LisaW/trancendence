@@ -4,7 +4,7 @@ import "@babylonjs/inspector";
 import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh } from "@babylonjs/core";
 import earcut from 'earcut';
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
-import { Button } from "@babylonjs/gui";
+import { Button, TextBlock } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import Environment from "./Environment";
 import { getToken } from "../../../utils/auth";
@@ -45,7 +45,7 @@ export default class App {
 			// 4
 			this.game_ws.onmessage = (msg) => {
 			const message = msg.data
-			console.log('I got a message!', message);
+			// console.log('I got a message!', message);
 			const data = JSON.parse(message);
 			if ('order' in data)
 			{
@@ -65,7 +65,7 @@ export default class App {
 					this.gameObjects[2].position.z = data.ball[2];
 				}
 			}
-			console.log(this.gameId);
+			// console.log(this.gameId);
 			//   message.innerHTML += `<br /> ${message}`
 			}
 			// 5
@@ -148,6 +148,7 @@ export default class App {
                     break;
                 default: break;
             }
+			this._engine.resize();
         });
 
     }
@@ -408,6 +409,45 @@ export default class App {
 
 		//--GUI--
 		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+		// if (playerUI.layer)
+			// playerUI.layer?.layerMask = 0x10000000;
+		const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${this.order? this.opponent: 'you'}`);
+		leftPlayer.color = "white";
+		leftPlayer.fontSize = 36;
+		leftPlayer.widthInPixels = 50;
+		leftPlayer.heightInPixels = leftPlayer.fontSizeInPixels;
+
+		leftPlayer.top = "14px";
+		leftPlayer.left = "14px";
+		leftPlayer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		leftPlayer.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+		leftPlayer.textWrapping = 3;
+		leftPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+		playerUI.addControl(leftPlayer);
+		const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
+		rightPlayer.color = "white";
+		rightPlayer.fontSize = 36;
+		rightPlayer.widthInPixels = 50;
+		rightPlayer.heightInPixels = rightPlayer.fontSizeInPixels;
+		rightPlayer.textWrapping = 3;
+		rightPlayer.top = "14px";
+		rightPlayer.left = "14px";
+		rightPlayer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		rightPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		playerUI.addControl(rightPlayer);
+
+		const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
+		scoreLabelLeft.color = "white";
+		scoreLabelLeft.fontSize = 24;
+		scoreLabelLeft.top = "10%";
+        scoreLabelLeft.left = "10%";
+		playerUI.addControl(scoreLabelLeft);
+		const scoreLabelRight = new TextBlock(`score-${this.order?'you': this.opponent}`, `Score: 0`);
+		scoreLabelRight.color = "white";
+		scoreLabelRight.fontSize = 24;
+		scoreLabelRight.top = "10%";
+        scoreLabelRight.left = "-10%";
+		playerUI.addControl(scoreLabelRight);
 		//dont detect any inputs from this ui while the game is loading
 		scene.detachControl();
 
