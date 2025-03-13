@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import { execute, fetchAll, fetchFirst } from "./sql";
+import { ProfileDTO, ProfileResponse } from "./model";
 
 export const DB_PATH ="/db/users.db";
 export interface UserDTO {
@@ -21,6 +22,14 @@ export const initDB = async () => {
 			email TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL)`
 		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS profiles (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL UNIQUE,
+			avatar TEXT,
+			phone TEXT)`
+		);
 	} catch (error) {
 		console.log(error);
 	} finally {
@@ -30,15 +39,73 @@ export const initDB = async () => {
 
 export const createNewUser = async (name:string, email:string, password: string) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql = `INSERT INTO users(name, email, password) VALUES(?, ?, ?)`;
+	const sql_users = `INSERT INTO users(name, email, password) VALUES(?, ?, ?)`;
+	const sql_profiles = `INSERT INTO profiles(user_id) VALUES(?)`;
 	try {
-	  await execute(db, sql, [name, email, password]);
+	  await execute(db, sql_users, [name, email, password]);
+	  const user = await fetchFirst(db, `SELECT * FROM users WHERE name = ?`, [name]) as UserDTO;
+	  await execute(db, sql_profiles, [user.id.toString()]);
 	} catch (err) {
 		console.log(err);
 	} finally {
 	  db.close();
 	}
 };
+
+export const updateProfile = async (id:number, avatar:string, phone: string) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `UPDATE profiles SET avatar = ?, phone = ? WHERE user_id = ?`;
+	try {
+	  await execute(db, sql, [avatar, phone, id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const getProfile = async (id:number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `SELECT * FROM profiles WHERE user_id = ?`;
+	try {
+	  const profile = await fetchFirst(db, sql, [id.toString()]) as ProfileResponse;
+	  console.log("id:", id," getProfile: ", profile);
+	  const response: ProfileDTO = {
+		profile: {
+			avatar: profile.avatar,
+			phone: profile.phone
+		}
+	  };
+	  return (response);
+	} catch (err) {
+		console.log(err);
+		return ({error: "Profile not found"});
+	} finally {
+	  db.close();
+	}
+}
+
+export const getUsersAvatarByName = async (name:string) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_users = `SELECT * FROM users WHERE name = ?`;
+	const sql_profile = `SELECT * FROM profiles WHERE user_id = ?`;
+	try {
+	  const user = await fetchFirst(db, sql_users, [name]) as UserDTO;
+	  if (!user)
+		return ({error: "User not found"});
+	  const id = user.id;
+	  const profile = await fetchFirst(db, sql_profile, [id.toString()]) as ProfileResponse;
+	  if (!profile)
+		return ({error: "Profile not found"});
+	//   console.log("getUsersAvatarByName profile.avatar:", profile.avatar.substring(0, 10));
+	  return ({avatar: profile.avatar});
+	} catch (err) {
+		console.log(err);
+		return ({error: "Profile not found"});
+	} finally {
+	  db.close();
+	}
+}
 
 export const getUserByName = async (name:string) => {
 	const db = new sqlite3.Database(DB_PATH);
@@ -132,9 +199,12 @@ export const createUser = async (name:string, email:string, password: string): P
 			status: 400
 	})
 	}
-	const sql = `INSERT INTO users(name, email, password) VALUES(?, ?, ?)`;
+	const sql_users = `INSERT INTO users(name, email, password) VALUES(?, ?, ?)`;
+	const sql_profiles = `INSERT INTO profiles(user_id) VALUES(?)`;
 	try {
-	  await execute(db, sql, [name, email, password]);
+	  await execute(db, sql_users, [name, email, password]);
+	  const user = await fetchFirst(db, `SELECT * FROM users WHERE name = ?`, [name]) as UserDTO;
+	  await execute(db, sql_profiles, [user.id.toString()]);
 	  return ({
 		message: "User registered successfully",
 		status: 201
@@ -192,3 +262,20 @@ export const getUserById = async (id:number) => {
 	  db.close();
 	}
 };
+
+export const deleteUser = async (id:number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_users = `DELETE FROM users WHERE id = ?`;
+	const sql_profiles = `DELETE FROM profiles WHERE user_id = ?`;
+
+	try {
+	  await execute(db, sql_profiles, [id.toString()]);
+	  await execute(db, sql_users, [id.toString()]);
+	  return ({message: "User deleted successfully"});
+	} catch (err) {
+	  console.log(err);
+	  return ({error: "User not found"});
+	} finally {
+	  db.close();
+	}
+}

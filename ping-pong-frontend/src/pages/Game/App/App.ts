@@ -4,13 +4,14 @@ import "@babylonjs/inspector";
 import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh } from "@babylonjs/core";
 import earcut from 'earcut';
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
-import { Button, TextBlock } from "@babylonjs/gui";
+import { Button, Image, Rectangle, TextBlock } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import Environment from "./Environment";
 import { getToken } from "../../../utils/auth";
 
 enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3, WAITING = 4 }
 
+const defaultAvatar = "data:image/jpeg;base64,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D7RXJDW/s16NLya/urs/dTP4avZ8J/X4rVitwAAAAAAAAAAAAAAAAAAAAABheVWrTpunzatVbX8jeijbriO2f/va18yfKLUZ1LVLt2mre1bn0dv+WO35zvLGNRmgCoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARMxO8TtMNicmtX/tXAj0tW+RZ2oue/2VfP8AXdrtkdC1OrStRt5EzPoqvUux7aZ8utKsbKHETFURVTMTE8YmHLLQAAAAAAAAAAAAAAAAAAx2v5s4Gk5F+mdq5p5lHxnh/wA/JkUvy7vzTiYuNE/9S5VXP9Mbf7iFRgDbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC/5I6hObpUWa6t7mNPo599P4fpw+TOITkVlTZ1WrHmfVyLcxt744x9N12zWoAIoAAAAAAAAAAAAAAAAxmsaDja1VaqyL12j0UTEcyY7dvbHuZMBN9BdN73k+NPkdBdN73k+NPkpBdTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTGD0/klg6dmW82zk36q7UzMRVMbTvG3s97OAigAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/Z";
 
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -30,6 +31,7 @@ export default class App {
 	private gameId: string | undefined;
 	private order = 0;
 	private opponent = '';
+	private avatars = [defaultAvatar, defaultAvatar];
 	private gameObjects: Mesh[] = [];
 
     constructor() {
@@ -52,8 +54,12 @@ export default class App {
 				this.gameId = data.gameId;
 				this.order = data.order;
 				this.opponent = data.opponent;
+				if (data.avatars[0])
+					this.avatars[0] = data.avatars[0];
+				if (data.avatars[1])
+					this.avatars[1] = data.avatars[1];
 				this._goToGame();
-				console.log("order: ", this.order, " opponent: ", this.opponent);
+				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatars);
 			}
 			else if ('pos' in data)
 			{
@@ -424,6 +430,20 @@ export default class App {
 		leftPlayer.textWrapping = 3;
 		leftPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
 		playerUI.addControl(leftPlayer);
+
+		const leftPlayerAvatarContainer = new Rectangle();
+		leftPlayerAvatarContainer.cornerRadius = 30;
+		leftPlayerAvatarContainer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		leftPlayerAvatarContainer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+		leftPlayerAvatarContainer.top = "20px";
+		leftPlayerAvatarContainer.left = "30%";
+		leftPlayerAvatarContainer.width = "50px";
+		leftPlayerAvatarContainer.height = "50px";
+		leftPlayerAvatarContainer.thickness = 0;
+		const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatars[0]);
+		leftPlayerAvatarContainer.addControl(leftPlayerAvatar);
+		playerUI.addControl(leftPlayerAvatarContainer);
+
 		const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
 		rightPlayer.color = "white";
 		rightPlayer.fontSize = 36;
@@ -435,6 +455,19 @@ export default class App {
 		rightPlayer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
 		rightPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
 		playerUI.addControl(rightPlayer);
+
+		const rightPlayerAvatarContainer = new Rectangle();
+		rightPlayerAvatarContainer.cornerRadius = 30;
+		rightPlayerAvatarContainer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		rightPlayerAvatarContainer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		rightPlayerAvatarContainer.top = "20px";
+		rightPlayerAvatarContainer.left = "-30%";
+		rightPlayerAvatarContainer.width = "50px";
+		rightPlayerAvatarContainer.height = "50px";
+		rightPlayerAvatarContainer.thickness = 0;
+		const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatars[1]);
+		rightPlayerAvatarContainer.addControl(rightPlayerAvatar);
+		playerUI.addControl(rightPlayerAvatarContainer);
 
 		const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
 		scoreLabelLeft.color = "white";

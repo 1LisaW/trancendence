@@ -13,15 +13,17 @@ export class UserSettings extends Component {
 	iconAuth: SVGSVGElement | null = null;
 	iconUnauth: SVGSVGElement | null = null;
 	menuList: MenuListType[] = [];
+	avatarSrc: string;
 
 	getIsAuth: ()=>boolean;
 	navigate: (route:string)=>void;
 
-	constructor(parent: HTMLElement, dictionary: DictionaryType, getIsAuth: ()=>boolean, navigate: (route:string)=>void) {
+	constructor(parent: HTMLElement, dictionary: DictionaryType, getIsAuth: ()=>boolean, navigate: (route:string)=>void, avatarSrc:string) {
 		super('div', parent, dictionary);
 		this.container.className = '';
 		this.getIsAuth = getIsAuth;
 		this.navigate = navigate;
+		this.avatarSrc = avatarSrc;
 		this.init();
 	}
 	initIcons(iconAuth: SVGSVGElement,iconUnauth: SVGSVGElement){
@@ -101,7 +103,12 @@ export class UserSettings extends Component {
 	}
 	destroy(){}
 	render = () => {
-		if (this.getIsAuth() && this.iconAuth) {
+		const isAuth = this.getIsAuth();
+		if (isAuth && this.avatarSrc && this.avatar)
+		{
+			this.avatar.innerHTML = `<img src="${this.avatarSrc}" class="w-12 h-12 rounded-full">`;
+		}
+		else if (isAuth && this.iconAuth) {
 			this.avatar?.appendChild(this.iconAuth);
 		} else if (this.iconUnauth) {
 			this.avatar?.appendChild(this.iconUnauth);
@@ -109,7 +116,8 @@ export class UserSettings extends Component {
 		if (this.parent)
 			this.parent.appendChild(this.container);
 	}
-	update = () => {
+	update = (avatarSrc?: string) => {
+		this.avatarSrc = avatarSrc || '';
 		const isAuth = this.getIsAuth();
 		const authComponents = this.profileDropdown?.querySelectorAll('.if-auth-visible');
 		const unAuthComponents = this.profileDropdown?.querySelectorAll('.if-auth-invisible');
@@ -125,6 +133,11 @@ export class UserSettings extends Component {
 			else
 				component.classList.add('hidden');
 		})
+		if (isAuth && this.avatarSrc && this.avatar)
+		{
+			this.avatar.innerHTML = `<img src="${this.avatarSrc}" class="w-12 h-12 rounded-full">`;
+			return ;
+		}
 		if (!isAuth && this.iconAuth && this.iconUnauth)
 		{
 			if (this.iconAuth.parentElement)
