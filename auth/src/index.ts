@@ -4,8 +4,9 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import fastify from "fastify";
 import { fetchAll, fetchFirst, execute } from "./sql";
-import { createNewUser, createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, UserDTO, initDB, getUserById } from "./sqlite";
+import { createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, UserDTO, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName } from "./sqlite";
 import { request } from "http";
+import { ProfileRequestBody } from "./model";
 
 dotenv.config();
 
@@ -85,7 +86,7 @@ Fastify.register(async function (fastify) {
 				if (!match)
 					return reply.status(401).send({ error: 'Invalid credentials' });
 				const token = jwt.sign({ userId: user_.id }, process.env.TOKEN_SECRET || "", { expiresIn: '1h' });
-				reply.send({ token });
+				return reply.send({ token });
 			}
 			return reply.status(401).send({ error: 'Invalid credentials' });
 		} catch (e) {
@@ -104,6 +105,75 @@ Fastify.register(async function (fastify) {
 			const response = await getUserById(decoded.userId);
 			const user = {name: response.name, email: response.email};
 			reply.send({user});
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
+	Fastify.post<{Body:ProfileRequestBody}>('/profile', async(request, reply) => {
+		const token = request.headers.authorization;
+
+		console.log("Auth /profile: ")
+
+		if (!token) return reply.status(401).send({ error: 'Access denied' });
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			const user = await getUserById(decoded.userId);
+			const response = await updateProfile(user.id, request.body.avatar || '', request.body.phone || '');
+
+			// const user = {name: response.name, email: response.email};
+			reply.send({message: "Profile updated"});
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
+	Fastify.get('/profile', async(request, reply) => {
+		const token = request.headers.authorization;
+
+		console.log("Auth /profile: ")
+
+		if (!token) return reply.status(401).send({ error: 'Access denied' });
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			// const user = await getUserById(decoded.userId);
+			console.log("decoded.userId: ", decoded.userId);
+			const response = await getProfile(decoded.userId);
+
+			// const user = {name: response.name, email: response.email};
+			reply.send(response);
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
+	interface avatarParams {
+		name: string
+	}
+	Fastify.get<{Params: avatarParams}>('/avatar/:name', async(request, reply) => {
+		const name = request.params.name;
+		try {
+			const response = await getUsersAvatarByName(name);
+			// console.log("auth get avatar: ", response);
+			reply.send(response);
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
+
+	Fastify.delete('/profile', async(request, reply) => {
+		const token = request.headers.authorization;
+
+		console.log("Auth /profile: ")
+
+		if (!token) return reply.status(401).send({ error: 'Access denied' });
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			const user = await getUserById(decoded.userId);
+			const response = await deleteUser(user.id);
+
+			// const user = {name: response.name, email: response.email};
+			reply.send(response);
 		} catch (e) {
 			reply.status(500).send({ error: "Server error", details: e });
 		}

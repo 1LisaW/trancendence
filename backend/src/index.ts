@@ -3,7 +3,7 @@
 import fastify from "fastify";
 import { WebSocket } from "@fastify/websocket";
 import { nanoid } from "nanoid";
-import { Auth_UserDTO, get_user__auth, post_bat_move__game_service, post_matchmaking__game_service, post_terminate_game } from "./api";
+import { Auth_UserDTO, AuthUserErrorDTO, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_matchmaking__game_service, post_terminate_game } from "./api";
 
 interface WSocket extends WebSocket {
   id?: string,
@@ -114,8 +114,11 @@ const addUser = async (token: string) => {
 
 const removeUser = async (token: string) => {
   const data = await get_user__auth(token);
-  const json: Auth_UserDTO = await data.json();
+  let json: Auth_UserDTO | AuthUserErrorDTO = await data.json();
   console.log("Backend remove user: json", json);
+  if ((json as AuthUserErrorDTO).error)
+    return ;
+  json = json as Auth_UserDTO;
   const userName = json.user.name;
   users.remove(userName);
   console.log("User ", userName, " has status ", users.getUserStatus(userName));
@@ -219,23 +222,18 @@ Fastify.register(async function (fastify) {
             const gameUsers: string[] = json.users;
             const opponentNames = [users.getUserByGameSocketId(gameUsers[1]), users.getUserByGameSocketId(gameUsers[0])];
             console.log("opponentNames: ",opponentNames);
+//////
+
+            const avatars = await Promise.all(opponentNames.map((name) =>  get_user_profile_avatar(name||'')));
             gameUsers.forEach((gameSocketId, id) => {
               const reply = {
                 gameId: json.gameId,
                 order: id,
-                opponent: opponentNames[id]
+                opponent: opponentNames[id],
+                avatars: [avatars[0].avatar, avatars[1].avatar]
               };
               users.getGameSocketById(gameSocketId)?.send(JSON.stringify(reply));
             });
-            // console.log("Backend json gameId: ", json.gameId);
-            // const order = json.users[0] === socket.id ?0:1;
-            // const opponent
-            // const reply = {
-            //   gameId: json.gameId,
-            //   order
-
-            // }
-            // socket.send(JSON.stringify({"gameId": json.gameId, users: json.users}));
           }
         }
       }
@@ -245,21 +243,14 @@ Fastify.register(async function (fastify) {
         console.log("BAT move /game: gameId", gameId);
       }
       console.log(msg);
-      // console.log(JSON.parse(message));
-      // message.toString() === 'hi from client'
-      // fastify.close();
     });
     socket.on('close', () => {
-      // console.log(socket);
-      // console.log(JSON.parse(message));
-      // post_exit_user(socket?.id || '');
       console.log("gameUserSockets : ", [ ...users.gameUserSockets.keys()]);
       console.log(users.gameSocketIsAlive(socket?.id || ''));
       users.removeGameSocket(socket);
       console.log("gameUserSockets : ", [ ...users.gameUserSockets.keys()]);
       console.log(users.gameSocketIsAlive(socket?.id || ''));
       console.log("Disconnected", socket?.id);
-      // message.toString() === 'hi from client'
       socket.send('server socket is closed');
     });
   })

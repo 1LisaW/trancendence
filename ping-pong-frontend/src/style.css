@@ -110,3 +110,8 @@ body, html {
     --color-button-base: #fff;
   }
 }
+
+.cropper-view-box,
+.cropper-face {
+  border-radius: 50%;
+}

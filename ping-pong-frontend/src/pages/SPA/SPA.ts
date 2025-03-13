@@ -6,7 +6,8 @@ import Main from "../Main/Main";
 import Login from "../Login/Login";
 import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
-import { getToken, isAuthenticated, removeToken } from "../../utils/auth";
+import { getProfileAvatar, getToken, isAuthenticated, removeToken } from "../../utils/auth";
+import Profile from "../Profile/Profile";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -58,6 +59,8 @@ export class SPA {
 
 	chat_ws: WebSocket | null = null;
 
+	avatar = '';
+
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
 		this.dictionary = dictionary;
@@ -83,7 +86,7 @@ export class SPA {
 	initOutlet(outletName: string){
 		switch (outletName) {
 			case "header":
-				this.outlets["header"] = new Header('nav', this.container, this.dictionary, this.getIsAuth, this.navigate);
+				this.outlets["header"] = new Header('nav', this.container, this.dictionary, this.getIsAuth, this.navigate, this.avatar);
 				break;
 			case "login":
 				this.outlets["login"] = new Login("div",this.container, this.dictionary, this.navigate);
@@ -100,6 +103,9 @@ export class SPA {
 			case "game":
 				this.outlets["game"] = new Game("div",this.container, this.dictionary);
 				break;
+			case "profile":
+				this.outlets["profile"] = new Profile("div",this.container, this.dictionary, this.avatar, this.updateAvatar);
+				break;
 			default:
 				break;
 		}
@@ -113,6 +119,11 @@ export class SPA {
 	}
 	getIsAuth = () => {
 		return (this.isAuth);
+	}
+	updateAvatar = async () => {
+		this.avatar = await getProfileAvatar();
+		this.outlets["profile"]?.update(this.avatar);
+		this.outlets["header"]?.update(this.avatar);
 	}
 	init_chat_ws = () => {
 		if (this.chat_ws)
@@ -136,14 +147,35 @@ export class SPA {
 		this.chat_ws.close();
 		this.chat_ws = null;
 	}
-	update = async() => {
-		const userName = await isAuthenticated();
-		this.isAuth = !!(userName);
-		this.outlets["header"]?.update();
-		if (!this.isAuth)
+	checkIsAuth = async () => {
+		const userName = !!(await isAuthenticated());
+		if (this.isAuth === userName)
+		{
+			return ;
+		}
+		this.isAuth = userName;
+		if (this.isAuth)
+		{
+			this.init_chat_ws();
+			// this.outlets["header"]?.;
+		}
+		else
 		{
 			removeToken();
 			this.close_chat_ws();
+			this.avatar = '';
+		}
+		this.updateAvatar();
+
+	}
+	update = async() => {
+		await this.checkIsAuth();
+		// this.isAuth = !!(userName);
+		this.outlets["header"]?.update();
+		if (!this.isAuth)
+		{
+			// removeToken();
+			// this.close_chat_ws();
 			console.log('location.pathname ',location.pathname);
 			if (location.pathname === '/game')
 			{
@@ -153,9 +185,11 @@ export class SPA {
 			}
 			// setSessionUserData(userName || '', 'logout');
 		}
-		else
-			this.init_chat_ws();
-		// console.log("appliedOtlets ", this.appliedOutlets);
+		// else
+		// {
+			// this.init_chat_ws();
+		// }
+		// console.log("appliedOutlets ", this.appliedOutlets);
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();

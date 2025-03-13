@@ -6,8 +6,7 @@ export const setUser = (user: string) => {
   localStorage.setItem('user', user);
 }
 
-export const setToken = (token:string) =>
-{
+export const setToken = (token: string) => {
   localStorage.setItem('token', token);
 }
 
@@ -36,4 +35,21 @@ export const isAuthenticated = async (): Promise<string | undefined> => {
       name = res.user.name;
   });
   return (name);
+}
+
+export const getProfileAvatar = () => {
+  return fetch(`/api/auth/profile`, {
+    method: "GET",
+    headers: {
+      "Authorization": getToken(),
+    },
+  }).then((res) => res.json()
+  ).then(res => {
+    if (res.profile)
+      return (res.profile.avatar);
+    return ('');
+  }).catch((err) => {
+    console.log(err);
+    return ('');
+  });
 }

@@ -61,3 +61,19 @@ export const get_user__auth = (token: string): Promise<Response> => {
 	  })
 	);
 }
+
+
+export interface GetUserAvatarResponse {
+	avatar?: string;
+	error?: string;
+}
+
+export const get_user_profile_avatar = async (name: string): Promise<{avatar:string}> => {
+	const response = await fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/avatar/${name}`, {
+		method: "GET",
+	});
+	const data: GetUserAvatarResponse = await response.json();
+	if (data.error)
+		return ({avatar:''});
+	return ({avatar:data.avatar || ''});
+}
