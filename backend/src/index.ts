@@ -3,7 +3,7 @@
 import fastify from "fastify";
 import { WebSocket } from "@fastify/websocket";
 import { nanoid } from "nanoid";
-import { Auth_UserDTO, AuthUserErrorDTO, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_matchmaking__game_service, post_terminate_game } from "./api";
+import { Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_matchmaking__game_service, post_terminate_game } from "./api";
 
 interface WSocket extends WebSocket {
   id?: string,
@@ -210,7 +210,10 @@ Fastify.register(async function (fastify) {
     socket.on('message', async message => {
 
       const msg = JSON.parse(message.toString());
-      if ('mode' in msg) {
+      if ('matchmaking' in msg && msg.matchmaking === false) {
+        delete_user_from_matchmaking(socket.id || '');
+      }
+      else if ('mode' in msg) {
         const mode = msg.mode as string;
         console.log("/game: mode", mode);
         if (mode === 'pvp' || mode === 'pvc') {

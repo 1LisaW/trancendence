@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
-import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh } from "@babylonjs/core";
+import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh, Animation } from "@babylonjs/core";
 import earcut from 'earcut';
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture";
 import { Button, Image, Rectangle, TextBlock } from "@babylonjs/gui";
@@ -27,12 +27,15 @@ export default class App {
 	private _environment: Environment | null = null;
     // private _cutScene: Scene;
 
+	// game attributes
 	private game_ws: WebSocket | null = null;
 	private gameId: string | undefined;
 	private order = 0;
 	private opponent = '';
-	private avatars = [defaultAvatar, defaultAvatar];
+	private avatarSrcs = [defaultAvatar, defaultAvatar];
 	private gameObjects: Mesh[] = [];
+	private usersAvatars: Rectangle[] = [];
+	private scores: TextBlock[] = [];
 
     constructor() {
 		this._canvas = this._createCanvas();
@@ -55,11 +58,34 @@ export default class App {
 				this.order = data.order;
 				this.opponent = data.opponent;
 				if (data.avatars[0])
-					this.avatars[0] = data.avatars[0];
+					this.avatarSrcs[0] = data.avatars[0];
 				if (data.avatars[1])
-					this.avatars[1] = data.avatars[1];
+					this.avatarSrcs[1] = data.avatars[1];
 				this._goToGame();
-				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatars);
+				// console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatarSrcs);
+			}
+			else if ('gameResult' in data)
+			{
+				this.scores[2].text = `You ${data.gameResult[this.order]}`;
+				console.log("FRONT APP gameResult: ", data.gameResult[this.order]);
+			}
+			else if ('score' in data)
+			{
+				if (this.scores.length >= 2)
+				{
+					if (this.scores[0].text != data.score[0])
+					{
+						this.scores[0].text = data.score[0].toString();
+						console.log("FRONT APP score: ", data.score);
+						this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
+					}
+					else
+					{
+						this.scores[1].text = data.score[1].toString();
+						console.log("FRONT APP score: ", data.score);
+						this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
+					}
+				}
 			}
 			else if ('pos' in data)
 			{
@@ -83,7 +109,6 @@ export default class App {
 		if (!this.game_ws)
 			return ;
 		this.game_ws.close();
-
 		this.game_ws = null;
 	}
 
@@ -205,14 +230,14 @@ export default class App {
 		guiMenu.addControl(multiSinglePlayerButton);
 
 		startSinglePlayerButton.onPointerDownObservable.add(() => {
-			this.game_ws?.send(JSON.stringify({"mode": "pvc"}));
+			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvc"}));
 			this._goToGame();
 			scene.detachControl(); //observables disabled
 		})
 		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
 			// TODO: search for the opponent
 			await this._goToWaitingRoom();
-			this.game_ws?.send(JSON.stringify({"mode": "pvp"}));
+			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvp"}));
 			scene.detachControl();
 		})
 
@@ -335,6 +360,8 @@ export default class App {
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
+			this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+			this.close_game_ws();
 			this._goToStart();
 		});
 
@@ -401,26 +428,11 @@ export default class App {
 	// 	this._scene.attachControl();
 	// }
 
-	private async _goToGame() {
-		//--SETUP SCENE--
-		console.log("GO_TO_GAME");
-		this._engine.displayLoadingUI();
-		this._scene.detachControl();
-		this._setUpGame();
-		const scene = this._gamescene as Scene;
-		scene.clearColor = new Color4(0.01568627450980392, 0.01568627450980392, 0.20392156862745098); // a color that fit the overall color scheme better
-        const camera = new FreeCamera("camera1", new Vector3(0, 90, 120), scene);
-
-		camera.setTarget(Vector3.Zero());
-
-		//--GUI--
-		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-		// if (playerUI.layer)
-			// playerUI.layer?.layerMask = 0x10000000;
+	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
 		const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${this.order? this.opponent: 'you'}`);
 		leftPlayer.color = "white";
-		leftPlayer.fontSize = 36;
-		leftPlayer.widthInPixels = 50;
+		leftPlayer.fontSize = "text-xl";
+		leftPlayer.height = "50px";
 		leftPlayer.heightInPixels = leftPlayer.fontSizeInPixels;
 
 		leftPlayer.top = "14px";
@@ -440,18 +452,33 @@ export default class App {
 		leftPlayerAvatarContainer.width = "50px";
 		leftPlayerAvatarContainer.height = "50px";
 		leftPlayerAvatarContainer.thickness = 0;
-		const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatars[0]);
+		const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[0]);
 		leftPlayerAvatarContainer.addControl(leftPlayerAvatar);
 		playerUI.addControl(leftPlayerAvatarContainer);
+		this.usersAvatars.push(leftPlayerAvatarContainer);
+
+		const leftPlayerScore = new TextBlock(`left-score`, `${0}`);
+		leftPlayerScore.color = "white";
+		leftPlayerScore.fontSize = 36;
+		leftPlayerScore.widthInPixels = 50;
+		leftPlayerScore.height = "50px";
+		leftPlayerScore.top = "14px";
+		leftPlayerScore.left = "40%";
+		leftPlayerScore.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		leftPlayerScore.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+		leftPlayerScore.textWrapping = 3;
+		leftPlayerScore.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+		playerUI.addControl(leftPlayerScore);
+		this.scores.push(leftPlayerScore);
 
 		const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
 		rightPlayer.color = "white";
-		rightPlayer.fontSize = 36;
+		rightPlayer.fontSize = "text-xl";
 		rightPlayer.widthInPixels = 50;
-		rightPlayer.heightInPixels = rightPlayer.fontSizeInPixels;
+		rightPlayer.height = "50px";
 		rightPlayer.textWrapping = 3;
 		rightPlayer.top = "14px";
-		rightPlayer.left = "14px";
+		rightPlayer.left = "-14px";
 		rightPlayer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
 		rightPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
 		playerUI.addControl(rightPlayer);
@@ -465,22 +492,109 @@ export default class App {
 		rightPlayerAvatarContainer.width = "50px";
 		rightPlayerAvatarContainer.height = "50px";
 		rightPlayerAvatarContainer.thickness = 0;
-		const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatars[1]);
+		const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[1]);
 		rightPlayerAvatarContainer.addControl(rightPlayerAvatar);
 		playerUI.addControl(rightPlayerAvatarContainer);
+		this.usersAvatars.push(rightPlayerAvatarContainer);
 
-		const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
-		scoreLabelLeft.color = "white";
-		scoreLabelLeft.fontSize = 24;
-		scoreLabelLeft.top = "10%";
-        scoreLabelLeft.left = "10%";
-		playerUI.addControl(scoreLabelLeft);
-		const scoreLabelRight = new TextBlock(`score-${this.order?'you': this.opponent}`, `Score: 0`);
-		scoreLabelRight.color = "white";
-		scoreLabelRight.fontSize = 24;
-		scoreLabelRight.top = "10%";
-        scoreLabelRight.left = "-10%";
-		playerUI.addControl(scoreLabelRight);
+		const rightPlayerScore = new TextBlock(`right-score`, `${0}`);
+		rightPlayerScore.color = "white";
+		rightPlayerScore.fontSize = 36;
+		rightPlayerScore.widthInPixels = 50;
+		rightPlayerScore.height = "50px";
+		rightPlayerScore.top = "14px";
+		rightPlayerScore.left = "-40%";
+		rightPlayerScore.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		rightPlayerScore.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		rightPlayerScore.textWrapping = 3;
+		rightPlayerScore.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		playerUI.addControl(rightPlayerScore);
+		this.scores.push(rightPlayerScore);
+
+		const gameResult = new TextBlock(`game_result`, ``);
+		gameResult.color = "white";
+		gameResult.fontSize = "text-xl";
+		gameResult.widthInPixels = 150;
+		gameResult.height = "50px";
+		gameResult.textWrapping = 3;
+		gameResult.top = "70px";
+		// rightPlayer.left = "-14px";
+		gameResult.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+		gameResult.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+		playerUI.addControl(gameResult);
+		this.scores.push(gameResult);
+
+		const animationScaleY = new Animation("myAnimationY", "scaleY", 20, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONTYPE_VECTOR3);
+        const animationScaleX = new Animation("myAnimationX", "scaleX", 20, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONTYPE_VECTOR3);
+
+        const keys = [];
+
+        keys.push({
+            frame: 0,
+            value: 1
+        });
+
+        keys.push({
+            frame: 5,
+            value: 1.2
+        });
+        keys.push({
+            frame: 10,
+            value: 1
+        });
+        keys.push({
+            frame: 15,
+            value: 1.2
+        });
+        keys.push({
+            frame: 20,
+            value: 1
+        });
+        animationScaleY.setKeys(keys);
+        animationScaleX.setKeys(keys);
+		leftPlayerAvatarContainer.animations = [];
+		leftPlayerAvatarContainer.animations.push(animationScaleY);
+		leftPlayerAvatarContainer.animations.push(animationScaleX);
+		rightPlayerAvatarContainer.animations = [];
+		rightPlayerAvatarContainer.animations.push(animationScaleY);
+		rightPlayerAvatarContainer.animations.push(animationScaleX);
+	}
+	private async _goToGame() {
+		//--SETUP SCENE--
+		console.log("GO_TO_GAME");
+		this._engine.displayLoadingUI();
+		this._scene.detachControl();
+		this._setUpGame();
+		const scene = this._gamescene as Scene;
+		scene.clearColor = new Color4(0.01568627450980392, 0.01568627450980392, 0.20392156862745098); // a color that fit the overall color scheme better
+        const camera = new FreeCamera("camera1", new Vector3(0, 90, 120), scene);
+
+		camera.setTarget(Vector3.Zero());
+
+		//--GUI--
+		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+		this._setGameGUI(playerUI);
+		// if (playerUI.layer)
+			// playerUI.layer?.layerMask = 0x10000000;
+
+
+
+
+
+
+
+		// const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
+		// scoreLabelLeft.color = "white";
+		// scoreLabelLeft.fontSize = 24;
+		// scoreLabelLeft.top = "10%";
+        // scoreLabelLeft.left = "10%";
+		// playerUI.addControl(scoreLabelLeft);
+		// const scoreLabelRight = new TextBlock(`score-${this.order?'you': this.opponent}`, `Score: 0`);
+		// scoreLabelRight.color = "white";
+		// scoreLabelRight.fontSize = 24;
+		// scoreLabelRight.top = "10%";
+        // scoreLabelRight.left = "-10%";
+		// playerUI.addControl(scoreLabelRight);
 		//dont detect any inputs from this ui while the game is loading
 		scene.detachControl();
 

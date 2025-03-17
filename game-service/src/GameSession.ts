@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import { GameState } from "./api";
+import { GameState, ScoreState, GameResult } from "./api";
 type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLength };
 
 type Tuple3<T> = Tuple<T, 3>;
@@ -58,7 +58,7 @@ const ballXRightPos = (sceneParams.ground.width + sceneParams.ball.diameter) / 2
 const batZToEdge = sceneParams.bat.width / 2;
 
 const batStep = sceneParams.bat.width / 2;
-const frameStep = 0.8;
+const frameStep = 1.5;
 
 export class GameSession {
 	private _id = nanoid();
@@ -72,7 +72,7 @@ export class GameSession {
 
 	private terminated = false;
 
-	constructor(mode: ModeProp, playerId: string, opponentId: string, sendDataToUser: (gameId: string, state: GameState) => void) {
+	constructor(mode: ModeProp, playerId: string, opponentId: string, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
 		this.sendDataToUser = sendDataToUser;
 		this._mode = mode;
 		this._ids.push(playerId, opponentId);
@@ -114,7 +114,7 @@ export class GameSession {
 
 	setBatMove(id: string, step: number) {
 		const bat = this._players[id];
-		console.log("Before: Bat of user ", id, " updated it's position: ", bat.dest[2], ", speed: ", bat.speed);
+		// console.log("Before: Bat of user ", id, " updated it's position: ", bat.dest[2], ", speed: ", bat.speed);
 		let z = bat.dest[2];
 		if (step > 0) {
 			this._players[id].dest[2] = Math.min(z + batStep, batZTopPos);
@@ -128,16 +128,20 @@ export class GameSession {
 		// this._players[id].dest[1] = y;
 		// if ((this._players[id].speed > -3 && step < 0) || (this._players[id].speed < 3 || step > 0))
 		// 	this._players[id].speed += step;
-		console.log("After: Bat of user ", id, " updated it's position: ", this._players[id].dest[2], ", speed: ", this._players[id].speed);
+		// console.log("After: Bat of user ", id, " updated it's position: ", this._players[id].dest[2], ", speed: ", this._players[id].speed);
 	}
 
 	private hasLoseRound(x: number, z: number, x_sign: number) {
 		if (x >= ballXRightPos) {
-			this._score[1]++;
+			this._score[0]++;
+			this._ball.speed = 1;
+			this.sendDataToUser(this._id, {players: this._ids, score: this._score});
 			return (true)
 		}
 		if (x <= -ballXRightPos) {
-			this._score[0]++;
+			this._score[1]++;
+			this._ball.speed = 1;
+			this.sendDataToUser(this._id, {players: this._ids, score: this._score});
 			return (true)
 		}
 		return false;
@@ -148,6 +152,7 @@ export class GameSession {
 			const koef = (z_sign * ballZTopPos - z) / this._ball.normal[2];
 			this._ball.pos[0] = x - koef * this._ball.normal[0];
 			this._ball.pos[2] = ballZTopPos * z_sign;
+			this._ball.speed = Math.min(this._ball.speed - 0.2, 1);
 			this._ball.normal[2] *= -1;
 			return true;
 		}
@@ -167,6 +172,7 @@ export class GameSession {
 			this._ball.pos[0] = ballXRightBatPos * x_sign;
 			this._ball.pos[2] = z - koef * this._ball.normal[2];
 			this._ball.normal[0] *= -1;
+			this._ball.speed = Math.min(this._ball.speed + 0.5, 3);
 			return true;
 		}
 		return false;
@@ -231,11 +237,11 @@ export class GameSession {
 	updateState() {
 		this._ids.forEach(id => this.updateBatState(id));
 		this.updateBallState();
-		console.log(this.getState());
+		this.getState();
 		// return()
 	}
 	isFinished() {
-		return (this._score[0] >= 15 || this._score[1] >= 15);
+		return (this._score[0] >= 5 || this._score[1] >= 5);
 	}
 	gameLoop() {
 		console.log("*** GAME LOOP *** (game-service)");
@@ -245,7 +251,14 @@ export class GameSession {
 
 		// const sessionPool = this.sessionPool;
 		const gameLoop = () => {
-			if (this.isFinished() || this.terminated)
+			if (this.isFinished())
+			{
+				const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
+				const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
+				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result]});
+				return;
+			}
+			if (this.terminated)
 				return;
 			let now = Date.now()
 
@@ -259,7 +272,7 @@ export class GameSession {
 				// session.updateState();
 				//send response to backend
 
-				console.log('delta', delta, '(target: ' + tickLengthMs + ' ms)', 'node ticks', actualTicks)
+				// console.log('delta', delta, '(target: ' + tickLengthMs + ' ms)', 'node ticks', actualTicks)
 				actualTicks = 0
 			}
 

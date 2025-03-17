@@ -10,7 +10,17 @@ export interface GameState {
 	ball: Tuple3<number>
 }
 
-export const post_game_loop_data = async(gameId:string, state: GameState)=>{
+export interface ScoreState {
+	players: string[],
+	score: number[],
+}
+
+export interface GameResult {
+	players: string[],
+	gameResult: string[]
+}
+
+export const post_game_loop_data = async(gameId:string, state: GameState | ScoreState | GameResult)=>{
 	return (
 		fetch(`${WS_SERVICE_HOSTNAME}/game/${gameId}`, {
 			method: "POST",
