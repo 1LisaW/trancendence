@@ -35,6 +35,13 @@ export const post_terminate_game = (gameId: string): Promise<Response> => {
 	);
 }
 
+export const delete_user_from_matchmaking = (socketId: string): Promise<Response> => {
+	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
+		method: "DELETE",
+	  })
+	);
+}
+
 
 //auth
 export interface Auth_UserDTO {

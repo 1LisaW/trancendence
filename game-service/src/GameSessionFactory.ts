@@ -1,4 +1,4 @@
-import { GameState, post_game_loop_data } from "./api";
+import { GameState, post_game_loop_data, ScoreState, GameResult } from "./api";
 import { GameSession, ModeProp } from "./GameSession";
 
 const WS_SERVICE_HOSTNAME = "http://backend:8082";
@@ -31,7 +31,7 @@ export class GameSessionFactory {
 		}
 	}
 
-	sendDataToUser = (gameId:string, state: GameState) => {
+	sendDataToUser = (gameId:string, state: GameState | ScoreState | GameResult) => {
 		post_game_loop_data(gameId, state)
 	}
 

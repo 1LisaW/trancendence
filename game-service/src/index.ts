@@ -43,16 +43,6 @@ interface UserParams {
     socket_id: string
 }
 
-interface ExitBody {
-    gameId?: string
-}
-
-Fastify.get('/', (request, reply) => {
-    console.log("request was received in game service ");
-    // console.log("User ", userName, " has status ", users.getUserStatus(userName));
-    reply.code(200).send({ message: "you're connected to backend service" });
-})
-
 Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socket_id', (request, reply) => {
     const { socket_id } = request.params;
     // const playerId = request.body.playerId;
@@ -76,11 +66,14 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
     });
 })
 
-Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
-    const { gameId } = request.params;
-    gameSessionFactory.removeSession(gameId);
-    reply.status(200).send({message: "game was terminated"})
-})
+Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, reply) => {
+    const { socket_id } = request.params;
+    matchmaking.removeUser(socket_id);
+    reply.send({ message: "User removed from queue" });
+}
+);
+
+
 
 interface GamePostBody {
     userId: string,
@@ -89,6 +82,13 @@ interface GamePostBody {
 interface GamePostParams {
     gameId: string
 }
+
+Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
+    const { gameId } = request.params;
+    gameSessionFactory.removeSession(gameId);
+    reply.status(200).send({message: "game was terminated"})
+})
+
 Fastify.post<{ Params: GamePostParams, Body: GamePostBody }>('/game/:gameId', (request, reply) => {
     const { gameId } = request.params;
     const { userId, step } = request.body;
