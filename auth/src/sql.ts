@@ -3,15 +3,6 @@ import sqlite3 from "sqlite3";
 type SQLiteDb = sqlite3.Database;
 type Resolve = (value?: any)=>void;
 
-
-// export const execute = async (db: SQLiteDb, sql: string) => {
-// 	return new Promise((resolve: Resolve, reject) => {
-// 	  db.exec(sql, (err) => {
-// 		if (err) reject(err);
-// 		resolve();
-// 	  });
-// 	});
-// };
 export const execute = async (db:SQLiteDb, sql:string, params?:string[]) => {
 	if (params && params.length > 0) {
 	  return new Promise((resolve:Resolve, reject) => {
