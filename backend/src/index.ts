@@ -41,7 +41,7 @@ class Users {
   }
   gameSocketIsAlive(socketId: string) {
     const socket = this.gameUserSockets.get(socketId);
-    console.log('socketId:', socketId, " socket: ", !!socket);
+    // console.log('socketId:', socketId, " socket: ", !!socket);
     if (this.gameUserSockets.has(socketId))
       return (true);
     return (false);
@@ -158,7 +158,7 @@ Fastify.register(async function (fastify) {
     const { players } = request.body;
     if (players.every(player => users.gameSocketIsAlive(player)))
     {
-      console.log("**players.every(player => users.gameSocketIsAlive(player))**");
+      // console.log("**players.every(player => users.gameSocketIsAlive(player))**");
       players.forEach(player => {
         const socket = users.getGameSocketById(player);
         if (socket)

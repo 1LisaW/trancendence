@@ -17,7 +17,8 @@ export interface ScoreState {
 
 export interface GameResult {
 	players: string[],
-	gameResult: string[]
+	gameResult: string[],
+	score: number[]
 }
 
 
