@@ -51,32 +51,34 @@ services:
       - auth:auth
       - backend:backend
       - game-service:game-service
+      - score:score
     depends_on:
       - ping-pong-frontend
       - backend
       - game-service
       - auth
+      - score
 
 
   auth:
     container_name: auth
     image: auth
-    # image: alpine:latest
     build:
       context: ./auth
-      # args:
-      #   DB_NAME: ${DB_NAME:-}
-      #   DB_USER: ${DB_USER}
-      #   DB_USER_PASS: ${DB_USER_PASS}
-      #   DB_ROOT_PASS: ${DB_ROOT_PASS}
-    # restart: always
-    # command: ["sh", "-c", "sqlite3", "./data/db.sqlite", "<", "./data/init.sql", "&&", "tail", "-f", "/dev/null"]
-    # command: ["sh","-c", "tail", "-f", "/dev/null"]
-    # command: ["tail", "-f", "/dev/null"]
     volumes:
       - db:/db
     ports:
       - 8083:8083
+
+  score:
+    container_name: score
+    image: score
+    build:
+      context: ./score
+    volumes:
+      - db:/db
+    ports:
+      - 8084:8084
 
 volumes:
   db:

@@ -20,6 +20,7 @@ export interface GameResult {
 	gameResult: string[]
 }
 
+
 export const post_game_loop_data = async(gameId:string, state: GameState | ScoreState | GameResult)=>{
 	return (
 		fetch(`${WS_SERVICE_HOSTNAME}/game/${gameId}`, {
@@ -32,14 +33,5 @@ export const post_game_loop_data = async(gameId:string, state: GameState | Score
 	)
 }
 
-// export const post_exit_user = async (socketId:string) => {
-// 	return (
-// 		fetch(`${WS_SERVICE_HOSTNAME}/exit/${socketId}`, {
-// 			method: "POST",
-// 			headers: {
-// 			  'Content-Type': 'application/json',
-// 			},
-// 			body: JSON.stringify({message: "Your opponent leave the game"}),
-// 		  })
-// 	)
-// }
+
+
