@@ -429,6 +429,8 @@ export default class App {
 	// }
 
 	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
+		this.usersAvatars = [];
+		this.scores	= [];
 		const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${this.order? this.opponent: 'you'}`);
 		leftPlayer.color = "white";
 		leftPlayer.fontSize = "text-xl";
