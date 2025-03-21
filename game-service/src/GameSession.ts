@@ -255,7 +255,7 @@ export class GameSession {
 			{
 				const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
 				const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
-				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result]});
+				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
 				return;
 			}
 			if (this.terminated)

@@ -4,9 +4,8 @@ import { setI18nData } from "../../utils/i18n";
 import Component from "../../components/Component";
 import Warning from "../../components/Warning/Warning";
 import { setToken } from "../../utils/auth";
-// import { setSessionUserData } from "../../utils/api";
 
-const AUTH_HOSTNAME = "/api/auth";
+const AUTH_HOSTNAME = "/gateway/auth";
 export default class Login extends Component {
 	navigate: (route:string)=>void
 	inputList: { id: string; type: string; required: boolean }[] = [];
@@ -40,20 +39,9 @@ export default class Login extends Component {
 			switch (res.status) {
 				case 200:
 					{
-						//TODO: set token
 						const json = await res.json();
-						// const sessionData = await setSessionUserData('login');
-						// if (sessionData)
-						// {
-							setToken(json.token);
-							this.navigate('/');
-						// }
-						// else
-						// {
-						// 	container = this.form?.querySelector('#login-container-email') as HTMLElement;
-						// 	if (container)
-						// 		this.warnings.push(new Warning(container, this.dictionary[this.dictionary.currLang], 'server-error'));
-						// }
+						setToken(json.token);
+						this.navigate('/');
 					}
 					break;
 				case 401:
@@ -70,12 +58,6 @@ export default class Login extends Component {
 					break;
 			}
 				console.log(res);
-
-			// console.log(email);
-		//   const  data  = await fetch('auth/signin');
-		//   localStorage.setItem('token', data.token); // Store JWT in localStorage
-		//   setMessage('Login Successful');
-		//   onLogin(); // Call onLogin to inform the App component of the login status
 		} catch {
 		//   setMessage('Login failed. Check your credentials.');
 		}

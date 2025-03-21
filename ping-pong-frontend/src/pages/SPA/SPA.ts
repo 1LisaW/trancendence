@@ -148,12 +148,12 @@ export class SPA {
 		this.chat_ws = null;
 	}
 	checkIsAuth = async () => {
-		const userName = !!(await isAuthenticated());
-		if (this.isAuth === userName)
+		const isAuth = (await isAuthenticated());
+		if (this.isAuth === isAuth)
 		{
 			return ;
 		}
-		this.isAuth = userName;
+		this.isAuth = isAuth;
 		if (this.isAuth)
 		{
 			this.init_chat_ws();
@@ -183,13 +183,7 @@ export class SPA {
 				location.pathname = '/login';
 				return ;
 			}
-			// setSessionUserData(userName || '', 'logout');
 		}
-		// else
-		// {
-			// this.init_chat_ws();
-		// }
-		// console.log("appliedOutlets ", this.appliedOutlets);
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();

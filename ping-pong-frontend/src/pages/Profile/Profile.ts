@@ -3,7 +3,7 @@ import { DictionaryType } from "../../lang/dictionary";
 import Cropper from 'cropperjs';
 import { getToken } from "../../utils/auth";
 
-const AUTH_HOSTNAME = "/api/auth";
+const AUTH_HOSTNAME = "/gateway/auth";
 
 class ImageEditor {
 	container: HTMLElement;

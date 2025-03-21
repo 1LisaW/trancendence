@@ -94,6 +94,7 @@ export class UserSettings extends Component {
 		logout.addEventListener('click',(event) => {
 			event.preventDefault();
 			removeToken();
+			// this.update();
 			this.navigate('/');
 		})
 
@@ -121,6 +122,8 @@ export class UserSettings extends Component {
 		const isAuth = this.getIsAuth();
 		const authComponents = this.profileDropdown?.querySelectorAll('.if-auth-visible');
 		const unAuthComponents = this.profileDropdown?.querySelectorAll('.if-auth-invisible');
+		if (!this.avatar)
+			return ;
 		authComponents?.forEach(component => {
 			if (isAuth)
 				component.classList.remove('hidden');
@@ -133,7 +136,7 @@ export class UserSettings extends Component {
 			else
 				component.classList.add('hidden');
 		})
-		if (isAuth && this.avatarSrc && this.avatar)
+		if (isAuth && this.avatarSrc)
 		{
 			this.avatar.innerHTML = `<img src="${this.avatarSrc}" class="w-12 h-12 rounded-full">`;
 			return ;
@@ -142,12 +145,14 @@ export class UserSettings extends Component {
 		{
 			if (this.iconAuth.parentElement)
 				this.avatar?.removeChild(this.iconAuth);
+			this.avatar.innerHTML = '';
 			this.avatar?.appendChild(this.iconUnauth);
 		}
 		if (isAuth && this.iconAuth && this.iconUnauth)
 		{
 			if (this.iconUnauth.parentElement)
 				this.avatar?.removeChild(this.iconUnauth);
+			this.avatar.innerHTML = '';
 			this.avatar?.appendChild(this.iconAuth);
 		}
 	}
