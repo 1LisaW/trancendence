@@ -19,26 +19,27 @@ export const getToken = () => {
 
 }
 
-export const isAuthenticated = async (): Promise<string | undefined> => {
-  let name: string | undefined = undefined;
-  await fetch(`/api/auth/user`, {
+export const isAuthenticated = async (): Promise<boolean> => {
+  return await fetch(`/gateway/auth/is-auth`, {
     method: "GET",
     headers: {
       "Authorization": getToken(),
     },
   }).then((res) => res.json()
   ).then(res => {
-    console.log(res);
-    if (res.error)
+    // console.log(res);
+    if (res.isAuth === false)
+    {
       removeToken();
+      return (false);
+    }
     else
-      name = res.user.name;
-  });
-  return (name);
+       return (true);
+    })
 }
 
 export const getProfileAvatar = () => {
-  return fetch(`/api/auth/profile`, {
+  return fetch(`/gateway/auth/profile`, {
     method: "GET",
     headers: {
       "Authorization": getToken(),

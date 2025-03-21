@@ -52,12 +52,14 @@ services:
       - backend:backend
       - game-service:game-service
       - score:score
+      - gateway:gateway
     depends_on:
       - ping-pong-frontend
       - backend
       - game-service
       - auth
       - score
+      - gateway
 
 
   auth:
@@ -80,6 +82,24 @@ services:
     ports:
       - 8084:8084
 
+  gateway:
+    container_name: gateway
+    image: gateway
+    build:
+      context: ./gateway
+    volumes:
+      - db:/db
+    ports:
+      - 8085:8085
+    links:
+      - auth:auth
+      - game-service:game-service
+      - score:score
+    depends_on:
+      - game-service
+      - auth
+      - score
+
 volumes:
   db:
     name: db
@@ -87,4 +107,5 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/tklimova/sgoinfre/_mariadb_volume
+      device: C:\Projects\_mariadb_volume
+
