@@ -5,18 +5,18 @@ type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLen
 type Tuple3<T> = Tuple<T, 3>;
 
 export interface GameState {
-	players: string[],
+	players: number[],
 	pos: Tuple3<number>[],
 	ball: Tuple3<number>
 }
 
 export interface ScoreState {
-	players: string[],
+	players: number[],
 	score: number[],
 }
 
 export interface GameResult {
-	players: string[],
+	players: number[],
 	gameResult: string[],
 	score: number[]
 }

@@ -89,6 +89,8 @@ export default class App {
 			}
 			else if ('pos' in data)
 			{
+				if (this._state !== State.GAME)
+					this._goToGame();
 				if (this.gameObjects.length === 3)
 				{
 					this.gameObjects[0].position.z = data.pos[0][2];

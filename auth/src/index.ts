@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import fastify from "fastify";
 import { createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName } from "./sqlite";
-import { AUTH_UserDTO, AUTH_AvatarRequestParams, AUTH_LoginRequestBody, AUTH_ProfileUpdateRequestBody, AUTH_SignInRequestBody, AUTH_CreateUserDTO, AUTH_LoginDTO, AUTH_ProfileUpdateResponse, AUTH_ServerErrorDTO, AUTH_UserDeleteDTO, AUTH_AuthErrorDTO, AUTH_ProfileDTO, AUTH_AvatarDTO, AUTH_IsAuthResponse } from "./model";
+import { AUTH_UserDTO, AUTH_AvatarRequestParams, AUTH_LoginRequestBody, AUTH_ProfileUpdateRequestBody, AUTH_SignInRequestBody, AUTH_CreateUserDTO, AUTH_LoginDTO, AUTH_ProfileUpdateResponse, AUTH_ServerErrorDTO, AUTH_UserDeleteDTO, AUTH_AuthErrorDTO, AUTH_ProfileDTO, AUTH_AvatarDTO, AUTH_IsAuthResponse, AUTH_GetUserDTO } from "./model";
 
 dotenv.config();
 
@@ -50,7 +50,6 @@ Fastify.register(async function (fastify) {
 			if (user) {
 				const user_ = user as AUTH_UserDTO;
 				const match = await bcrypt.compare(request.body.password, user_.password);
-				// console.log("auth Login: match:", match)
 
 				if (!match)
 					return reply.status(401).send({ error: 'Invalid credentials' });
@@ -63,17 +62,15 @@ Fastify.register(async function (fastify) {
 		}
 	})
 
-	Fastify.get('/user', async(request, reply) => {
+	Fastify.get<{Reply: AUTH_GetUserDTO | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO}>('/user', async(request, reply) => {
 		const token = request.headers.authorization;
-
-		console.log("Auth /user: ")
 
 		if (!token) return reply.status(401).send({ error: 'Access denied' });
 		try {
 			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
 
 			const response = await getUserById(decoded.userId);
-			const user = {name: response.name, email: response.email};
+			const user = {id: response.id, name: response.name, email: response.email};
 			reply.send({user});
 		} catch (e) {
 			reply.status(500).send({ error: "Server error", details: e });
@@ -83,9 +80,6 @@ Fastify.register(async function (fastify) {
 	Fastify.post<{Body: AUTH_ProfileUpdateRequestBody, Reply: AUTH_ProfileUpdateResponse | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO}>('/profile', async(request, reply) => {
 		const token = request.headers.authorization || '';
 
-		// console.log("Auth /profile: ")
-
-		// if (!token) return reply.status(401).send({ error: 'Access denied' });
 		try {
 			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
 
@@ -126,8 +120,6 @@ Fastify.register(async function (fastify) {
 
 	Fastify.delete<{Reply: AUTH_UserDeleteDTO | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO}>('/profile', async(request, reply) => {
 		const token = request.headers.authorization;
-
-		console.log("Auth /profile: ")
 
 		if (!token) return reply.status(401).send({ error: 'Access denied' });
 		try {

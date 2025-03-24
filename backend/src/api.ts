@@ -3,7 +3,7 @@
 const GAME_SESSION_HOSTNAME = 'game-service';
 const GAME_SESSION_PORT = 8081;
 
-export const post_matchmaking__game_service = (socketId: string, mode: 'pvp'|'pvc'): Promise<Response> => {
+export const post_matchmaking__game_service = (socketId: number, mode: 'pvp'|'pvc'): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
 		method: "POST",
 		headers: {
@@ -14,7 +14,7 @@ export const post_matchmaking__game_service = (socketId: string, mode: 'pvp'|'pv
 	);
 }
 
-export const post_bat_move__game_service = (gameSessionId: string, socketId: string, step: number): Promise<Response> => {
+export const post_bat_move__game_service = (gameSessionId: string, socketId: number, step: number): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/game/${gameSessionId}`, {
 		method: "POST",
 		headers: {
@@ -35,7 +35,7 @@ export const post_terminate_game = (gameId: string): Promise<Response> => {
 	);
 }
 
-export const delete_user_from_matchmaking = (socketId: string): Promise<Response> => {
+export const delete_user_from_matchmaking = (socketId: number): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
 		method: "DELETE",
 	  })
@@ -59,7 +59,23 @@ export interface AuthUserErrorDTO {
 const AUTH_HOSTNAME = "auth";
 const AUTH_PORT = 8083;
 
-export const get_user__auth = (token: string): Promise<Response> => {
+export interface AUTH_ServerErrorDTO {
+	error: string,
+	details: unknown
+}
+
+export interface AUTH_AuthErrorDTO {
+	error: string,
+}
+export interface AUTH_GetUserDTO {
+	user: {
+		id: number,
+		name: string,
+		email: string
+	}
+}
+
+export const get_user__auth = async(token: string) => {
 	return (fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/user`, {
 		method: "GET",
 		headers: {
