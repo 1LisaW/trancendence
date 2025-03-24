@@ -243,7 +243,6 @@ export const getUserById = async (id:number) => {
 	} catch (err) {
 	  console.log(err);
 	  throw err;
-	//   return ({});
 	} finally {
 	  db.close();
 	}

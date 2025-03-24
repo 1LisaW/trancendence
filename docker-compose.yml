@@ -22,6 +22,13 @@ services:
     hostname: backend
     ports:
       - 8082:8082
+    links:
+      - auth:auth
+      - game-service:game-service
+    depends_on:
+      - auth
+      - game-service
+
 
   game-service:
     container_name: game-service
@@ -48,17 +55,11 @@ services:
       - 8443:443
     links:
       - ping-pong-frontend:ping-pong-frontend
-      - auth:auth
       - backend:backend
-      - game-service:game-service
-      - score:score
       - gateway:gateway
     depends_on:
       - ping-pong-frontend
       - backend
-      - game-service
-      - auth
-      - score
       - gateway
 
 
@@ -93,10 +94,8 @@ services:
       - 8085:8085
     links:
       - auth:auth
-      - game-service:game-service
       - score:score
     depends_on:
-      - game-service
       - auth
       - score
 

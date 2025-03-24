@@ -7,7 +7,7 @@ export class GameSessionFactory {
 	constructor(){
 
 	}
-	createSession(playerId:string, opponentId: string, mode: ModeProp ){
+	createSession(playerId:number, opponentId: number, mode: ModeProp ){
 		const newGameSession = new GameSession(mode, playerId, opponentId, this.sendDataToUser);
 		this.sessionPool.push(newGameSession);
 		return (newGameSession);
@@ -23,7 +23,7 @@ export class GameSessionFactory {
 		return (this.sessionPool.find((game) => game.getId() === gameId))
 	}
 
-	updateGameSessionUserData(gameId: string, userId:string, step: number) {
+	updateGameSessionUserData(gameId: string, userId:number, step: number) {
 		const gameSession = this.getGameSession(gameId);
 		if (gameSession)
 		{

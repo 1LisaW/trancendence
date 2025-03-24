@@ -6,16 +6,16 @@ const Fastify = fastify();
 
 class Matchmaking {
 
-    private usersPool: string[] = [];
+    private usersPool: number[] = [];
 
-    private addUser(id: string): boolean {
+    private addUser(id: number): boolean {
         this.usersPool.push(id);
         return true;
     }
     private getOpponent() {
         return (this.usersPool.pop());
     }
-    match(id: string): string | undefined {
+    match(id: number): number | undefined {
         if (this.usersPool.includes(id))
             return undefined;
         const opponent = this.getOpponent();
@@ -24,10 +24,10 @@ class Matchmaking {
         this.addUser(id);
         return undefined;
     }
-    isInPool(id: string) {
+    isInPool(id: number) {
         return (this.usersPool.includes(id));
     }
-    removeUser(id: string) {
+    removeUser(id: number) {
         this.usersPool = this.usersPool.filter((_id => _id !== id));
     }
 }
@@ -36,15 +36,16 @@ const matchmaking = new Matchmaking();
 const gameSessionFactory = new GameSessionFactory();
 
 interface MatchmakingBody {
-    playerId: string,
+    playerId: number,
     mode: ModeProp
 }
 interface UserParams {
-    socket_id: string
+    socket_id: number
 }
 
 Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socket_id', (request, reply) => {
-    const { socket_id } = request.params;
+    let { socket_id } = request.params;
+    socket_id = Number(socket_id);
     // const playerId = request.body.playerId;
     const mode = request.body.mode;
     if (mode === 'pvp') {
@@ -67,7 +68,8 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
 })
 
 Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, reply) => {
-    const { socket_id } = request.params;
+    let { socket_id } = request.params;
+    socket_id = Number(socket_id);
     matchmaking.removeUser(socket_id);
     reply.send({ message: "User removed from queue" });
 }
@@ -76,7 +78,7 @@ Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, repl
 
 
 interface GamePostBody {
-    userId: string,
+    userId: number,
     step: number
 }
 interface GamePostParams {

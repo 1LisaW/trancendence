@@ -78,3 +78,10 @@ export interface AUTH_ServerErrorDTO {
 export interface AUTH_AuthErrorDTO {
 	error: string,
 }
+export interface AUTH_GetUserDTO {
+	user: {
+		id: number,
+		name: string,
+		email: string
+	}
+}

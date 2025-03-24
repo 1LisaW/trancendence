@@ -35,7 +35,7 @@ let sceneParams: SceneProps = require('../configuration.json');
 // sceneParams = sceneParams as SceneProps;
 
 interface PlayerProp {
-	id: string | undefined;
+	id: number | undefined;
 	pos: Tuple3<number>,
 	dest: Tuple3<number>,
 	speed: number
@@ -62,7 +62,7 @@ const frameStep = 1.5;
 
 export class GameSession {
 	private _id = nanoid();
-	private _ids: string[] = [];
+	private _ids: number[] = [];
 	private _players: Players;
 	private _ball: BallProp;
 	private _score = [0, 0];
@@ -72,7 +72,7 @@ export class GameSession {
 
 	private terminated = false;
 
-	constructor(mode: ModeProp, playerId: string, opponentId: string, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
+	constructor(mode: ModeProp, playerId: number, opponentId: number, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
 		this.sendDataToUser = sendDataToUser;
 		this._mode = mode;
 		this._ids.push(playerId, opponentId);
@@ -112,7 +112,7 @@ export class GameSession {
 		this._ball.speed = 1;
 	}
 
-	setBatMove(id: string, step: number) {
+	setBatMove(id: number, step: number) {
 		const bat = this._players[id];
 		// console.log("Before: Bat of user ", id, " updated it's position: ", bat.dest[2], ", speed: ", bat.speed);
 		let z = bat.dest[2];
@@ -177,7 +177,7 @@ export class GameSession {
 		}
 		return false;
 	}
-	updateBatState(id: string) {
+	updateBatState(id: number) {
 		const bat = this._players[id]
 		if (bat.pos[2] > bat.dest[2] && bat.speed > 0)
 			bat.speed = -1;
