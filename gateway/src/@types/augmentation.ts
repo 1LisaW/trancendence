@@ -5,7 +5,7 @@ import * as http from "http";
 
 declare module "fastify" {
   export interface FastifyInstance {
-    isAuthenticated (token: string): Promise<{status:number, isAuth:boolean}>;
+    isAuthenticated (token: string): Promise<{status:number,user_id: number | undefined, isAuth:boolean}>;
 	proxyRequest <T>(path: string,
 		method: string,
 		request: fastify.FastifyRequest,

@@ -14,6 +14,16 @@ export interface GameState {
 	pos: Tuple3<number>[],
 	ball: Tuple3<number>
 }
+export interface ScoreState {
+	players: number[],
+	score: number[],
+}
+
+export interface GameResult {
+	players: number[],
+	gameResult: string[],
+	score: number[]
+}
 export interface WSocket extends WebSocket {
 	id?: number,
 	token?: string

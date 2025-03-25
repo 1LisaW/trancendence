@@ -1,5 +1,6 @@
 import sqlite3 from "sqlite3";
 import { execute, fetchAll, fetchFirst } from "./sql";
+import { SCORE_ScoreDTO } from "./model";
 
 export const DB_PATH ="/db/scores.db";
 export interface UserDTO {
@@ -57,7 +58,7 @@ export const getAllUserScores = async (id:number) => {
 	const db = new sqlite3.Database(DB_PATH);
 	const sql = `SELECT * FROM scores WHERE first_user_id = ? OR second_user_id = ?`;
 	try {
-	  const scores = await fetchAll(db, sql, [id.toString(), id.toString()]);
+	  const scores = await fetchAll(db, sql, [id.toString(), id.toString()]) as SCORE_ScoreDTO[];
 	  return ({scores: scores});
 	} catch (err) {
 		console.log(err);

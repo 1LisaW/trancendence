@@ -52,7 +52,7 @@ const registerAuthRoutes = (Fastify: FastifyInstance, AUTH_SERVICE: string) => {
 	Fastify.get(
 		'/auth/user',
 		async (request, reply) => {
-			const token = request.headers.authorization || '';
+			// const token = request.headers.authorization || '';
 			try {
 				await Fastify.proxyRequest<any>(
 					`${AUTH_SERVICE}/user`, 'GET', request, reply, true

@@ -103,9 +103,9 @@ export const get_user_profile_avatar = async (name: string): Promise<{avatar:str
 
 const SCORE_SERVICE_HOSTNAME = "http://score:8084";
 
-interface ScoreRequestBody {
-	first_user_id: string,
-	second_user_id: string,
+export interface ScoreRequestBody {
+	first_user_id: number,
+	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],

@@ -1,6 +1,7 @@
 import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import { AUTH_IsAuthResponse } from "./auth-model";
 import registerAuthRoutes from "./auth-routes";
+import registerScoreServiceRoutes from "./score-service-routes";
 
 const PORT = 8085;
 
@@ -12,7 +13,7 @@ const SERVICES = {
 
 const Fastify = fastify({ logger: true });
 
-Fastify.decorate('isAuthenticated', async (token: string): Promise<{ status: number, isAuth: boolean }> => {
+Fastify.decorate('isAuthenticated', async (token: string): Promise<{ status: number, user_id: number | undefined, isAuth: boolean }> => {
 	try {
 		const response = await fetch(`${SERVICES.AUTH}/is-auth`, {
 			method: "GET",
@@ -22,11 +23,11 @@ Fastify.decorate('isAuthenticated', async (token: string): Promise<{ status: num
 		});
 		const json: AUTH_IsAuthResponse = await response.json();
 		if (json.error) {
-			return ({ status: response.status, "isAuth": false });
+			return ({ status: response.status, user_id: json.userId, "isAuth": false });
 		}
-		return ({ status: response.status, "isAuth": true });
+		return ({ status: response.status, user_id: json.userId, "isAuth": true });
 	} catch (e) {
-		return ({ status: 500, "isAuth": false });
+		return ({ status: 500, user_id: undefined, "isAuth": false });
 
 	}
 });
@@ -60,6 +61,7 @@ Fastify.register(async function (fastify) {
 
 	// auth service
 	registerAuthRoutes(Fastify, SERVICES.AUTH);
+	registerScoreServiceRoutes(Fastify, SERVICES.SCORE);
 	// score service
 
 });
