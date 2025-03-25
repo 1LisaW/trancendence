@@ -58,9 +58,9 @@ export default class App {
 				this.order = data.order;
 				this.opponent = data.opponent;
 				if (data.avatars[0])
-					this.avatarSrcs[0] = data.avatars[0];
+					this.avatarSrcs[0] = data.avatars[1];
 				if (data.avatars[1])
-					this.avatarSrcs[1] = data.avatars[1];
+					this.avatarSrcs[1] = data.avatars[0];
 				this._goToGame();
 				// console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatarSrcs);
 			}

@@ -4,6 +4,7 @@ import Cropper from 'cropperjs';
 import { getToken } from "../../utils/auth";
 
 const AUTH_HOSTNAME = "/gateway/auth";
+const SCORE_HOSTNAME = "/gateway/score";
 
 class ImageEditor {
 	container: HTMLElement;
@@ -82,9 +83,9 @@ class ImageEditor {
 		// const formData = new FormData();
 		// Pass the image file name as the third parameter if necessary.
 		// if (!blob)
-			// return ;
+		// return ;
 		// formData.append('croppedImage', blob/*, 'example.png' */);
-		console.log(base64);
+		// console.log(base64);
 		fetch(`${AUTH_HOSTNAME}/profile`, {
 			method: "POST",
 			headers: {
@@ -167,17 +168,102 @@ class ImageEditor {
 }
 
 
+export interface SCORE_ScoreDTO {
+	data: Date,
+	first_user_id: number,
+	second_user_id: number,
+	first_user_name: string,
+	second_user_name: string,
+	first_user_score: number,
+	second_user_score: number,
+	game_mode: string
+}
 export default class Profile extends Component {
 	avatar: HTMLElement;
 	popup: HTMLElement | null = null;
 	updateAvatarSrc: () => void;
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
-		this.container.className = "flex h-full items-center bg-(--color-paper-base) justify-center";
+		this.container.className = "flex flex-col h-full items-center bg-(--color-paper-base) justify-center";
 		this.avatar = document.createElement('div');
 		this.updateAvatarSrc = updateAvatarSrc;
 		this.update(avatarSrc);
 		this.init();
+	}
+	createScoreTable(parent: HTMLElement, data: {scores: SCORE_ScoreDTO[], user_id:number}){
+		if (data.scores.length === 0)
+			return;
+		const tableWrapper = document.createElement('div');
+		tableWrapper.className = "relative overflow-x-auto shadow-md sm:rounded-lg";
+
+		const table = document.createElement('table');
+		table.className = "w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400";
+
+		const thead = document.createElement('thead');
+		thead.className = "text-xs text-gray-700 uppercase dark:text-gray-400";
+		const tableHeadRow = document.createElement('tr');
+		const tableHeaders = ['Opponent', 'Date', 'Score', 'Result'];
+		tableHeaders.forEach( (tableHeader, id) => {
+			const th = document.createElement('th');
+			th.setAttribute('scope', "col");
+			th.className = id%2? "px-6 py-3": "px-6 py-3 bg-gray-50 dark:bg-gray-800" ;
+			th.innerText = tableHeader;
+			tableHeadRow.appendChild(th);
+		})
+		thead.appendChild(tableHeadRow);
+		table.appendChild(thead);
+
+		const tbody = document.createElement('tbody');
+		data.scores.forEach((scoreData, id) => {
+			const tr = document.createElement('tr');
+			tr.className = id%2? "border-b border-gray-200 dark:border-gray-700" : "border-b border-gray-200 dark:border-gray-700";
+
+			const th = document.createElement('th');
+			th.setAttribute("scope", "row");
+			th.className = "px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
+			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.first_user_name :  scoreData.second_user_name;
+			tr.appendChild(th);
+
+			const dateTd = document.createElement('td');
+			dateTd.className = "px-6 py-4";
+			dateTd.innerText = new Date(scoreData.data).toDateString();
+			tr.appendChild(dateTd);
+
+			const scoreTd = document.createElement('td');
+			scoreTd.className = "px-6 py-4 bg-gray-50 dark:bg-gray-800";
+			scoreTd.innerText = data.user_id == scoreData.first_user_id ?
+				`${scoreData.first_user_score} - ${scoreData.second_user_score}`: `${scoreData.second_user_score} - ${scoreData.first_user_score}`
+			tr.appendChild(scoreTd);
+
+			const resultTd = document.createElement('td');
+			resultTd.className = "px-6 py-4";
+			const isDraw = scoreData.first_user_score == scoreData.second_user_score;
+			const isWin = (scoreData.first_user_score > scoreData.second_user_score && scoreData.first_user_id == data.user_id)
+				|| (scoreData.first_user_score < scoreData.second_user_score && scoreData.second_user_id == data.user_id);
+			if (isWin)
+			{
+				resultTd.innerText = 'W';
+				resultTd.classList.add("bg-green-500");
+			}
+			else if (isDraw)
+			{
+				resultTd.innerText = 'D';
+				resultTd.classList.add("bg-black-100");
+			}
+			else
+			{
+				resultTd.innerText = 'L';
+				resultTd.classList.add("bg-red-500");
+			}
+
+			tr.appendChild(resultTd);
+
+			tbody.appendChild(tr);
+		})
+		table.appendChild(tbody);
+		tableWrapper.appendChild(table);
+		parent.appendChild(tableWrapper);
+
 	}
 	createChildren(): void {
 		const grid = document.createElement('div');
@@ -185,6 +271,24 @@ export default class Profile extends Component {
 		this.avatar.setAttribute('id', 'user_avatar');
 		this.avatar.className = 'rounded-full shadow-2xl shadow-(color:--color-accent) size-[100px] overflow-hidden';
 		this.avatar.addEventListener('click', () => this.avatarEditor(this.container));
+
+		// fetch()
+		fetch(`${SCORE_HOSTNAME}/score`, {
+			method: "GET",
+			headers: {
+				"Authorization": getToken(),
+			},
+		}).then(
+			(res) => res.json()
+		).then(res => {
+			if ('user_id' in res)
+			{
+				res = res as SCORE_ScoreDTO
+				console.log("Score get res: ",res);
+				this.createScoreTable(this.container, res);
+
+			}
+		});
 		// if avatar is not uploaded
 
 		// fetch(`${AUTH_HOSTNAME}/profile`, {
@@ -278,8 +382,7 @@ export default class Profile extends Component {
 	}
 
 	update = (avatar: string) => {
-		if (avatar === '')
-		{
+		if (avatar === '') {
 			const emptyAvatar = document.createElement('div');
 			emptyAvatar.setAttribute('id', 'upload_avatar');
 			emptyAvatar.className = 'relative w-full h-full cursor-pointer [text-shadow:_0_2px_4px_rgb(99_102_241_/_0.8)] flex justify-center text-6xl p-2 bg-(--color-form-base) text-(--color-paper-base)';

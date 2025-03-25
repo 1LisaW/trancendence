@@ -1,8 +1,8 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_terminate_game } from "./api";
-import { GameLoopParams, GameState, Status, WSocket } from "./model";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 
 
@@ -17,7 +17,7 @@ Fastify.register(async function (fastify) {
 
   // GAME:
   // http: gameLoop data from game-service
-  Fastify.post<{ Params: GameLoopParams, Body: GameState }>('/game/:gameId', (request, reply) => {
+  Fastify.post<{ Params: GameLoopParams, Body: GameState | ScoreState | GameResult }>('/game/:gameId', (request, reply) => {
     const { gameId } = request.params;
     const { players } = request.body;
     if (players.every(player => users.gameSocketIsAlive(player))) {
@@ -26,6 +26,20 @@ Fastify.register(async function (fastify) {
         if (sockets && sockets.length)
           sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
       })
+
+      if ("gameResult" in request.body)
+      {
+        const { score } = request.body;
+        const data: ScoreRequestBody = {
+          first_user_id: players[0],
+          second_user_id: players[1],
+          first_user_name: users.getUserNameById(players[0]) || '',
+          second_user_name: users.getUserNameById(players[1]) || '',
+          score: score,
+          game_mode: 'pvp'
+        };
+        post_score_data(data);
+      }
       reply.code(200).send({ message: "Message received" });
       return;
     }
