@@ -8,6 +8,7 @@ import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
 import { getProfileAvatar, getToken, isAuthenticated, removeToken } from "../../utils/auth";
 import Profile from "../Profile/Profile";
+import Chat from "../../components/Chat/Chat";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -60,6 +61,8 @@ export class SPA {
 	chat_ws: WebSocket | null = null;
 
 	avatar = '';
+
+	chat: Chat = new Chat();
 
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
@@ -157,10 +160,14 @@ export class SPA {
 		if (this.isAuth)
 		{
 			this.init_chat_ws();
+			if (this.chat.container)
+				this.container.appendChild(this.chat.container);
 			// this.outlets["header"]?.;
 		}
 		else
 		{
+			if (this.chat.container)
+				this.container.removeChild(this.chat.container);
 			removeToken();
 			this.close_chat_ws();
 			this.avatar = '';
