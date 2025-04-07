@@ -19,7 +19,6 @@ export class Tournament {
 	private startDate: number;
 	private users: Users;
 	private tournament: TournamentState | null;
-	// private tournament: TournamentLevel[] = [];
 
 	constructor(users: Users, user: number) {
 		this.isStarted = false;
@@ -32,11 +31,12 @@ export class Tournament {
 	}
 
 
-	// private initLevel(){}
 	init() {
 		const lobbyCheck = () => {
 			if (this.isStarted)
+			{
 				clearInterval(setLobbyCheck);
+			}
 			else {
 				if (this.usersPool.length < 3)
 					return;
@@ -46,6 +46,7 @@ export class Tournament {
 						this.tournament.matches.push({ user: userId, played: [], decline: 0 });
 				});
 				this.isStarted = true;
+				this.startDate = Date.now();
 			}
 		}
 		const setLobbyCheck = setInterval(lobbyCheck, TOURNAMENT_LOBBY_CHECK_PERIOD)

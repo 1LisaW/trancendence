@@ -6,14 +6,17 @@ type Resolve = (value?: any)=>void;
 export const execute = async (db:SQLiteDb, sql:string, params?:string[]) => {
 	if (params && params.length > 0) {
 	  return new Promise((resolve:Resolve, reject) => {
-		db.run(sql, params, (err) => {
+		db.run(sql, params, function (err) {
 		  if (err) reject(err);
-		  resolve();
+		  const lastID = this? this.lastID: undefined;
+		  console.log(this, " this ", lastID);
+		  resolve(lastID);
+
 		});
 	  });
 	}
 	return new Promise((resolve:Resolve, reject) => {
-	  db.exec(sql, (err) => {
+	  db.exec(sql, function (err) {
 		if (err) reject(err);
 		resolve();
 	  });
