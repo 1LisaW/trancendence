@@ -18,7 +18,7 @@ export const initDB = async () => {
 			db,
 			`CREATE TABLE IF NOT EXISTS scores (
 			id INTEGER PRIMARY KEY,
-			data INTEGER NOT NULL,
+			date INTEGER NOT NULL,
 			first_user_id INTEGER NOT NULL,
 			second_user_id INTEGER NOT NULL,
 			first_user_name TEXT NOT NULL,
@@ -31,7 +31,7 @@ export const initDB = async () => {
 			db,
 			`CREATE TABLE IF NOT EXISTS tournaments (
 			id INTEGER PRIMARY KEY,
-			data INTEGER NOT NULL,
+			date INTEGER NOT NULL,
 			is_finished INTEGER NOT NULL)`
 		);
 		await execute(
@@ -48,7 +48,7 @@ export const initDB = async () => {
 			`CREATE TABLE IF NOT EXISTS tournaments_scores (
 			id INTEGER PRIMARY KEY,
 			tournament_id INTEGER NOT NULL,
-			data INTEGER NOT NULL,
+			date INTEGER NOT NULL,
 			first_user_id INTEGER NOT NULL,
 			second_user_id INTEGER NOT NULL,
 			first_user_name TEXT NOT NULL,
@@ -73,10 +73,10 @@ export const createNewScoreRecord = async (
 	game_mode: string
 ) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const data = Date.now();
-	const sql = `INSERT INTO scores(data, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score, game_mode) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
+	const date = Date.now();
+	const sql = `INSERT INTO scores(date, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score, game_mode) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
 	try {
-		await execute(db, sql, [data.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_mode]);
+		await execute(db, sql, [date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_mode]);
 	} catch (err) {
 		console.log(err);
 	} finally {
@@ -100,17 +100,17 @@ export const getAllUserScores = async (id: number) => {
 
 export const createNewTournamentRecord = async (users: number[]) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const data = Date.now();
-	const sql = `INSERT INTO tournaments(data, is_finished) VALUES(?, ?)`;
+	const date = Date.now();
+	const sql = `INSERT INTO tournaments(date, is_finished) VALUES(?, ?)`;
 	try {
-		const tournament_id = await execute(db, sql, [data.toString(), '0']);
+		const tournament_id = await execute(db, sql, [date.toString(), '0']);
 		console.log('tournament_id ', tournament_id);
 		if (tournament_id) {
 			for (let i = 0; i < users.length; i++) {
 				await execute(db, `INSERT INTO tournaments_users(tournament_id, user_id, rating) VALUES(?, ?, ?)`, [tournament_id, users[i], 0]);
 			}
 		}
-		return ({ tournament_id: tournament_id });
+		return ({ tournament_id: tournament_id, date: date });
 	} catch (err) {
 		console.log(err);
 		return ({ error: 'could not create new tournament' });
@@ -135,10 +135,10 @@ export const addNewTournamentUser = async (tournament_id: number, user_id: numbe
 
 export const addTournamentMatch = async (tournament_id: number, first_user_id: number, second_user_id: number, first_user_name: string, second_user_name: string, score: number[]) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const data = Date.now();
-	const sql = `INSERT INTO tournaments_scores(tournament_id, data, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
+	const date = Date.now();
+	const sql = `INSERT INTO tournaments_scores(tournament_id, date, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
 	try {
-		await execute(db, sql, [tournament_id.toString(), data.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString()]);
+		await execute(db, sql, [tournament_id.toString(), date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString()]);
 		await execute(db, `UPDATE tournaments_users SET rating = rating + ? WHERE tournament_id = ? AND user_id = ?`, [score[0].toString(), tournament_id.toString(), first_user_id.toString()]);
 	} catch (err) {
 		console.log(err);

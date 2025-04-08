@@ -4,12 +4,13 @@ import fastify from "fastify";
 import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
 import { GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
+import { Tournament } from "./Tournament";
 
 
 
 
 const users = new Users();
-
+const tournament = new Tournament(users);
 
 const Fastify = fastify();
 Fastify.register(require('@fastify/websocket'));

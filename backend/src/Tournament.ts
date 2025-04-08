@@ -1,15 +1,16 @@
+import { get_active_tournaments, get_tournaments_data, post_new_tournament } from "./api";
 import { Status } from "./model";
 import { Users } from "./Users";
 
 interface Match {
 	user: number,
-	played: number[],
-	decline: number
+	played: Set<number>,
 }
 interface TournamentState {
-	matches: Match[]
-	scores: Record<number, number>[],
+	id: number;
 	rating: Record<number, number>,
+	matches: Match[]
+	// scores: Record<number, number>[],
 }
 const TOURNAMENT_LOBBY_CHECK_PERIOD = 1000 * 60;
 export class Tournament {
@@ -18,21 +19,39 @@ export class Tournament {
 	private usersPool: number[] = [];
 	private startDate: number;
 	private users: Users;
-	private tournament: TournamentState | null;
+	private tournament: TournamentState | null = null;
 
-	constructor(users: Users, user: number) {
+	constructor(users: Users) {
 		this.isStarted = false;
 		this.isFinished = false;
 		this.usersPool = [];
-		this.usersPool.push(user);
 		this.startDate = Date.now();
-		this.tournament = null;
 		this.users = users;
 	}
 
+	initTournamentData = (startDate: number, id: number) => {
+		// this.usersPool = [...usersPool];
+		this.isStarted = true;
+		this.isFinished = false;
+		this.startDate = startDate;
+		this.tournament = {id: id, rating: {}, matches: []}
+		this.usersPool.forEach(userId => {
+			if (this.tournament)
+				this.tournament.matches.push({ user: userId, played: new Set()});
+		});
+	}
 
-	init() {
-		const lobbyCheck = () => {
+	init = async () => {
+		const activeTournament = await get_active_tournaments();
+		if ('id' in activeTournament)
+		{
+			const tournamentData = await get_tournaments_data(activeTournament.id);
+			if ("tournaments" in tournamentData && tournamentData.tournaments.length)
+			{
+				this.initTournamentData(tournamentData.tournaments[0].date, tournamentData.tournaments[0].tournament_id);
+			}
+		}
+		const lobbyCheck = async () => {
 			if (this.isStarted)
 			{
 				clearInterval(setLobbyCheck);
@@ -40,13 +59,19 @@ export class Tournament {
 			else {
 				if (this.usersPool.length < 3)
 					return;
-				this.tournament = { scores: [], rating: {}, matches: [] };
-				this.usersPool.forEach(userId => {
-					if (this.tournament)
-						this.tournament.matches.push({ user: userId, played: [], decline: 0 });
-				});
-				this.isStarted = true;
-				this.startDate = Date.now();
+				const createNewTournamentResponse = await post_new_tournament(this.usersPool);
+				if ("tournament_id" in createNewTournamentResponse)
+				{
+					this.initTournamentData(createNewTournamentResponse.date, createNewTournamentResponse.tournament_id);
+				}
+				// this.initTournamentData(Date.now(), )
+				// this.tournament = { scores: [], rating: {}, matches: [] };
+				// this.usersPool.forEach(userId => {
+				// 	if (this.tournament)
+				// 		this.tournament.matches.push({ user: userId, played: [], decline: 0 });
+				// });
+				// this.isStarted = true;
+				// this.startDate = Date.now();
 			}
 		}
 		const setLobbyCheck = setInterval(lobbyCheck, TOURNAMENT_LOBBY_CHECK_PERIOD)
@@ -70,22 +95,22 @@ export class Tournament {
 				const activePlayers = this.usersPool.filter(user_id => this.users.getUserStatus(user_id) === Status.ONLINE);
 				if (activePlayers.length < 2)
 					return;
-				const availablePlayers = this.tournament.matches.filter(match => match.played.length < 2
+				const availablePlayers = this.tournament.matches.filter(match => match.played.size < 2
 					&& activePlayers.find((id) => id === match.user));
 				if (availablePlayers.length < 2)
 					return;
 				availablePlayers.forEach((match, id) => {
-					if (match.played.length >= 2)
+					if (match.played.size >= 2)
 						return;
 					let nextId = ++id;
 					if (nextId === availablePlayers.length)
 						return;
 					while (nextId < availablePlayers.length) {
-						if (match.played.find(id => id === availablePlayers[nextId].user))
+						if (match.played.has(availablePlayers[nextId].user))
 							nextId++;
 						else {
-							match.played.push(availablePlayers[nextId].user);
-							availablePlayers[nextId].played.push(match.user);
+							match.played.add(availablePlayers[nextId].user);
+							availablePlayers[nextId].played.add(match.user);
 							//send message to start tournament and if not accepted remove players
 							return;
 						}
@@ -102,7 +127,7 @@ export class Tournament {
 			return;
 		// const level = this.tournament.reverse().find(level => level.matches.find(({ user }) => user === userId));
 		const userMatch = this.tournament.matches.find(match => match.user === userId);
-		if (userMatch && userMatch.played.find(user => user == opponentId)) {
+		if (userMatch && userMatch.played.has(opponentId)) {
 		}
 		// const opponentId = level?.matches.find(match =>match.user === userId)?.played.pop();
 	}

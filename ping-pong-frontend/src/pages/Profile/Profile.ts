@@ -169,7 +169,7 @@ class ImageEditor {
 
 
 export interface SCORE_ScoreDTO {
-	data: Date,
+	date: number,
 	first_user_id: number,
 	second_user_id: number,
 	first_user_name: string,
@@ -226,7 +226,7 @@ export default class Profile extends Component {
 
 			const dateTd = document.createElement('td');
 			dateTd.className = "px-6 py-4";
-			dateTd.innerText = new Date(scoreData.data).toDateString();
+			dateTd.innerText = new Date(scoreData.date).toDateString();
 			tr.appendChild(dateTd);
 
 			const scoreTd = document.createElement('td');
