@@ -123,3 +123,11 @@ export const post_score_data = async (data: ScoreRequestBody) => {
 		})
 	)
 }
+
+export const get_active_tournaments = async () => {
+	return (
+		fetch(`${SCORE_SERVICE_HOSTNAME}/tournaments`, {
+			method: "GET",
+		})
+	)
+}

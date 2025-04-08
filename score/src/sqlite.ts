@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import { execute, fetchAll, fetchFirst } from "./sql";
-import { SCORE_ScoreDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO, SCORE_TournamentUserDTO } from "./model";
+import { SCORE_ScoreDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO, SCORE_TournamentUserDTO } from "./model";
 
 export const DB_PATH = "/db/scores.db";
 export interface UserDTO {
@@ -40,7 +40,8 @@ export const initDB = async () => {
 			id INTEGER PRIMARY KEY,
 			tournament_id INTEGER NOT NULL,
 			user_id INTEGER NOT NULL,
-			rating INTEGER NOT NULL)`
+			rating INTEGER NOT NULL,
+   			FOREIGN KEY(tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE ON UPDATE CASCADE)`
 		);
 		await execute(
 			db,
@@ -53,7 +54,8 @@ export const initDB = async () => {
 			first_user_name TEXT NOT NULL,
 			second_user_name TEXT NOT NULL,
 			first_user_score INTEGER NOT NULL,
-			second_user_score INTEGER NOT NULL)`
+			second_user_score INTEGER NOT NULL,
+   			FOREIGN KEY(tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE ON UPDATE CASCADE)`
 		);
 	} catch (error) {
 		console.log(error);
@@ -63,8 +65,8 @@ export const initDB = async () => {
 }
 
 export const createNewScoreRecord = async (
-	first_user_id: string,
-	second_user_id: string,
+	first_user_id: number,
+	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],
@@ -74,7 +76,7 @@ export const createNewScoreRecord = async (
 	const data = Date.now();
 	const sql = `INSERT INTO scores(data, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score, game_mode) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
 	try {
-		await execute(db, sql, [data.toString(), first_user_id, second_user_id, first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_mode]);
+		await execute(db, sql, [data.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_mode]);
 	} catch (err) {
 		console.log(err);
 	} finally {
@@ -108,8 +110,11 @@ export const createNewTournamentRecord = async (users: number[]) => {
 				await execute(db, `INSERT INTO tournaments_users(tournament_id, user_id, rating) VALUES(?, ?, ?)`, [tournament_id, users[i], 0]);
 			}
 		}
+		return ({ tournament_id: tournament_id });
 	} catch (err) {
 		console.log(err);
+		return ({ error: 'could not create new tournament' });
+
 	} finally {
 		db.close();
 	}
@@ -119,8 +124,10 @@ export const addNewTournamentUser = async (tournament_id: number, user_id: numbe
 	const db = new sqlite3.Database(DB_PATH);
 	try {
 		await execute(db, `INSERT INTO tournaments_users(tournament_id, user_id, rating) VALUES(?, ?, ?)`, [tournament_id.toString(), user_id.toString(), '0']);
+		return ({ tournament_id: tournament_id });
 	} catch (err) {
 		console.log(err);
+		return ({ error: 'could not add user to tournament' });
 	} finally {
 		db.close();
 	}
@@ -151,7 +158,7 @@ export const finishTournament = async (tournament_id: number) => {
 	}
 }
 
-export const getActiveTournaments = async () => {
+export const getActiveTournament = async () => {
 	const db = new sqlite3.Database(DB_PATH);
 	const sql = `SELECT * FROM tournaments WHERE is_finished = 0`;
 	try {
@@ -159,7 +166,7 @@ export const getActiveTournaments = async () => {
 		return ({ tournament: tournament });
 	} catch (err) {
 		console.log(err);
-		return ({ tournament: null });
+		return ({ error: 'no active tournaments' });
 	} finally {
 		db.close();
 	}
@@ -188,6 +195,73 @@ export const getTournamentMatches = async (tournament_id: number) => {
 	} catch (err) {
 		console.log(err);
 		return ({ matches: null });
+	} finally {
+		db.close();
+	}
+}
+
+export const getTournamentHistory = async (tournament_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `SELECT * FROM tournaments_users
+		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
+		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id
+		WHERE tournaments_users.tournament_id = ?)`;
+
+	try {
+		const tournamentData = await fetchAll(db, sql, [tournament_id.toString()]) as SCORE_TournamentDataDTO[];
+		return ({tournaments: tournamentData});
+	} catch (err) {
+		console.log(err);
+		return ({ error: 'no tournament data' });
+	} finally {
+		db.close();
+	}
+}
+
+export const getAllTournamentsHistory = async () => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `SELECT * FROM tournaments_users
+		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
+		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id)`;
+
+	try {
+		const tournamentData = await fetchAll(db, sql) as SCORE_TournamentDataDTO[];
+		return ({tournaments: tournamentData});
+	} catch (err) {
+		console.log(err);
+		return ({ error: 'no tournaments data' });
+	} finally {
+		db.close();
+	}
+}
+
+export const getUsersTournamentHistory = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `SELECT * FROM tournaments_users
+		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
+		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id
+		WHERE tournaments_users.tournament_id in ( SELECT tournament_id FROM tournaments_users WHERE user_id = ?)`;
+
+	try {
+		const tournamentData = await fetchAll(db, sql, [user_id.toString()]) as SCORE_TournamentDataDTO[];
+		return ({tournaments: tournamentData});
+	} catch (err) {
+		console.log(err);
+		return ({ error: 'no tournaments data for user' });
+	} finally {
+		db.close();
+	}
+}
+
+export const getUserTournaments = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql = `SELECT tournament_id FROM tournaments_users WHERE user_id = ?`;
+	try {
+		const tournaments = await fetchAll(db, sql, [user_id.toString()]) as SCORE_TournamentDTO[];
+		return ({ tournaments: tournaments });
+	} catch (err) {
+		console.log(err);
+		return ({ tournaments: null });
 	} finally {
 		db.close();
 	}
