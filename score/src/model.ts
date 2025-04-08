@@ -1,4 +1,3 @@
-import { error } from "console"
 
 export interface SCORE_PostNewScoreRequestBody {
 	first_user_id: number,
@@ -19,7 +18,7 @@ export interface SCORE_GetUserScoreRequestParams {
 }
 
 export interface SCORE_ScoreDTO {
-	data: Date,
+	date: number,
 	first_user_id: number,
 	second_user_id: number,
 	first_user_name: string,
@@ -36,7 +35,7 @@ export interface SCORE_ServerErrorReply {
 
 export interface SCORE_TournamentDTO {
 	id: number,
-	data: Date,
+	date: number,
 	is_finished: boolean
 }
 
@@ -49,7 +48,7 @@ export interface SCORE_TournamentUserDTO {
 export interface SCORE_TournamentScoreDTO {
 	id: number,
 	tournament_id: number,
-	data: Date,
+	date: Date,
 	first_user_id: number,
 	second_user_id: number,
 	first_user_name: string,

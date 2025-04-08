@@ -31,3 +31,38 @@ export interface WSocket extends WebSocket {
 
 export enum Status { OFFLINE, ONLINE, MATCHMAKING, PLAYING }
 
+export interface SCORE_TournamentDTO {
+	id: number,
+	date: number,
+	is_finished: boolean
+}
+
+export interface SCORE_ErrorDTO {
+	error: string
+}
+
+export interface SCORE_TournamentDTO {
+	id: number,
+	date: number,
+	is_finished: boolean
+}
+
+export interface SCORE_TournamentUserDTO {
+	id: number,
+	tournament_id: number,
+	user_id: number,
+	rating: number
+}
+export interface SCORE_TournamentScoreDTO {
+	id: number,
+	tournament_id: number,
+	date: number,
+	first_user_id: number,
+	second_user_id: number,
+	first_user_name: string,
+	second_user_name: string,
+	first_user_score: number,
+	second_user_score: number,
+}
+
+export type SCORE_TournamentDataDTO = SCORE_TournamentScoreDTO & SCORE_TournamentUserDTO & SCORE_TournamentScoreDTO;
