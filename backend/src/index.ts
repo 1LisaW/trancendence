@@ -1,180 +1,159 @@
 'use strict'
 
 import fastify from "fastify";
-import { WebSocket } from "@fastify/websocket";
-import http from "http";
-import { nanoid } from "nanoid";
-import { hostname } from "os";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { Users } from "./Users";
 
-const GAME_SESSION_HOSTNAME = 'http://game-service:8081';
 
-const getOptions = (hostname: string, path: string, method: string, data: string)=>{
-  const options = {
-    hostname: 'api.example.com',
-    path: '/endpoint',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': data.length,
-    },
-  };
-  return (options);
-}
-
-const makeHTTPRequest = (host: string, path: string, method: string, data:string) => {
-  const options = {
-    hostname: 'game-service',
-    port: 8081,
-    path,
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': data.length,
-    },
-  };
-  const req = http.request(options, (res) => {
-    let responseData = '';
-
-    res.on('data', (chunk) => {
-      responseData += chunk;
-    });
-
-    res.on('end', () => {
-      console.log('Response:', responseData);
-    });
-  });
-
-  req.on('error', (error) => {
-    console.error('Error:', error);
-  });
-
-  req.write(data);
-  req.end();
-  // return ()
-}
-
-interface WSocket extends WebSocket {
-  id?: string
-};
-
-enum Status { OFFLINE, ONLINE, MATCHMAKING, PLAYING}
-
-class Users {
-  private userPool: Set<string> = new Set();
-  private statuses: Map<string, Status> = new Map();
-  gameUserSockets: Map<string, WSocket> = new Map();
-  // gamePool: Set<string> = new Set(); //gameId
-  // gameUsers: Map<string, string> = new Map(); // userid: gameId
-  add(login:string){
-    if (this.userPool[login] && this.statuses[login] !== Status.OFFLINE)
-      return ;
-    this.userPool.add(login);
-    this.setStatus(login, Status.ONLINE);
-  }
-  private setStatus(login:string, status: Status){
-    this.statuses[login] = status;
-  }
-  getUserStatus(userName:string)
-  {
-    return (this.statuses[userName]);
-  }
-  remove(login: string){
-    this.setStatus(login, Status.OFFLINE);
-  }
-  matchmaking(userName:string, socket: WSocket, mode: string) {
-    this.gameUserSockets[userName] = socket;
-    this.setStatus(userName, Status.MATCHMAKING);
-    console.log("this.matchmaking in process ", socket.id);
-    makeHTTPRequest(GAME_SESSION_HOSTNAME, `/matchmaking/${socket.id}`, 'POST', JSON.stringify({
-      mode
-    }))
-    // fetch(`http:/localhost:3001/matchmaking/:${socket.id}`);
-  }
-  // startPlay(gameId: string, player1: string, player2: string)
-  // {
-  //   this.setStatus(player1, Status.PLAYING);
-  //   this.setStatus(player2, Status.PLAYING);
-  //   this.gamePool.add(gameId);
-  //   this.gameUsers[player1] = gameId;
-  //   this.gameUsers[player2] = gameId;
-  // }
-  // stopPlay(gameId: string){
-  //   this.gamePool.delete(gameId);
-
-  // }
-}
 
 
 const users = new Users();
 
-interface UserParams {
-  userName: string;
-}
 
 const Fastify = fastify();
 Fastify.register(require('@fastify/websocket'));
 Fastify.register(async function (fastify) {
 
-  Fastify.get('/', (request, reply) => {
-    console.log("request was received in backend" );
-    // console.log("User ", userName, " has status ", users.getUserStatus(userName));
-    reply.code(200).send({message: "you're connected to backend service"});
+  // GAME:
+  // http: gameLoop data from game-service
+  Fastify.post<{ Params: GameLoopParams, Body: GameState | ScoreState | GameResult }>('/game/:gameId', (request, reply) => {
+    const { gameId } = request.params;
+    const { players } = request.body;
+    if (players.every(player => users.gameSocketIsAlive(player))) {
+      players.forEach(player => {
+        const sockets = users.getGameSocketById(player);
+        if (sockets && sockets.length)
+          sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
+      })
+
+      if ("gameResult" in request.body)
+      {
+        const { score } = request.body;
+        const data: ScoreRequestBody = {
+          first_user_id: players[0],
+          second_user_id: players[1],
+          first_user_name: users.getUserNameById(players[0]) || '',
+          second_user_name: users.getUserNameById(players[1]) || '',
+          score: score,
+          game_mode: 'pvp'
+        };
+        post_score_data(data);
+      }
+      reply.code(200).send({ message: "Message received" });
+      return;
+    }
+    post_terminate_game(gameId);
+    players.forEach((player, id) => {
+      if (users.gameSocketIsAlive(player))
+      {
+        const sockets = users.getGameSocketById(player);
+        if (sockets && sockets.length)
+          sockets.forEach(socket => socket
+            .send(JSON.stringify({ message: `${users.getUserNameById(players[(1-id)])} leave the room` })));
+      }
+    })
+    // TODO terminate game
+    reply.code(200).send({ message: "Message received" });
   })
 
-  Fastify.post<{Params:UserParams}>('/login/:userName', (request, reply) => {
-    const { userName } = request.params;
-    users.add(userName);
-    console.log("User ", userName, " has status ", users.getUserStatus(userName));
-    reply.code(200).send({message: "user login signal received"});
-  })
-  Fastify.post<{Params:UserParams}>('/logout/:userName', (request, reply) => {
-    const { userName } = request.params;
-    users.remove(userName);
-    console.log("User ", userName, " has status ", users.getUserStatus(userName));
-    reply.code(200).send({message: "user logout signal received"});
 
+  //ws:
+  Fastify.get('/game', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
+    const token = req.headers['sec-websocket-protocol'] || '';
+    let userData = await users.addUser(token);
+
+    if ('user' in userData) {
+      userData = userData as Auth_UserDTO;
+      const user_id = userData.user.id;
+      socket.id = user_id;
+
+      users.addGameSocket(user_id, socket);
+    }
+    else if ('error' in userData) {
+      socket.close();
+    }
+
+    socket.on('message', async message => {
+
+      const user_id = socket.id;
+      if (user_id === undefined)
+        return;
+
+      const msg = JSON.parse(message.toString());
+
+      // message to withdraw from waiting queue
+      if ('matchmaking' in msg && msg.matchmaking === false) {
+        users.removeUserFromMatchmaking(user_id);
+      }
+
+      // message for matchmaking
+      else if ('mode' in msg) {
+        const mode = msg.mode as string;
+        if (mode === 'pvp' || mode === 'pvc') {
+
+          const data = await users.matchmaking(user_id, socket, mode);
+          const json = await data.json();
+
+          if ('gameId' in json) {
+            const gameUsers: number[] = json.users;
+            const opponentNames = [users.getUserNameById(gameUsers[1]), users.getUserNameById(gameUsers[0])];
+            console.log("opponentNames: ", opponentNames);
+
+            const avatars = await Promise.all(opponentNames.map((name) => get_user_profile_avatar(name || '')));
+            gameUsers.forEach((gameSocketId, id) => {
+              const reply = {
+                gameId: json.gameId,
+                order: id,
+                opponent: opponentNames[id],
+                avatars: [avatars[0].avatar, avatars[1].avatar]
+              };
+              users.setPlayingStateToUser(gameSocketId);
+              users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
+            });
+          }
+        }
+      }
+      // bat movements from frontend
+      else if ('gameId' in msg) {
+        const { gameId, step } = msg;
+        post_bat_move__game_service(gameId, user_id, step);
+      }
+    });
+    socket.on('close', () => {
+      users.removeGameSocket(socket);
+      console.log("Disconnected", socket.id);
+      socket.send('server socket is closed');
+    });
   })
-  interface MatchmakingBody {
-    mode: 'pvp' | 'pvc';
-  }
-  interface GameUserSessionBody {
-    gameId: string,
-    step: number
-  }
-  // interface QueryParams: {
-  //   mode: 'pvp'
-  // }
-  Fastify.get<{ Params: UserParams, Querystring: MatchmakingBody | GameUserSessionBody }>('/game/:userName', { websocket: true }, (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
-    const { userName } = req.params;
-    console.log("/game/:userName id:", socket.id);
-    const id = nanoid();
-    socket.id = id;
+
+
+  // CHAT:
+
+  Fastify.get('/chat', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
+    const token = req.headers['sec-websocket-protocol'] || '';
+    const userData = await users.addUser(token);
+    console.log('/chat ws: ', userData);
+    if ('user' in userData) {
+      socket.id = userData.user.id;
+      users.addChatUserSocket(userData.user.id, socket);
+    }
+
+    else {
+      socket.close();
+    }
 
     socket.on('message', message => {
-      if ('mode' in req.query)
-      {
-        const mode:string = req.query.mode ;
-        users.matchmaking(userName, socket, mode);
-      }
-      else
-      {
-
-      }
-      console.log(message.toString());
-      // console.log(JSON.parse(message));
-      // message.toString() === 'hi from client'
-      socket.send('hi from server');
-      // fastify.close();
+      console.log("From backend:", message.toString());
     });
-    socket.on('close', ()  => {
-      // console.log(socket);
-      // console.log(JSON.parse(message));
-      console.log("Disconnected", socket?.id);
-      // message.toString() === 'hi from client'
+
+    socket.on('close', () => {
+      users.removeChatUserSocket(socket);
       socket.send('server socket is closed');
     });
   })
 })
+
 
 
 Fastify.listen({ port: 8082, host: '0.0.0.0' }, (err, address) => {

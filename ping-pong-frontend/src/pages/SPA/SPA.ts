@@ -6,7 +6,9 @@ import Main from "../Main/Main";
 import Login from "../Login/Login";
 import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
-import { isAuthenticated } from "../../utils/auth";
+import { getProfileAvatar, getToken, isAuthenticated, removeToken } from "../../utils/auth";
+import Profile from "../Profile/Profile";
+import Chat from "../../components/Chat/Chat";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -55,6 +57,13 @@ export class SPA {
 	};
 	appliedOutlets: AppliedOutlets[] = [];
 	isAuth = false;
+
+	chat_ws: WebSocket | null = null;
+
+	avatar = '';
+
+	chat: Chat = new Chat();
+
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
 		this.dictionary = dictionary;
@@ -80,7 +89,7 @@ export class SPA {
 	initOutlet(outletName: string){
 		switch (outletName) {
 			case "header":
-				this.outlets["header"] = new Header('nav', this.container, this.dictionary, this.getIsAuth, this.navigate);
+				this.outlets["header"] = new Header('nav', this.container, this.dictionary, this.getIsAuth, this.navigate, this.avatar);
 				break;
 			case "login":
 				this.outlets["login"] = new Login("div",this.container, this.dictionary, this.navigate);
@@ -97,11 +106,16 @@ export class SPA {
 			case "game":
 				this.outlets["game"] = new Game("div",this.container, this.dictionary);
 				break;
+			case "profile":
+				this.outlets["profile"] = new Profile("div",this.container, this.dictionary, this.avatar, this.updateAvatar);
+				break;
 			default:
 				break;
 		}
 	}
 	navigate = async (route: string) => {
+		// if (route === '/game' && this.isAuth == false)
+		// 	route ='/login';
 		this.router.navigateTo(route);
 		this.router.currentRoute = location.pathname;
 		await this.update();
@@ -109,10 +123,74 @@ export class SPA {
 	getIsAuth = () => {
 		return (this.isAuth);
 	}
+	updateAvatar = async () => {
+		this.avatar = await getProfileAvatar();
+		this.outlets["profile"]?.update(this.avatar);
+		this.outlets["header"]?.update(this.avatar);
+	}
+	init_chat_ws = () => {
+		if (this.chat_ws)
+			return ;
+		this.chat_ws = new WebSocket('/api/session-management/ws/chat', getToken());
+		this.chat_ws.onopen = () => console.log('WebSocket is connected!')
+		// 4
+		this.chat_ws.onmessage = (msg) => {
+		const message = msg.data
+		console.log('I got a message!', message)
+		//   message.innerHTML += `<br /> ${message}`
+		}
+		// 5
+		this.chat_ws.onerror = (error) => console.log('WebSocket error', error)
+		// 6
+		this.chat_ws.onclose = () => console.log('Disconnected from the WebSocket server')
+	}
+	close_chat_ws = () => {
+		if (!this.chat_ws)
+			return ;
+		this.chat_ws.close();
+		this.chat_ws = null;
+	}
+	checkIsAuth = async () => {
+		const isAuth = (await isAuthenticated());
+		if (this.isAuth === isAuth)
+		{
+			return ;
+		}
+		this.isAuth = isAuth;
+		if (this.isAuth)
+		{
+			this.init_chat_ws();
+			if (this.chat.container)
+				this.container.appendChild(this.chat.container);
+			// this.outlets["header"]?.;
+		}
+		else
+		{
+			if (this.chat.container)
+				this.container.removeChild(this.chat.container);
+			removeToken();
+			this.close_chat_ws();
+			this.avatar = '';
+		}
+		this.updateAvatar();
+
+	}
 	update = async() => {
-		this.isAuth = !!(await isAuthenticated());
+		await this.checkIsAuth();
+		// this.isAuth = !!(userName);
 		this.outlets["header"]?.update();
-		// console.log("appliedOtlets ", this.appliedOutlets);
+		if (!this.isAuth)
+		{
+			// removeToken();
+			// this.close_chat_ws();
+			console.log('location.pathname ',location.pathname);
+			if (location.pathname === '/game')
+			{
+				this.navigate('/login');
+				location.pathname = '/login';
+				return ;
+			}
+		}
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();

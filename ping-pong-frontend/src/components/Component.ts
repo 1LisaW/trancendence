@@ -53,7 +53,7 @@ export default abstract class Component {
 		this.children.forEach((child) => child.removeSubscriptions());
 		this.parent.removeChild(this.container);
 	};
-	update(){
-		console.log('mock update from Component');
+	update(param?: string) {
+		console.log('mock update from Component', param);
 	}
 }

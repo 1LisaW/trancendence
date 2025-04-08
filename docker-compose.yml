@@ -22,6 +22,13 @@ services:
     hostname: backend
     ports:
       - 8082:8082
+    links:
+      - auth:auth
+      - game-service:game-service
+    depends_on:
+      - auth
+      - game-service
+
 
   game-service:
     container_name: game-service
@@ -35,8 +42,8 @@ services:
     ports:
       - 8081:8081
   nginx:
-    container_name: nginx
-    image: nginx
+    container_name: reverse-proxy-nginx
+    image: reverse-proxy-nginx
     build:
       context: ./nginx
       dockerfile: ./Dockerfile
@@ -44,37 +51,53 @@ services:
       NODE_ENV: production
     hostname: nginx
     ports:
-      - 80:80
-      - 443:443
+      # - 80:80
+      - 8443:443
     links:
-      - "ping-pong-frontend:ping-pong-frontend"
-      - auth:auth
+      - ping-pong-frontend:ping-pong-frontend
+      - backend:backend
+      - gateway:gateway
     depends_on:
       - ping-pong-frontend
       - backend
-      - game-service
-      - auth
+      - gateway
 
 
   auth:
     container_name: auth
     image: auth
-    # image: alpine:latest
     build:
       context: ./auth
-      # args:
-      #   DB_NAME: ${DB_NAME:-}
-      #   DB_USER: ${DB_USER}
-      #   DB_USER_PASS: ${DB_USER_PASS}
-      #   DB_ROOT_PASS: ${DB_ROOT_PASS}
-    # restart: always
-    # command: ["sh", "-c", "sqlite3", "./data/db.sqlite", "<", "./data/init.sql", "&&", "tail", "-f", "/dev/null"]
-    # command: ["sh","-c", "tail", "-f", "/dev/null"]
-    # command: ["tail", "-f", "/dev/null"]
     volumes:
       - db:/db
     ports:
       - 8083:8083
+
+  score:
+    container_name: score
+    image: score
+    build:
+      context: ./score
+    volumes:
+      - db:/db
+    ports:
+      - 8084:8084
+
+  gateway:
+    container_name: gateway
+    image: gateway
+    build:
+      context: ./gateway
+    volumes:
+      - db:/db
+    ports:
+      - 8085:8085
+    links:
+      - auth:auth
+      - score:score
+    depends_on:
+      - auth
+      - score
 
 volumes:
   db:
@@ -84,3 +107,4 @@ volumes:
       type: none
       o: bind
       device: C:\Projects\_mariadb_volume
+

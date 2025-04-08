@@ -5,7 +5,7 @@ import Component from "../../components/Component";
 import Warning from "../../components/Warning/Warning";
 import { setToken } from "../../utils/auth";
 
-const AUTH_HOSTNAME = "/api/auth";
+const AUTH_HOSTNAME = "/gateway/auth";
 export default class Login extends Component {
 	navigate: (route:string)=>void
 	inputList: { id: string; type: string; required: boolean }[] = [];
@@ -32,15 +32,13 @@ export default class Login extends Component {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ name, email, password }),
-			// }).then((res) => res.json()
+				body: JSON.stringify({ email, password }),
 			});
 			let container;
 			console.log("Login: res:", res);
 			switch (res.status) {
 				case 200:
 					{
-						//TODO: set token
 						const json = await res.json();
 						setToken(json.token);
 						this.navigate('/');
@@ -60,12 +58,6 @@ export default class Login extends Component {
 					break;
 			}
 				console.log(res);
-
-			// console.log(email);
-		//   const  data  = await fetch('auth/signin');
-		//   localStorage.setItem('token', data.token); // Store JWT in localStorage
-		//   setMessage('Login Successful');
-		//   onLogin(); // Call onLogin to inform the App component of the login status
 		} catch {
 		//   setMessage('Login failed. Check your credentials.');
 		}
