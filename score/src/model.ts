@@ -1,8 +1,8 @@
 import { error } from "console"
 
 export interface SCORE_PostNewScoreRequestBody {
-	first_user_id: string,
-	second_user_id: string,
+	first_user_id: number,
+	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],
@@ -57,3 +57,5 @@ export interface SCORE_TournamentScoreDTO {
 	first_user_score: number,
 	second_user_score: number,
 }
+
+export type SCORE_TournamentDataDTO = SCORE_TournamentScoreDTO & SCORE_TournamentUserDTO & SCORE_TournamentScoreDTO;
