@@ -4,7 +4,7 @@ import { setI18nData } from "../../utils/i18n";
 import Component from "../../components/Component";
 import Warning from "../../components/Warning/Warning";
 
-const AUTH_HOSTNAME = "/api/auth";
+const AUTH_HOSTNAME = "/gateway/auth";
 
 export default class SignUp extends Component {
 
@@ -75,10 +75,6 @@ export default class SignUp extends Component {
 				}));
 			}
 			console.log(email);
-		//   const  data  = await fetch('auth/signin');
-		//   localStorage.setItem('token', data.token); // Store JWT in localStorage
-		//   setMessage('Login Successful');
-		//   onLogin(); // Call onLogin to inform the App component of the login status
 		} catch {
 		//   setMessage('Login failed. Check your credentials.');
 		}
