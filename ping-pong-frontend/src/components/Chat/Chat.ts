@@ -26,13 +26,16 @@ class Chat {
 	unreadIcon: HTMLElement | null = null;
 	isClosed = true;
 	unreadCount = 0;
+
+	tournamentInvites: {tournament_id: number, element?: HTMLElement, buttonBlock?: HTMLElement}[] = [];
+	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
 	constructor() {
 		//this.parent = parent;
 		this.initChat();
-		this.addChatBubble('user1', '11:35', 'message', 1);
-		this.addChatBubble('user2', '11:37', 'reply', 1);
-		this.addJoinTournament(Date.now());
-		this.addInviteToTournamentMatch(Date.now());
+		// this.addChatBubble('user1', '11:35', 'message', 1);
+		// this.addChatBubble('user2', '11:37', 'reply', 1);
+		this.addJoinTournament(0, Date.now());
+		this.addInviteToTournamentMatch(0, 'user1', Date.now());
 	}
 
 	toggleChat = () => {
@@ -57,6 +60,30 @@ class Chat {
 			this.unreadIcon.innerText = this.unreadCount.toString();
 			this.unreadIcon.classList.remove('invisible');
 		}
+	}
+
+	onDeclineTournament = () => {
+		const tournament = this.tournamentInvites[this.tournamentInvites.length - 1];
+		tournament.buttonBlock?.classList.add('hidden');
+	}
+
+	onJoinTournament = () => {
+		this.onDeclineTournament();
+		// send socket data
+	}
+
+	onForfeitTournamentMatch = () => {
+		const match = this.tournamentMatches[this.tournamentMatches.length - 1];
+		match.buttonBlock?.classList.add('hidden');
+		match.textBlock!.innerText = `You forfeited the match against ${match.opponent_name}`;
+		// send socket data
+	}
+
+	onJoinTournamentMatch = () => {
+		const match = this.tournamentMatches[this.tournamentMatches.length - 1];
+		match.buttonBlock?.classList.add('hidden');
+		match.textBlock!.innerText = `You join the match against ${match.opponent_name}`;
+		// send socket data
 	}
 
 	initChat() {
@@ -104,32 +131,50 @@ class Chat {
     	iconBlock.appendChild(unread);
 		this.unreadIcon = unread;
 		chatBlockWrapper.appendChild(iconBlock);
-
 	}
 
 
-	addJoinTournament(time: number) {
+	addJoinTournament(tournament_id: number, time: number) {
 		const date = new Date(time);
 		const timeInfo = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 		const messageBlock = this.addChatBubble('tournament', timeInfo, 'join tournament!!!', 0);
 		const buttonBlock = createCustomElement('div', 'flex justify-between items-center');
+
 		const joinButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		joinButton.innerText = 'Join';
+		joinButton.addEventListener('click', this.onJoinTournament);
 		buttonBlock.appendChild(joinButton);
+		
 		const declineButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		declineButton.innerText = 'Decline';
+		declineButton.addEventListener('click', this.onDeclineTournament);
 		buttonBlock.appendChild(declineButton);
+
 		messageBlock.appendChild(buttonBlock);
+		this.tournamentInvites.push({tournament_id, element: messageBlock, buttonBlock: buttonBlock})
 	}
 
-	addInviteToTournamentMatch(time: number) {
+	addStartTournamentMessage(tournament_id: number){
+		const lastTournamentId = this.tournamentInvites.length - 1;
+		const currentTournament = this.tournamentInvites[lastTournamentId];
+		currentTournament.tournament_id = tournament_id;
+		currentTournament!.buttonBlock?.classList.add('hidden');
+	}
+
+
+	addInviteToTournamentMatch(tournament_id: number, opponent_name:string, time: number) {
+		this.tournamentMatches.push({tournament_id, opponent_name})
+
 		const date = new Date(time);
 		const timeInfo = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-		const messageBlock = this.addChatBubble('tournament', timeInfo, 'you have match to participate', 0);
+		const messageBlock = this.addChatBubble('tournament', timeInfo, 'you have match to participate', 1);
 		const buttonBlock = createCustomElement('div', 'flex justify-between items-center');
+
 		const joinButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		joinButton.innerText = 'Join';
+		joinButton.addEventListener('click', this.onJoinTournamentMatch);
 		buttonBlock.appendChild(joinButton);
+
 		const forfeitButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		let count = Math.round((time - Date.now() + 30000) / 1000);
 		forfeitButton.innerText = `Forfeit (${count} sec)`;
@@ -139,10 +184,13 @@ class Chat {
 				clearInterval(countDown);
 			forfeitButton.innerText = `Forfeit (${count} sec)`;
 		}, 1000);
+		forfeitButton.addEventListener('click', this.onForfeitTournamentMatch);
 		buttonBlock.appendChild(forfeitButton);
-		messageBlock.appendChild(buttonBlock);
-	}
 
+		messageBlock.appendChild(buttonBlock);
+		let lastTournamentId = this.tournamentMatches.length - 1;
+		this.tournamentMatches[lastTournamentId] = ({...this.tournamentMatches[lastTournamentId], element: messageBlock, buttonBlock: buttonBlock})
+	}
 
 	addChatBubble(user: string, time: string, message: string, messageType: MessageType) {
 		this.updateUnreadIcon();
@@ -185,6 +233,9 @@ class Chat {
 		 messageBlock.appendChild(buttonBlock); */
 		if (this.chatBlock)
 			this.chatBlock.appendChild(bubble);
+		if (messageType === 1)
+			this.tournamentMatches[this.tournamentMatches.length - 1].textBlock = messageText;
+
 		return messageBlock;
 	}
 }
