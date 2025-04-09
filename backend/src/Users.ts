@@ -105,6 +105,9 @@ export class Users {
 	setPlayingStateToUser(user_id:number) {
 		this.setStatus(user_id, Status.PLAYING);
 	}
+	setMatchmakingStateToUser(user_id:number) {
+		this.setStatus(user_id, Status.MATCHMAKING);
+	}
 	addUser = async (token: string) => {
 	  const data = await get_user__auth(token);
 	  let json: AuthUserErrorDTO | Auth_UserDTO | AUTH_ServerErrorDTO = await data.json();

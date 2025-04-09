@@ -128,6 +128,19 @@ export class SPA {
 		this.outlets["profile"]?.update(this.avatar);
 		this.outlets["header"]?.update(this.avatar);
 	}
+
+	joinTournament =  () => {
+		if (!this.chat_ws)
+			return ;
+		this.chat_ws.send(JSON.stringify({joinTournament: true}));
+	}
+
+	acceptTournamentMatch =  (reply: boolean) => {
+		if (!this.chat_ws)
+			return ;
+		this.chat_ws.send(JSON.stringify({acceptTournamentMatch: reply}));
+	}
+
 	init_chat_ws = () => {
 		if (this.chat_ws)
 			return ;
