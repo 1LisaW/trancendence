@@ -138,6 +138,9 @@ Fastify.register(async function (fastify) {
     if ('user' in userData) {
       socket.id = userData.user.id;
       users.addChatUserSocket(userData.user.id, socket);
+      if (!tournament.isUserInTournament(userData.user.id)) {
+        socket.send(JSON.stringify({ tournament_id: tournament.getTournamentId(), status: 'invite' }));
+      }
     }
 
     else {

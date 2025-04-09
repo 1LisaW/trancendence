@@ -160,7 +160,7 @@ export const finishTournament = async (tournament_id: number) => {
 
 export const getActiveTournament = async () => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql = `SELECT * FROM tournaments WHERE is_finished = 0`;
+	const sql = `SELECT * FROM tournaments WHERE is_finished = ?`;
 	try {
 		const tournament = await fetchFirst(db, sql, [0]) as SCORE_TournamentDTO;
 		return ({ tournament: tournament });
