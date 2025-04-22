@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   ping-pong-frontend:
     container_name: ping-pong-frontend
@@ -29,7 +31,6 @@ services:
       - auth
       - game-service
 
-
   game-service:
     container_name: game-service
     image: game-service
@@ -41,6 +42,7 @@ services:
     hostname: game-service
     ports:
       - 8081:8081
+
   nginx:
     container_name: reverse-proxy-nginx
     image: reverse-proxy-nginx
@@ -51,7 +53,6 @@ services:
       NODE_ENV: production
     hostname: nginx
     ports:
-      # - 80:80
       - 8443:443
     links:
       - ping-pong-frontend:ping-pong-frontend
@@ -61,7 +62,6 @@ services:
       - ping-pong-frontend
       - backend
       - gateway
-
 
   auth:
     container_name: auth
@@ -101,10 +101,3 @@ services:
 
 volumes:
   db:
-    name: db
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: C:\Projects\_mariadb_volume
-
