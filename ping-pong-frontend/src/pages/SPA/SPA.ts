@@ -6,9 +6,11 @@ import Main from "../Main/Main";
 import Login from "../Login/Login";
 import SignUp from "../SignUp/SignUp";
 import Game from "../Game/Game";
-import { getProfileAvatar, getToken, isAuthenticated, removeToken } from "../../utils/auth";
+import { getProfileAvatar, isAuthenticated, removeToken } from "../../utils/auth";
 import Profile from "../Profile/Profile";
 import Chat from "../../components/Chat/Chat";
+import Chat_WS from "./Chat_WS";
+import { ChatTournamentMessage, ChatTournamentReply } from "../../model/Chat";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -58,17 +60,19 @@ export class SPA {
 	appliedOutlets: AppliedOutlets[] = [];
 	isAuth = false;
 
-	chat_ws: WebSocket | null = null;
+	chat_ws: Chat_WS;
 
 	avatar = '';
 
-	chat: Chat = new Chat();
+	chat: Chat;
 
 	constructor(parent: HTMLElement, dictionary: DictionaryType) {
 		this.parent = parent;
 		this.dictionary = dictionary;
 		this.container = parent;
 		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
+		this.chat_ws = new Chat_WS(this.syncChatFromWs);
+		this.chat = new Chat(this.syncWsFromChat);
 
 		this.update().then(()=>{
 			this.initSubscriptions();
@@ -123,46 +127,56 @@ export class SPA {
 	getIsAuth = () => {
 		return (this.isAuth);
 	}
+
 	updateAvatar = async () => {
 		this.avatar = await getProfileAvatar();
 		this.outlets["profile"]?.update(this.avatar);
 		this.outlets["header"]?.update(this.avatar);
 	}
 
-	joinTournament =  () => {
-		if (!this.chat_ws)
-			return ;
-		this.chat_ws.send(JSON.stringify({joinTournament: true}));
+	syncChatFromWs = (data: ChatTournamentMessage) => {
+		console.log('syncChatFromWs', data);
+		this.chat.update(data);
 	}
 
-	acceptTournamentMatch =  (reply: boolean) => {
-		if (!this.chat_ws)
-			return ;
-		this.chat_ws.send(JSON.stringify({acceptTournamentMatch: reply}));
+	syncWsFromChat = (data: ChatTournamentReply) => {
+		this.chat_ws.send(JSON.stringify(data));
 	}
 
-	init_chat_ws = () => {
-		if (this.chat_ws)
-			return ;
-		this.chat_ws = new WebSocket('/api/session-management/ws/chat', getToken());
-		this.chat_ws.onopen = () => console.log('WebSocket is connected!')
-		// 4
-		this.chat_ws.onmessage = (msg) => {
-		const message = msg.data
-		console.log('I got a message!', message)
-		//   message.innerHTML += `<br /> ${message}`
-		}
-		// 5
-		this.chat_ws.onerror = (error) => console.log('WebSocket error', error)
-		// 6
-		this.chat_ws.onclose = () => console.log('Disconnected from the WebSocket server')
-	}
-	close_chat_ws = () => {
-		if (!this.chat_ws)
-			return ;
-		this.chat_ws.close();
-		this.chat_ws = null;
-	}
+	// joinTournament =  () => {
+	// 	if (!this.chat_ws)
+	// 		return ;
+	// 	this.chat_ws.send(JSON.stringify({ recipient: 'tournament', event: 'join'}));
+	// }
+
+	// acceptTournamentMatch =  (reply: boolean) => {
+	// 	if (!this.chat_ws)
+	// 		return ;
+	// 	this.chat_ws.send(JSON.stringify({recipient: 'tournament', event: 'match', accept: reply}));
+	// }
+
+	// init_chat_ws = () => {
+	// 	if (this.chat_ws)
+	// 		return ;
+	// 	this.chat_ws = new WebSocket('/api/session-management/ws/chat', getToken());
+	// 	this.chat_ws.onopen = () => console.log('WebSocket is connected!')
+	// 	// 4
+	// 	this.chat_ws.onmessage = (msg) => {
+	// 	const message = msg.data
+	// 	console.log('I got a message!', message)
+	// 	//   message.innerHTML += `<br /> ${message}`
+	// 	}
+	// 	// 5
+	// 	this.chat_ws.onerror = (error) => console.log('WebSocket error', error)
+	// 	// 6
+	// 	this.chat_ws.onclose = () => console.log('Disconnected from the WebSocket server')
+	// }
+	// close_chat_ws = () => {
+	// 	if (!this.chat_ws)
+	// 		return ;
+	// 	this.chat_ws.close();
+	// 	this.chat_ws = null;
+	// }
 	checkIsAuth = async () => {
 		const isAuth = (await isAuthenticated());
 		if (this.isAuth === isAuth)
@@ -172,7 +186,8 @@ export class SPA {
 		this.isAuth = isAuth;
 		if (this.isAuth)
 		{
-			this.init_chat_ws();
+			// this.init_chat_ws();
+			this.chat_ws.init();
 			if (this.chat.container)
 				this.container.appendChild(this.chat.container);
 			// this.outlets["header"]?.;
@@ -182,7 +197,8 @@ export class SPA {
 			if (this.chat.container)
 				this.container.removeChild(this.chat.container);
 			removeToken();
-			this.close_chat_ws();
+			// this.close_chat_ws();
+			this.chat_ws.close();
 			this.avatar = '';
 		}
 		this.updateAvatar();

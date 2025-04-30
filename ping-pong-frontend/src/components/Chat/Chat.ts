@@ -1,3 +1,5 @@
+import { ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
+
 function createCustomElement(tag: string, className: string) {
 	const element = document.createElement(tag);
 	element.className = className;
@@ -29,16 +31,16 @@ class Chat {
 
 	tournamentInvites: {tournament_id: number, element?: HTMLElement, buttonBlock?: HTMLElement}[] = [];
 	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
-	constructor() {
-		//this.parent = parent;
+
+	syncWsFromChat: (data: ChatTournamentReply) => void ;
+	constructor(syncWsFromChat: (data: ChatTournamentReply) => void) {
+		this.syncWsFromChat = syncWsFromChat;
 		this.initChat();
-		// this.addChatBubble('user1', '11:35', 'message', 1);
-		// this.addChatBubble('user2', '11:37', 'reply', 1);
-		this.addJoinTournament(0, Date.now());
-		this.addInviteToTournamentMatch(0, 'user1', Date.now());
+		// this.addInviteTournamentMessage(0, Date.now());
+		// this.addInviteToTournamentMatchMessage(0, 'user1', Date.now());
 	}
 
-	toggleChat = () => {
+	private toggleChat = () => {
 		if (this.chatWrapper)
 			this.chatWrapper.classList.toggle('invisible');
 		this.isClosed = !this.isClosed;
@@ -52,7 +54,7 @@ class Chat {
 		}
 	}
 
-	updateUnreadIcon = () => {
+	private updateUnreadIcon = () => {
 
 		if (this.isClosed && this.unreadIcon)
 		{
@@ -62,31 +64,69 @@ class Chat {
 		}
 	}
 
-	onDeclineTournament = () => {
-		const tournament = this.tournamentInvites[this.tournamentInvites.length - 1];
+	private getLastTournamentInviteMessage = () => {
+		if (this.tournamentInvites.length === 0)
+			return null;
+		return this.tournamentInvites[this.tournamentInvites.length - 1];
+	}
+
+	private getLastTournamentMatchMessage = () => {
+		if (this.tournamentMatches.length === 0)
+			return null;
+		return this.tournamentMatches[this.tournamentMatches.length - 1];
+	}
+
+	private onDeclineTournament = () => {
+		const tournament = this.getLastTournamentInviteMessage();
+		if (!tournament)
+			return undefined;
 		tournament.buttonBlock?.classList.add('hidden');
+		return tournament.tournament_id;
 	}
 
-	onJoinTournament = () => {
-		this.onDeclineTournament();
-		// send socket data
+	private onJoinTournament = () => {
+		const tournament_id = this.onDeclineTournament();
+
+		if (tournament_id === undefined)
+			return;
+		this.syncWsFromChat({
+			recipient: 'tournament',
+			event: 'invite',
+			tournament_id: tournament_id,
+			reply: true
+		});
 	}
 
-	onForfeitTournamentMatch = () => {
-		const match = this.tournamentMatches[this.tournamentMatches.length - 1];
+	private onTournamentMatchChoice = (choice: boolean) => {
+		const match = this.getLastTournamentMatchMessage();
+		if (!match)
+			return;
 		match.buttonBlock?.classList.add('hidden');
-		match.textBlock!.innerText = `You forfeited the match against ${match.opponent_name}`;
+		this.syncWsFromChat({
+			recipient: 'tournament',
+			tournament_id: match.tournament_id,
+			event: 'matchmaking',
+			opponent_name: match.opponent_name,
+			reply: choice
+		});
+	}
+
+	private onForfeitTournamentMatch = () => {
+		this.onTournamentMatchChoice(false);
+		// if (match.textBlock)
+		// 	match.textBlock.innerText = `You forfeited the match against ${match.opponent_name}`;
+
 		// send socket data
 	}
 
-	onJoinTournamentMatch = () => {
-		const match = this.tournamentMatches[this.tournamentMatches.length - 1];
-		match.buttonBlock?.classList.add('hidden');
-		match.textBlock!.innerText = `You join the match against ${match.opponent_name}`;
+	private onJoinTournamentMatch = () => {
+		this.onTournamentMatchChoice(true);
+		// if (match.textBlock)
+		// 	match.textBlock.innerText = `You join the match against ${match.opponent_name}`;
 		// send socket data
 	}
 
-	initChat() {
+	private initChat() {
 		const chatBlockWrapper = createCustomElement('div', 'fixed z-15 bottom-0 right-0 flex flex-col gap-1 items-end m-1');
 		this.container = chatBlockWrapper;
 		const chatWrapper = document.createElement('div');
@@ -134,17 +174,16 @@ class Chat {
 	}
 
 
-	addJoinTournament(tournament_id: number, time: number) {
-		const date = new Date(time);
-		const timeInfo = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-		const messageBlock = this.addChatBubble('tournament', timeInfo, 'join tournament!!!', 0);
+	private addInviteTournamentMessage(tournament_id: number, time: number) {
+		this.onDeclineTournament()
+		const messageBlock = this.addChatBubble('tournament', time, 'join tournament!!!', 0);
 		const buttonBlock = createCustomElement('div', 'flex justify-between items-center');
 
 		const joinButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		joinButton.innerText = 'Join';
 		joinButton.addEventListener('click', this.onJoinTournament);
 		buttonBlock.appendChild(joinButton);
-		
+
 		const declineButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		declineButton.innerText = 'Decline';
 		declineButton.addEventListener('click', this.onDeclineTournament);
@@ -154,20 +193,26 @@ class Chat {
 		this.tournamentInvites.push({tournament_id, element: messageBlock, buttonBlock: buttonBlock})
 	}
 
-	addStartTournamentMessage(tournament_id: number){
-		const lastTournamentId = this.tournamentInvites.length - 1;
-		const currentTournament = this.tournamentInvites[lastTournamentId];
-		currentTournament.tournament_id = tournament_id;
-		currentTournament!.buttonBlock?.classList.add('hidden');
+	private addStartTournamentMessage(tournament_id: number,  time: number){
+		const currentTournament = this.getLastTournamentInviteMessage();
+		if (currentTournament)
+			currentTournament.tournament_id = tournament_id;
+		this.addChatBubble('tournament', time, `tournament № ${tournament_id} started`, 0);
+	}
+
+	private addFinishTournamentMessage = (tournament_id: number,  time: number, canceled: boolean, rating: number) => {
+		const currentTournament = this.tournamentInvites.find(tournament => tournament.tournament_id === tournament_id);
+		if (currentTournament && currentTournament.buttonBlock)
+			currentTournament.buttonBlock?.classList.add('hidden');
+		const message = canceled ? 'tournament was canceled' : `tournament ${tournament_id} finished, your rating is ${rating}`;
+		this.addChatBubble('tournament', time, message, 0);
 	}
 
 
-	addInviteToTournamentMatch(tournament_id: number, opponent_name:string, time: number) {
+	private addInviteToTournamentMatchMessage(tournament_id: number, time: number, opponent_name:string) {
 		this.tournamentMatches.push({tournament_id, opponent_name})
 
-		const date = new Date(time);
-		const timeInfo = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-		const messageBlock = this.addChatBubble('tournament', timeInfo, 'you have match to participate', 1);
+		const messageBlock = this.addChatBubble('tournament', time, 'you have match to participate', 1);
 		const buttonBlock = createCustomElement('div', 'flex justify-between items-center');
 
 		const joinButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
@@ -188,11 +233,32 @@ class Chat {
 		buttonBlock.appendChild(forfeitButton);
 
 		messageBlock.appendChild(buttonBlock);
-		let lastTournamentId = this.tournamentMatches.length - 1;
+		const lastTournamentId = this.tournamentMatches.length - 1;
 		this.tournamentMatches[lastTournamentId] = ({...this.tournamentMatches[lastTournamentId], element: messageBlock, buttonBlock: buttonBlock})
 	}
 
-	addChatBubble(user: string, time: string, message: string, messageType: MessageType) {
+	private addMatchResultMessage = (tournament_id: number, time: number, opponent_name:string, option: MatchOptions) => {
+
+		let message = '';
+		if (option === MatchOptions.FORFEIT)
+			message = `You forfeited the match against ${opponent_name}`;
+		else if (option === MatchOptions.TECHNICAL_WIN)
+			message = `You won the match due to a forfeit of ${opponent_name}`;
+		else if (option === MatchOptions.WIN)
+			message = `You won the match against ${opponent_name}`;
+		else if (option === MatchOptions.LOSE)
+			message = `You lost the match against ${opponent_name}`;
+		else if (option === MatchOptions.DRAW)
+			message = `The match against ${opponent_name} ended in a draw`;
+		else
+			return;
+		this.addChatBubble(`tournament ${tournament_id}`, time, message, 0);
+	}
+
+
+	private addChatBubble(user: string, time: number, message: string, messageType: MessageType) {
+		const date = new Date(time);
+		const timeInfo = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 		this.updateUnreadIcon();
 		const bubble = document.createElement('div');
 		bubble.className = 'flex items-start gap-2.5 mt-2 p-1';
@@ -212,7 +278,7 @@ class Chat {
 		userNameHeader.innerText = user;
 		const messageTime = document.createElement('span');
 		messageTime.className = 'text-sm font-normal text-gray-500 dark:text-gray-400';
-		messageTime.innerText = time;
+		messageTime.innerText = timeInfo;
 		messageBlockHeader.appendChild(userNameHeader);
 		messageBlockHeader.appendChild(messageTime);
 		messageBlock.appendChild(messageBlockHeader);
@@ -237,6 +303,23 @@ class Chat {
 			this.tournamentMatches[this.tournamentMatches.length - 1].textBlock = messageText;
 
 		return messageBlock;
+	}
+	update = (data: ChatTournamentMessage) => {
+		if (data.recipient === 'tournament')
+		{
+			console.log('Chat update: ', data);
+			if (data.event === 'invite')
+				this.addInviteTournamentMessage(data.tournament_id, data.time);
+			else if (data.event === 'start')
+				this.addStartTournamentMessage(data.tournament_id, data.time);
+			else if (data.event === 'matchmaking')
+				this.addInviteToTournamentMatchMessage(data.tournament_id, data.time, data.opponent_name );
+			else if (data.event === 'match')
+				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent_name, data.option);
+			else if (data.event === 'finish')
+				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);
+
+		}
 	}
 }
 

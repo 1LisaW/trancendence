@@ -139,7 +139,12 @@ Fastify.register(async function (fastify) {
       socket.id = userData.user.id;
       users.addChatUserSocket(userData.user.id, socket);
       if (!tournament.isUserInTournament(userData.user.id)) {
-        socket.send(JSON.stringify({ tournament_id: tournament.getTournamentId(), status: 'invite' }));
+        socket.send(JSON.stringify({
+          recipient: 'tournament',
+          tournament_id: tournament.getTournamentId(),
+          event: 'invite',
+          time: Date.now()
+        }));
       }
     }
 
@@ -149,6 +154,13 @@ Fastify.register(async function (fastify) {
 
     socket.on('message', message => {
       console.log("From backend:", message.toString());
+      const msg = JSON.parse(message.toString());
+      const user_id = socket.id;
+      if (user_id && 'recipient' in msg && 'event' in msg) {
+        if (msg.recipient === 'tournament') {
+          tournament.onChatWSMessage(user_id, msg);
+        }
+      }
     });
 
     socket.on('close', () => {
