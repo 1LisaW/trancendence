@@ -42,9 +42,11 @@ export interface SCORE_ErrorDTO {
 }
 
 export interface SCORE_TournamentDTO {
-	id: number,
-	date: number,
-	is_finished: boolean
+	tournament: {
+		id: number,
+		date: number,
+		is_finished: boolean
+	}
 }
 
 export interface SCORE_TournamentUserDTO {

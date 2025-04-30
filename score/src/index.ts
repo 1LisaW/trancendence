@@ -1,6 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import fastify from "fastify";
-import { addNewTournamentUser, addTournamentMatch, createNewScoreRecord, createNewTournamentRecord, getActiveTournament, getAllUserScores, getTournamentHistory, getUsersTournamentHistory, initDB } from "./sqlite";
+import { addNewTournamentUser, addTournamentMatch, createNewScoreRecord, createNewTournamentRecord, getActiveTournament, getAllTournamentsHistory, getAllUserScores, getTournamentHistory, getTournamentUsers, getUsersTournamentHistory, initDB } from "./sqlite";
 import { SCORE_GetUserScoreRequestParams, SCORE_PostNewScoreReply, SCORE_PostNewScoreRequestBody, SCORE_ScoreDTO, SCORE_ServerErrorReply } from "./model";
 
 const PORT = 8084;
@@ -11,7 +11,6 @@ const Fastify = fastify({ logger: true });
 Fastify.register(async function (fastify) {
 	await initDB();
 	Fastify.post<{ Body: SCORE_PostNewScoreRequestBody, Reply: SCORE_PostNewScoreReply }>('/score', async (request, reply) => {
-		console.log("score data post request ", request.body);
 		try {
 			const { first_user_id, second_user_id, first_user_name, second_user_name, score, game_mode } = request.body;
 
