@@ -66,3 +66,29 @@ export interface SCORE_TournamentScoreDTO {
 }
 
 export type SCORE_TournamentDataDTO = SCORE_TournamentScoreDTO & SCORE_TournamentUserDTO & SCORE_TournamentScoreDTO;
+
+export enum MatchOptions {
+	START,
+	FORFEIT,
+	TECHNICAL_WIN,
+	WIN,
+	LOSE,
+	DRAW
+}
+
+export interface ChatTournamentInviteMessage {
+	recipient: 'tournament';
+	tournament_id: number;
+	event: 'invite';
+	reply: boolean;
+}
+
+export interface ChatTournamentMatchmakingMessage {
+	recipient: 'tournament';
+	tournament_id: number;
+	event: 'matchmaking';
+	opponent_name: string;
+	reply: boolean;
+}
+
+export type ChatTournamentMessage = ChatTournamentInviteMessage | ChatTournamentMatchmakingMessage;

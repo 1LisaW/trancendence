@@ -135,7 +135,7 @@ export const get_active_tournaments = async () => {
 }
 
 export const post_new_tournament = async (users: number[]) => {
-	const response = await fetch(`${SCORE_SERVICE_HOSTNAME}//tournament/new`, {
+	const response = await fetch(`${SCORE_SERVICE_HOSTNAME}/tournament/new`, {
 		method: "POST",
 		headers: {
 			'Content-Type': 'application/json',

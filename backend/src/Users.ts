@@ -108,6 +108,11 @@ export class Users {
 	setMatchmakingStateToUser(user_id:number) {
 		this.setStatus(user_id, Status.MATCHMAKING);
 	}
+
+	setOnlineStatusToUser(user_id: number) {
+		this.setStatus(user_id, Status.ONLINE);
+	}
+
 	addUser = async (token: string) => {
 	  const data = await get_user__auth(token);
 	  let json: AuthUserErrorDTO | Auth_UserDTO | AUTH_ServerErrorDTO = await data.json();
@@ -120,6 +125,14 @@ export class Users {
 	  this.add(id, name, token);
 	  console.log("User ", name, " has status ", this.getUserStatus(id));
 	  return (json);
+	}
+
+	sendDataToChatSockets(user_id: number, data: any)
+	{
+		const sockets = this.getChatUserSocketById(user_id);
+		if (!sockets)
+			return ;
+		sockets.forEach(socket => socket.send(JSON.stringify(data)));
 	}
 
 	// removeUser = async (user_id: number) => {
