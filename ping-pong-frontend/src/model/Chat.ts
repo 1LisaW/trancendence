@@ -35,7 +35,7 @@ export interface ChatTournamentMatchmakingMessage {
 	tournament_id: number;
 	event: 'matchmaking';
 	time: number;
-	opponent_name: string;
+	opponent: string;
 }
 
 export interface ChatTournamentMatchMessage {
@@ -43,7 +43,7 @@ export interface ChatTournamentMatchMessage {
 	tournament_id: number;
 	event: 'match';
 	time: number;
-	opponent_name: string;
+	opponent: string;
 	option: MatchOptions;
 }
 
@@ -62,7 +62,7 @@ export interface ChatTournamentMatchmakingReply {
 	recipient: 'tournament';
 	tournament_id: number;
 	event: 'matchmaking';
-	opponent_name: string;
+	opponent: string;
 	reply: boolean;
 }
 
