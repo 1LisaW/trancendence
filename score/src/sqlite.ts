@@ -104,7 +104,6 @@ export const createNewTournamentRecord = async (users: number[]) => {
 	const sql = `INSERT INTO tournaments(date, is_finished) VALUES(?, ?)`;
 	try {
 		const tournament_id = await execute(db, sql, [date.toString(), '0']);
-		console.log('tournament_id ', tournament_id);
 		if (tournament_id) {
 			for (let i = 0; i < users.length; i++) {
 				await execute(db, `INSERT INTO tournaments_users(tournament_id, user_id, rating) VALUES(?, ?, ?)`, [tournament_id, users[i], 0]);
@@ -203,9 +202,9 @@ export const getTournamentMatches = async (tournament_id: number) => {
 export const getTournamentHistory = async (tournament_id: number) => {
 	const db = new sqlite3.Database(DB_PATH);
 	const sql = `SELECT * FROM tournaments_users
-		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
+		LEFT JOIN tournaments_scores ON tournaments_users.user_id = tournaments_scores.first_user_id OR tournaments_users.user_id = tournaments_scores.second_user_id
 		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id
-		WHERE tournaments_users.tournament_id = ?)`;
+		WHERE tournaments_users.tournament_id = ?`;
 
 	try {
 		const tournamentData = await fetchAll(db, sql, [tournament_id.toString()]) as SCORE_TournamentDataDTO[];

@@ -226,7 +226,10 @@ class Chat {
 		const countDown = setInterval(() => {
 			count = Math.round((time - Date.now() + 30000) / 1000);
 			if (count <= 0)
+			{
 				clearInterval(countDown);
+				this.onTournamentMatchChoice(false);
+			}
 			forfeitButton.innerText = `Forfeit (${count} sec)`;
 		}, 1000);
 		forfeitButton.addEventListener('click', this.onForfeitTournamentMatch);

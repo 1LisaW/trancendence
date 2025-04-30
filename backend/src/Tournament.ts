@@ -213,8 +213,10 @@ export class Tournament {
 
 	syncTournamentDataWithDB = async () => {
 		const activeTournament = await get_active_tournaments();
-		if ('id' in activeTournament) {
-			const tournamentData = await get_tournaments_data(activeTournament.id);
+		if ('tournament' in activeTournament) {
+			console.log("Tournament: activeTournament", activeTournament);
+			const tournamentData = await get_tournaments_data(activeTournament.tournament.id);
+			console.log("Tournament: tournamentData", tournamentData);
 			if ("tournaments" in tournamentData && tournamentData.tournaments.length) {
 				const users = tournamentData.tournaments
 					.filter((value, idx, array) => array.findIndex(v => v.user_id === value.user_id) === idx)
@@ -268,7 +270,7 @@ export class Tournament {
 		// 		return;
 		// 	}
 		// }
-		this.goToFillingOfLobbyCheck();
+		// this.goToFillingOfLobbyCheck();
 		// const lobbyCheck = async () => {
 		// 	if (this.isStarted) {
 		// 		clearInterval(setLobbyCheck);
