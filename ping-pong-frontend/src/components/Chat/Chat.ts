@@ -106,7 +106,7 @@ class Chat {
 			recipient: 'tournament',
 			tournament_id: match.tournament_id,
 			event: 'matchmaking',
-			opponent_name: match.opponent_name,
+			opponent: match.opponent_name,
 			reply: choice
 		});
 	}
@@ -313,12 +313,24 @@ class Chat {
 			else if (data.event === 'start')
 				this.addStartTournamentMessage(data.tournament_id, data.time);
 			else if (data.event === 'matchmaking')
-				this.addInviteToTournamentMatchMessage(data.tournament_id, data.time, data.opponent_name );
+				this.addInviteToTournamentMatchMessage(data.tournament_id, data.time, data.opponent );
 			else if (data.event === 'match')
-				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent_name, data.option);
+				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent, data.option);
 			else if (data.event === 'finish')
 				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);
 
+		}
+	}
+
+	clear = () => {
+		this.tournamentInvites = [];
+		this.tournamentMatches = [];
+		if (this.chatBlock)
+			this.chatBlock.innerHTML = '';
+		if (this.chatWrapper)
+		{
+			this.isClosed = true;
+			this.chatWrapper.classList.add('invisible');
 		}
 	}
 }

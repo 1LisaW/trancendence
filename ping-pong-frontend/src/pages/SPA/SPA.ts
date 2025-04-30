@@ -195,7 +195,10 @@ export class SPA {
 		else
 		{
 			if (this.chat.container)
+			{
+				this.chat.clear();
 				this.container.removeChild(this.chat.container);
+			}
 			removeToken();
 			// this.close_chat_ws();
 			this.chat_ws.close();
