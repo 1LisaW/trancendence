@@ -2,7 +2,7 @@
 
 import fastify from "fastify";
 import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
-import { GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { GAME_MODE, GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
 
@@ -90,8 +90,8 @@ Fastify.register(async function (fastify) {
 
       // message for matchmaking
       else if ('mode' in msg) {
-        const mode = msg.mode as string;
-        if (mode === 'pvp' || mode === 'pvc') {
+        const mode = msg.mode as GAME_MODE;
+        if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
           const data = await users.matchmaking(user_id, socket, mode);
           const json = await data.json();

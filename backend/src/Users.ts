@@ -96,6 +96,7 @@ export class Users {
 
 		return post_matchmaking__game_service(user_id, mode);
 	}
+
 	removeUserFromMatchmaking(user_id: number) {
 		delete_user_from_matchmaking(user_id);
 		if (this.getUserStatus(user_id) === Status.MATCHMAKING)

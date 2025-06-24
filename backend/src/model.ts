@@ -94,3 +94,9 @@ export interface ChatTournamentMatchmakingMessage {
 }
 
 export type ChatTournamentMessage = ChatTournamentInviteMessage | ChatTournamentMatchmakingMessage;
+
+export enum GAME_MODE {
+	PVP = 'pvp',
+	PVC = 'pvc',
+	TOURNAMENT = 'tournament',
+}

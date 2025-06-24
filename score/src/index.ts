@@ -12,9 +12,9 @@ Fastify.register(async function (fastify) {
 	await initDB();
 	Fastify.post<{ Body: SCORE_PostNewScoreRequestBody, Reply: SCORE_PostNewScoreReply }>('/score', async (request, reply) => {
 		try {
-			const { first_user_id, second_user_id, first_user_name, second_user_name, score, game_mode } = request.body;
+			const { first_user_id, second_user_id, first_user_name, second_user_name, score, game_results, game_mode } = request.body;
 
-			const user = await createNewScoreRecord(first_user_id, second_user_id, first_user_name, second_user_name, score, game_mode);
+			const user = await createNewScoreRecord(first_user_id, second_user_id, first_user_name, second_user_name, score,game_results, game_mode);
 			reply.send({ message: "Score record created" });
 		} catch (e) {
 			reply.send({ message: "Error", details: e });

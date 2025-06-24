@@ -1,11 +1,26 @@
 
+export enum SCORE_GAME_RESULT {
+	WIN = "win",
+	LOSE = "lose",
+	DRAW = "draw",
+	TECHNICAL_WIN = "technical_win",
+	TECHNICAL_LOSE = "technical_lose",
+}
+
+export enum SCORE_GAME_MODE {
+	PVP = "pvp",
+	AI = "pvc",
+	TOURNAMENT = "tournament",
+}
+
 export interface SCORE_PostNewScoreRequestBody {
 	first_user_id: number,
 	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],
-	game_mode: string
+	game_results: SCORE_GAME_RESULT[],
+	game_mode: SCORE_GAME_MODE,
 }
 
 export interface SCORE_PostNewScoreReply {
@@ -25,6 +40,8 @@ export interface SCORE_ScoreDTO {
 	second_user_name: string,
 	first_user_score: number,
 	second_user_score: number,
+	first_user_result: string,
+	second_user_result: string,
 	game_mode: string
 }
 
