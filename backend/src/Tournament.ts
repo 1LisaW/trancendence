@@ -231,13 +231,15 @@ export class Tournament {
 						this.tournament.setUsersRating(user.user_id, user.rating);
 				});
 				// set users matches opponents from db
-				tournamentData.tournaments.forEach(tournament => {
-					const opponent_id = tournament.user_id === tournament.first_user_id ? tournament.second_user_id : tournament.first_user_id;
-					this.tournament.matches.addUserPlayed(tournament.user_id, opponent_id);
+				const usersMatches = tournamentData.tournaments.filter((value) => value.first_user_id !== null && value.second_user_id !== null);
+				usersMatches.forEach(usersMatch => {
+					const opponent_id = usersMatch.user_id === usersMatch.first_user_id ? usersMatch.second_user_id : usersMatch.first_user_id;
+					this.tournament.matches.addUserPlayed(usersMatch.user_id, opponent_id);
 				})
 			}
 		}
 	}
+
 	init = async () => {
 		await this.syncTournamentDataWithDB();
 		if (this.isStarted) {
@@ -337,6 +339,8 @@ export class Tournament {
 					this.users.sendDataToChatSockets(userId, message);
 				})
 			}
+			if (this.checkTournamentOnFinishedCondition())
+				this.goToEndTournament();
 		}
 		const setMatchmakingCheck = setInterval(matchmakingCheck, TOURNAMENT_LOBBY_CHECK_PERIOD);
 	}

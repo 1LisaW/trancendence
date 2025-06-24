@@ -1,6 +1,7 @@
 import fastify from "fastify";
 import { ModeProp } from "./GameSession";
 import { GameSessionFactory } from "./GameSessionFactory";
+import { GAME_MODE } from "./model";
 
 const Fastify = fastify();
 
@@ -37,7 +38,8 @@ const gameSessionFactory = new GameSessionFactory();
 
 interface MatchmakingBody {
     playerId: number,
-    mode: ModeProp
+    opponentId?: number,
+    mode: GAME_MODE
 }
 interface UserParams {
     socket_id: number
@@ -48,17 +50,32 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
     socket_id = Number(socket_id);
     // const playerId = request.body.playerId;
     const mode = request.body.mode;
-    if (mode === 'pvp') {
-        const opponent = matchmaking.match(socket_id);
-        if (opponent) {
-            const game = gameSessionFactory.createSession(socket_id, opponent, mode);
-            reply.send({ gameId: game.getId(), users: [opponent, socket_id] });
-            gameSessionFactory.startGameLoop(game.getId());
-            console.log("Game-service: matchmaking done");
-            return
-        }
-        reply.send({ message: "User set in queue" });
+    switch (mode) {
+        case GAME_MODE.PVP:
+            const opponent = matchmaking.match(socket_id);
+            if (opponent) {
+                const game = gameSessionFactory.createSession(socket_id, opponent, mode);
+                reply.send({ gameId: game.getId(), users: [opponent, socket_id] });
+                gameSessionFactory.startGameLoop(game.getId());
+                console.log("Game-service: matchmaking done");
+                return
+            }
+            reply.send({ message: "User set in queue" });
+            break;
+        case GAME_MODE.TOURNAMENT:
+            if ('opponentId' in request.body) {
+                const opponentId = Number(request.body.opponentId);
+                const game = gameSessionFactory.createSession(socket_id, opponentId, mode);
+                reply.send({ gameId: game.getId(), users: [opponentId, socket_id] });
+                    gameSessionFactory.startGameLoop(game.getId());
+                    console.log("Game-service: matchmaking done");
+                    return
+            }
+            break;
+
     }
+
+
     // if player has active session reply "You have a game"
     console.log("Game-service: matchmaking not done");
 
@@ -88,14 +105,14 @@ interface GamePostParams {
 Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
     const { gameId } = request.params;
     gameSessionFactory.removeSession(gameId);
-    reply.status(200).send({message: "game was terminated"})
+    reply.status(200).send({ message: "game was terminated" })
 })
 
 Fastify.post<{ Params: GamePostParams, Body: GamePostBody }>('/game/:gameId', (request, reply) => {
     const { gameId } = request.params;
     const { userId, step } = request.body;
     gameSessionFactory.updateGameSessionUserData(gameId, userId, step);
-    reply.status(200).send({message: "bat data updated"})
+    reply.status(200).send({ message: "bat data updated" })
 })
 
 Fastify.listen({ port: 8081, host: '0.0.0.0' }, (err, address) => {

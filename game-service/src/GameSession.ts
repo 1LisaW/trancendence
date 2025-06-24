@@ -49,7 +49,7 @@ interface BallProp {
 	normal: Tuple3<number>,
 }
 console.log("sceneParams: ",sceneParams);
-export type ModeProp = 'pvp' | 'pvc';
+export type ModeProp = 'pvp' | 'pvc' | 'tournament';
 
 const batZTopPos = (sceneParams.ground.height - sceneParams.bat.width) / 2;
 const ballZTopPos = (sceneParams.ground.height - sceneParams.ball.diameter) / 2;

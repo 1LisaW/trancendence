@@ -1,6 +1,6 @@
 // game-service
 
-import { SCORE_ErrorDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO } from "./model";
+import { SCORE_ErrorDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO } from "./model";
 
 const GAME_SESSION_HOSTNAME = 'game-service';
 const GAME_SESSION_PORT = 8081;
@@ -141,6 +141,18 @@ export const post_new_tournament = async (users: number[]) => {
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({users}),
+	});
+	const data: {tournament_id: number, date: number} | {error: string} = await response.json();
+	return (data);
+}
+
+export const post_new_tournament_score = async (tournament_id: number, score: ScoreRequestBody) => {
+	const response = await fetch(`${SCORE_SERVICE_HOSTNAME}/tournament/score/${tournament_id}`, {
+		method: "POST",
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({score}),
 	});
 	const data: {tournament_id: number, date: number} | {error: string} = await response.json();
 	return (data);
