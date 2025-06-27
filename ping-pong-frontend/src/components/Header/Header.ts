@@ -18,7 +18,7 @@ export class Header extends Component {
 	}
 
 	createLogo() {
-		this.logo = document.createElement('div');
+/* 		this.logo = document.createElement('div');
 		this.logo.className = 'flex items-center flex-shrink-0 text-white mr-6';
 		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 		svg.classList.add('fill-current', 'h-8', 'w-8', 'mr-2');
@@ -31,7 +31,7 @@ export class Header extends Component {
 		path.setAttributeNS(null, 'd', 'M13.5 22.1c1.8-7.2 6.3-10.8 13.5-10.8 10.8 0 12.15 8.1 17.55 9.45 3.6.9 6.75-.45 9.45-4.05-1.8 7.2-6.3 10.8-13.5 10.8-10.8 0-12.15-8.1-17.55-9.45-3.6-.9-6.75.45-9.45 4.05zM0 38.3c1.8-7.2 6.3-10.8 13.5-10.8 10.8 0 12.15 8.1 17.55 9.45 3.6.9 6.75-.45 9.45-4.05-1.8 7.2-6.3 10.8-13.5 10.8-10.8 0-12.15-8.1-17.55-9.45-3.6-.9-6.75.45-9.45 4.05z');
 		svg.appendChild(path);
 		this.logo.appendChild(svg);
-		this.container.appendChild(this.logo);
+		this.container.appendChild(this.logo); */
 	}
 	createTitle() {
 		this.title = document.createElement('span');
@@ -40,7 +40,7 @@ export class Header extends Component {
 		this.container.appendChild(this.title);
 	}
 	createChildren(): void {
-		this.createLogo();
+/* 		this.createLogo(); */
 		this.createTitle();
 	}
 	render() {
