@@ -1,5 +1,7 @@
 import { nanoid } from "nanoid"
 import { GameState, ScoreState, GameResult } from "./api";
+import { getAIMove } from './ai'; // [ADDED] for AI logic
+
 type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLength };
 
 type Tuple3<T> = Tuple<T, 3>;
@@ -266,6 +268,18 @@ export class GameSession {
 			if (previousTick + tickLengthMs <= now) {
 				const delta = (now - previousTick) / 1000
 				previousTick = now;
+
+				//*** [ADDED] AI move for 'pvc' mode
+				if (this._mode === 'pvc' && actualTicks % 20 === 0) {
+					const state: GameState = {
+						players: this._ids,
+						pos: [this._players[this._ids[0]].pos, this._players[this._ids[1]].pos],
+						ball: this._ball.pos
+					};
+					const move = getAIMove(state, this._ids[1]);
+					this.setBatMove(this._ids[1], move);
+				}
+				//*** [END OF AI MOVE] 
 
 				this.updateState();
 				// this.getState();

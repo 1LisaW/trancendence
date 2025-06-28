@@ -107,5 +107,17 @@
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
-  }
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
 }
+
+// Simona
+// Added "include": ["src/**/*.ts"] to explicitly include all .ts files in src/.
+// Added "exclude": ["node_modules", "build"] to prevent compiling irrelevant directories.
+// Just because it kept making lines red in vs code (it did compile without these).

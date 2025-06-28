@@ -8,7 +8,7 @@
   "main": "index.ts",
   "scripts": {
     "copy": "cp -R ../configuration.json /",
-    "test": "test",
+    "test": "npx tsc -p tsconfig.json && node ./build/ai.test.js",
     "build": "tsc -p tsconfig.json",
     "start": "node ./build/index.js"
   },
@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.4",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }

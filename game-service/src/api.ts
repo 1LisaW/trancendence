@@ -8,6 +8,12 @@ export interface GameState {
 	players: number[],
 	pos: Tuple3<number>[],
 	ball: Tuple3<number>
+	// Updating to include normal and speed (for AI logic)
+	//ball: {
+    //    pos: Tuple3<number>;
+    //    normal: Tuple3<number>;
+    //    speed: number;
+    //};
 }
 
 export interface ScoreState {

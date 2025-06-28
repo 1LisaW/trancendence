@@ -7,11 +7,22 @@ export class GameSessionFactory {
 	constructor(){
 
 	}
-	createSession(playerId:number, opponentId: number, mode: ModeProp ){
-		const newGameSession = new GameSession(mode, playerId, opponentId, this.sendDataToUser);
+	
+	// COMMENTED OUT ORIGINAL // VERSION WITH AI BELOW 
+	//createSession(playerId:number, opponentId: number, mode: ModeProp ){
+	//	const newGameSession = new GameSession(mode, playerId, opponentId, this.sendDataToUser);
+	//	this.sessionPool.push(newGameSession);
+	//	return (newGameSession);
+	//}
+
+	//*** [ADDED] Implementing AI logic */
+	createSession(playerId: number, opponentId: number | null, mode: ModeProp) { // [CHANGED] Allow null opponentId
+		const aiOpponentId = mode === 'pvc' ? 0 : opponentId!; // Using 0 for AI
+		const newGameSession = new GameSession(mode, playerId, aiOpponentId, this.sendDataToUser);
 		this.sessionPool.push(newGameSession);
-		return (newGameSession);
+		return newGameSession;
 	}
+	// ** END OF ADDED BIT LOGIC
 
 	removeSession(session_id: string) {
 		const session = this.sessionPool.find(session => session.getId() === session_id);

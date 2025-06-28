@@ -59,12 +59,27 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
         }
         reply.send({ message: "User set in queue" });
     }
+    //*** [ADDED] Handle 'pvc' mode for AI opponent
+    else if (mode === 'pvc') {
+        const aiId = 0; // Fixed AI opponent ID (Just a proposal: could be any unique ID)
+        const game = gameSessionFactory.createSession(socket_id, aiId, mode);
+        reply.send({ gameId: game.getId(), users: [socket_id, aiId] });
+        gameSessionFactory.startGameLoop(game.getId());
+        console.log("Game-service: AI match created");
+    } 
+    //*** [ADDED] Handle invalid mode
+    else { 
+        console.log("Game-service: invalid mode");
+        reply.send({ opponent: null });
+    }
+    // *** [REMOVED] This part is not needed IF we handle matchmaking above
     // if player has active session reply "You have a game"
-    console.log("Game-service: matchmaking not done");
+    //console.log("Game-service: matchmaking not done");
 
-    reply.send({
-        opponent: null,
-    });
+    // *** [REMOVED] This part is not needed IF we handle matchmaking above
+    //reply.send({
+    //   opponent: null,
+    //});
 })
 
 Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, reply) => {
