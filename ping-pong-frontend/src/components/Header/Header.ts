@@ -11,7 +11,7 @@ export class Header extends Component {
 	avatarSrc: string;
 	constructor(tag:string, parent: HTMLElement, dictionary: DictionaryType, getIsAuth: ()=>boolean, navigate: (route:string)=>void, avatarSrc:string) {
 		super(tag, parent, dictionary);
-		this.container.className = 'flex items-center justify-between flex-wrap bg-(--color-accent) p-6 h-25 relative rounded-lg';
+		this.container.className = 'flex items-center justify-between flex-wrap bg-(--color-accent) p-6 h-25 relative';
 		this.init();
 		this.avatarSrc = avatarSrc;
 		this.userSettings = new UserSettings(this.container, dictionary, getIsAuth, navigate, this.avatarSrc);

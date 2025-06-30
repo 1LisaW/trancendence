@@ -2,117 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-body, html {
+html, body {
   height: 100%;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
+
+body {
+  background: url("/assets/forest.gif") no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* Optional: dark overlay if needed */
+/*
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  z-index: -1;
+}
+*/
 
 @layer base {
   :root, .light {
-    --color-text-base: #1f2937;         /* slate-800 */
-    --color-text-muted: #6b7280;        /* gray-500 */
-    --color-fill: #f3f4f6;              /* gray-100 */
-    --color-text-inverted: #ffffff;
-    --color-button-base: #4f46e5;       /* indigo-600 */
-
-    --color-form-base: #f9fafb;         /* gray-50 */
-    --color-form-accent: #e5e7eb;       /* gray-200 */
-    --color-text-form: #111827;         /* gray-900 */
-    --color-text-form-accent: #374151;  /* gray-700 */
-
-    --color-accent: #10b981;            /* emerald-500 */
-    --color-accent2: #22d3ee;           /* cyan-400 */
-    --color-text-accent: #111827;
-    --color-text-accent2: #111827;
-
-    --color-paper-base: #ffffff;
-  }
-
-  .palette1 {
     --color-text-base: #1f2937;
     --color-text-muted: #6b7280;
-    --color-fill: #e0f2fe;              /* sky-100 */
-    --color-text-inverted: #0c4a6e;
-    --color-button-base: #38bdf8;       /* sky-400 */
+    --color-fill: transparent; /* <- KEY FIX */
+    --color-text-inverted: #ffffff;
+    --color-button-base: #4f46e5;
 
-    --color-form-base: #fefce8;         /* yellow-50 */
-    --color-form-accent: #fde68a;       /* yellow-300 */
-    --color-text-form: #1f2937;
-    --color-text-form-accent: #374151;
-
-    --color-paper-base: #fdfcdc;
-    --color-accent: #4ade80;            /* green-400 */
-    --color-text-accent: #1e293b;
-    --color-accent2: #fbbf24;           /* amber-400 */
-    --color-text-accent2: #1f2937;
+    --color-form-base: #f9fafb;
+    --color-form-accent: #e5e7eb;
+    --color-text-form:
   }
-
-  .palette2 {
-    --color-text-base: #111827;
-    --color-text-muted: #9ca3af;
-    --color-fill: #fef2f2;              /* rose-50 */
-    --color-text-inverted: #be123c;
-    --color-button-base: #f43f5e;       /* rose-500 */
-
-    --color-form-base: #fff7ed;         /* orange-50 */
-    --color-form-accent: #fdba74;       /* orange-300 */
-    --color-text-form: #1c1917;
-    --color-text-form-accent: #4b5563;
-
-    --color-accent: #fb923c;            /* orange-400 */
-    --color-accent2: #f59e0b;           /* amber-500 */
-    --color-text-accent: #1f2937;
-    --color-text-accent2: #1f2937;
-
-    --color-paper-base: #fffaf0;
-  }
-
-  .dark {
-    --color-text-base: #e5e7eb;         /* gray-200 */
-    --color-text-muted: #9ca3af;
-    --color-fill: #1f2937;              /* gray-800 */
-    --color-text-inverted: #000000;
-    --color-button-base: #4f46e5;       /* indigo-600 */
-
-    --color-form-base: #374151;         /* gray-700 */
-    --color-form-accent: #1f2937;       /* gray-800 */
-    --color-text-form: #f9fafb;
-    --color-text-form-accent: #d1d5db;
-
-    --color-accent: #14b8a6;            /* teal-500 */
-    --color-accent2: #06b6d4;           /* cyan-500 */
-    --color-text-accent: #ffffff;
-    --color-text-accent2: #f3f4f6;
-
-    --color-paper-base: #111827;        /* gray-900 */
-  }
-
-  .blue {
-    --color-text-base: #ffffff;
-    --color-text-muted: #bfdbfe;
-    --color-fill: #3b82f6;              /* blue-500 */
-    --color-text-inverted: #1e3a8a;
-    --color-button-base: #60a5fa;
-  }
-
-  .red {
-    --color-text-base: #ffffff;
-    --color-text-muted: #fecaca;
-    --color-fill: #ef4444;              /* red-500 */
-    --color-text-inverted: #7f1d1d;
-    --color-button-base: #f87171;
-  }
-
-  .purple {
-    --color-text-base: #ffffff;
-    --color-text-muted: #e9d5ff;
-    --color-fill: #8b5cf6;              /* violet-500 */
-    --color-text-inverted: #4c1d95;
-    --color-button-base: #c4b5fd;
-  }
-}
-
-.cropper-view-box,
-.cropper-face {
-  border-radius: 50%;
 }

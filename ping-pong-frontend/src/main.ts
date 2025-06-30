@@ -20,6 +20,32 @@ const initSPA = (parent: HTMLElement | null, dictionary: DictionaryType) => {
     text-[var(--color-text-base)]
   `;
 
+  const bg = document.createElement("img");
+  bg.src = "/assets/forest.gif"; // adjust path if needed
+  bg.alt = "";
+  bg.className = `
+    fixed
+    top-0 left-0
+    w-full h-full
+    object-cover
+    -z-10
+    pointer-events-none
+    select-none
+  `;
+  parent.appendChild(bg);
+
+  const overlay = document.createElement("div");
+
+  overlay.className = `
+    fixed
+    top-0 left-0
+    w-full h-full
+    bg-black/40
+    -z-10
+    pointer-events-none
+  `;
+  parent.appendChild(overlay);
+
   parent.appendChild(wrapper);
 
   const SPAI = new SPA(wrapper, dictionary);
