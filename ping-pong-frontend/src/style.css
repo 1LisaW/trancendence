@@ -28,11 +28,11 @@ body::before {
 }
 */
 
-@layer base {
+/* @layer base {
   :root, .light {
     --color-text-base: #1f2937;
     --color-text-muted: #6b7280;
-    --color-fill: transparent; /* <- KEY FIX */
+    --color-fill: transparent;
     --color-text-inverted: #ffffff;
     --color-button-base: #4f46e5;
 
@@ -40,4 +40,4 @@ body::before {
     --color-form-accent: #e5e7eb;
     --color-text-form:
   }
-}
+} */

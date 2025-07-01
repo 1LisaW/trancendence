@@ -21,7 +21,7 @@ const initSPA = (parent: HTMLElement | null, dictionary: DictionaryType) => {
   `;
 
   const bg = document.createElement("img");
-  bg.src = "/assets/forest.gif"; // adjust path if needed
+  bg.src = "/assets/forest.gif";
   bg.alt = "";
   bg.className = `
     fixed
@@ -40,7 +40,6 @@ const initSPA = (parent: HTMLElement | null, dictionary: DictionaryType) => {
     fixed
     top-0 left-0
     w-full h-full
-    bg-black/40
     -z-10
     pointer-events-none
   `;
