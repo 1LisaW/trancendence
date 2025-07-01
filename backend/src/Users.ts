@@ -136,6 +136,17 @@ export class Users {
 		sockets.forEach(socket => socket.send(JSON.stringify(data)));
 	}
 
+	getOnlineUsers = () => {
+		let onlineUsers: number[] = [];
+		Array.from(this.statuses.entries())
+			.reduce((acc, curr) => {
+				if(curr[1] === Status.ONLINE)
+					acc.push(curr[0])
+				return acc;
+			}, onlineUsers);
+		return (onlineUsers);
+	}
+
 	// removeUser = async (user_id: number) => {
 	//   this.remove(user_id);
 	//   console.log("REMOVED User ", user_id, " has status ", this.getUserStatus(user_id));
