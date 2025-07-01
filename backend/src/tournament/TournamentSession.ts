@@ -62,63 +62,63 @@ class TournamentSession {
 		return this.id;
 	}
 
-	private goToFillingOfLobbyCheck() {
-		const lobbyCheck = async () => {
-					if (this.isStarted) {
-						clearInterval(setLobbyCheck);
-					}
-					else {
-						if (this.usersPool.size < 3)
-							return;
-						const createNewTournamentResponse = await post_new_tournament([...this.usersPool]);
-						if ("tournament_id" in createNewTournamentResponse) {
-							this.id = createNewTournamentResponse.tournament_id;
-							this.startDate = createNewTournamentResponse.date;
-							this.isStarted = true;
-							// this.onSessionStart(createNewTournamentResponse.date, createNewTournamentResponse.tournament_id);
-							this.goToMatchmaking();
-						}
-					}
-		}
-		const setLobbyCheck = setInterval(lobbyCheck, TOURNAMENT_LOBBY_CHECK_PERIOD)
-	}
+	// private goToFillingOfLobbyCheck() {
+	// 	const lobbyCheck = async () => {
+	// 				if (this.isStarted) {
+	// 					clearInterval(setLobbyCheck);
+	// 				}
+	// 				else {
+	// 					if (this.usersPool.size < 3)
+	// 						return;
+	// 					const createNewTournamentResponse = await post_new_tournament([...this.usersPool]);
+	// 					if ("tournament_id" in createNewTournamentResponse) {
+	// 						this.id = createNewTournamentResponse.tournament_id;
+	// 						this.startDate = createNewTournamentResponse.date;
+	// 						this.isStarted = true;
+	// 						// this.onSessionStart(createNewTournamentResponse.date, createNewTournamentResponse.tournament_id);
+	// 						this.goToMatchmaking();
+	// 					}
+	// 				}
+	// 	}
+	// 	const setLobbyCheck = setInterval(lobbyCheck, TOURNAMENT_LOBBY_CHECK_PERIOD)
+	// }
 
-	goToMatchmaking = (users: Users) => {
-		const matchmakingCheck = () => {
-			if (this.isFinished) {
-				clearInterval(setMatchmakingCheck);
-			}
-			const activePlayers = this.getActivePlayers();
-			if (!activePlayers)
-				return;
+	// goToMatchmaking = (users: Users) => {
+	// 	const matchmakingCheck = () => {
+	// 		if (this.isFinished) {
+	// 			clearInterval(setMatchmakingCheck);
+	// 		}
+	// 		const activePlayers = this.getActivePlayers();
+	// 		if (!activePlayers)
+	// 			return;
 
-			let pair: number[] | null = null;
-			while (pair = this.getTournamentPair()) {
-				const matchmaking: TournamentMatchmaking = {
-					first_user_id: pair[0],
-					second_user_id: pair[1],
-					first_user_response: -1,
-					second_user_response: -1
-				};
-				this.matchmakingPool.add(matchmaking.first_user_id, matchmaking.second_user_id);
-				const time = Date.now();
-				pair.forEach((userId, id) => {
-					this.users.setMatchmakingStateToUser(userId);
-					const message = {
-						recipient: 'tournament',
-						tournament_id: this.getId(),
-						event: 'matchmaking',
-						time: time,
-						opponent_name: this.users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
-					}
-					this.users.sendDataToChatSockets(userId, message);
-				})
-			}
-			if (this.checkTournamentOnFinishedCondition())
-				this.goToEndTournament();
-		}
-		const setMatchmakingCheck = setInterval(matchmakingCheck, TOURNAMENT_LOBBY_CHECK_PERIOD);
-	}
+	// 		let pair: number[] | null = null;
+	// 		while (pair = this.getTournamentPair()) {
+	// 			const matchmaking: TournamentMatchmaking = {
+	// 				first_user_id: pair[0],
+	// 				second_user_id: pair[1],
+	// 				first_user_response: -1,
+	// 				second_user_response: -1
+	// 			};
+	// 			this.matchmakingPool.add(matchmaking.first_user_id, matchmaking.second_user_id);
+	// 			const time = Date.now();
+	// 			pair.forEach((userId, id) => {
+	// 				this.users.setMatchmakingStateToUser(userId);
+	// 				const message = {
+	// 					recipient: 'tournament',
+	// 					tournament_id: this.getId(),
+	// 					event: 'matchmaking',
+	// 					time: time,
+	// 					opponent_name: this.users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
+	// 				}
+	// 				this.users.sendDataToChatSockets(userId, message);
+	// 			})
+	// 		}
+	// 		if (this.checkTournamentOnFinishedCondition())
+	// 			this.goToEndTournament();
+	// 	}
+	// 	const setMatchmakingCheck = setInterval(matchmakingCheck, TOURNAMENT_LOBBY_CHECK_PERIOD);
+	// }
 
 	matchmakingIteration = (onlineUsers: number[]) => {
 
@@ -129,8 +129,8 @@ class TournamentSession {
 		if (this.getId() !== tournament_id)
 			return;
 		this.usersPool.add(user_id);
-		if (this.usersPool.size === 1)
-			this.goToFillingOfLobbyCheck();
+		// if (this.usersPool.size === 1)
+			// this.goToFillingOfLobbyCheck();
 	}
 
 	handleMatchmaking = (tournament_id:number, user_id: number, reply: boolean) => {
