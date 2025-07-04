@@ -2,14 +2,17 @@
 
 import fastify from "fastify";
 import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
-import { GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { GAME_MODE, GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
+import { Tournament } from "./Tournament";
+import TournamentSessionManager from "./tournament/TournamentSessionManager";
 
 
 
 
 const users = new Users();
-
+const tournamentSessionManager = new TournamentSessionManager(users);
+// const tournament = new Tournament(users);
 
 const Fastify = fastify();
 Fastify.register(require('@fastify/websocket'));
@@ -89,8 +92,8 @@ Fastify.register(async function (fastify) {
 
       // message for matchmaking
       else if ('mode' in msg) {
-        const mode = msg.mode as string;
-        if (mode === 'pvp' || mode === 'pvc') {
+        const mode = msg.mode as GAME_MODE;
+        if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
           const data = await users.matchmaking(user_id, socket, mode);
           const json = await data.json();
@@ -137,6 +140,17 @@ Fastify.register(async function (fastify) {
     if ('user' in userData) {
       socket.id = userData.user.id;
       users.addChatUserSocket(userData.user.id, socket);
+
+      tournamentSessionManager.onNewUserConnection(userData.user.id);
+      // if (!tournament.isUserInTournament(userData.user.id)) {
+      //   const invitation = {
+      //     recipient: 'tournament',
+      //     tournament_id: tournament.getTournamentId(),
+      //     event: 'invite',
+      //     time: Date.now()
+      //   };
+      //   socket.send(JSON.stringify(invitation));
+      // }
     }
 
     else {
@@ -145,6 +159,13 @@ Fastify.register(async function (fastify) {
 
     socket.on('message', message => {
       console.log("From backend:", message.toString());
+      const msg = JSON.parse(message.toString());
+      const user_id = socket.id;
+      if (user_id && 'recipient' in msg && 'event' in msg) {
+        if (msg.recipient === 'tournament') {
+          tournamentSessionManager.handleChatMessage(user_id, msg);
+        }
+      }
     });
 
     socket.on('close', () => {
