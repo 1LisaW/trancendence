@@ -96,6 +96,7 @@ export class Users {
 
 		return post_matchmaking__game_service(user_id, mode);
 	}
+
 	removeUserFromMatchmaking(user_id: number) {
 		delete_user_from_matchmaking(user_id);
 		if (this.getUserStatus(user_id) === Status.MATCHMAKING)
@@ -105,6 +106,14 @@ export class Users {
 	setPlayingStateToUser(user_id:number) {
 		this.setStatus(user_id, Status.PLAYING);
 	}
+	setMatchmakingStateToUser(user_id:number) {
+		this.setStatus(user_id, Status.MATCHMAKING);
+	}
+
+	setOnlineStatusToUser(user_id: number) {
+		this.setStatus(user_id, Status.ONLINE);
+	}
+
 	addUser = async (token: string) => {
 	  const data = await get_user__auth(token);
 	  let json: AuthUserErrorDTO | Auth_UserDTO | AUTH_ServerErrorDTO = await data.json();
@@ -117,6 +126,25 @@ export class Users {
 	  this.add(id, name, token);
 	  console.log("User ", name, " has status ", this.getUserStatus(id));
 	  return (json);
+	}
+
+	sendDataToChatSockets(user_id: number, data: any)
+	{
+		const sockets = this.getChatUserSocketById(user_id);
+		if (!sockets)
+			return ;
+		sockets.forEach(socket => socket.send(JSON.stringify(data)));
+	}
+
+	getOnlineUsers = () => {
+		let onlineUsers: number[] = [];
+		Array.from(this.statuses.entries())
+			.reduce((acc, curr) => {
+				if(curr[1] === Status.ONLINE)
+					acc.push(curr[0])
+				return acc;
+			}, onlineUsers);
+		return (onlineUsers);
 	}
 
 	// removeUser = async (user_id: number) => {
