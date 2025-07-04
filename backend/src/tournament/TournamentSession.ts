@@ -1,5 +1,5 @@
-import { post_new_tournament } from "../api";
-import { SCORE_TournamentDataDTO } from "../model";
+import { post_new_tournament, post_new_tournament_score, post_new_tournament_user, ScoreRequestBody } from "../api";
+import { MatchOptions, SCORE_TournamentDataDTO, Status } from "../model";
 import { Tournament } from "../Tournament";
 import { Users } from "../Users";
 import Ratings from "./Rating";
@@ -9,12 +9,20 @@ import TournamentMatchmakingPool from "./TournamentMatchmakingPool";
 
 const TOURNAMENT_LOBBY_CHECK_PERIOD = 1000 * 60; // 1 minute
 const TOURNAMENT_EXPIRE_PERIOD = 1000 * 60 * 15; // 15 minutes
+
+interface TournamentMatchmaking {
+	first_user_id: number,
+	second_user_id: number,
+	first_user_response: number,
+	second_user_response: number,
+}
+
 class TournamentSession {
 
 	private id: number = 0;
 
-	private isStarted: boolean = false;
-	private isFinished: boolean = false;
+	// private isStarted: boolean = false;
+	// private isFinished: boolean = false;
 	startDate: number;
 	usersPool: Set<number>;
 
@@ -36,7 +44,7 @@ class TournamentSession {
 	init(tournaments: SCORE_TournamentDataDTO[]) {
 		if (tournaments.length == 0)
 			return;
-		this.id = tournaments[0].tournament_id;
+		this.id = tournaments[0].tournament_id ? tournaments[0].tournament_id : 0;
 		this.startDate = tournaments[0].date;
 
 
@@ -58,86 +66,140 @@ class TournamentSession {
 		const usersMatches = tournaments.filter((value) => value.first_user_id !== null && value.second_user_id !== null);
 		this.matches.init(usersMatches);
 	}
+
+	clear() {
+		this.id = 0;
+		this.startDate = Date.now();
+		this.usersPool.clear();
+		this.ratings = new Ratings();
+		this.matches = new TournamentMatches();
+		this.matchmakingPool = new TournamentMatchmakingPool();
+	}
 	getId = () => {
 		return this.id;
 	}
 
-	// private goToFillingOfLobbyCheck() {
-	// 	const lobbyCheck = async () => {
-	// 				if (this.isStarted) {
-	// 					clearInterval(setLobbyCheck);
-	// 				}
-	// 				else {
-	// 					if (this.usersPool.size < 3)
-	// 						return;
-	// 					const createNewTournamentResponse = await post_new_tournament([...this.usersPool]);
-	// 					if ("tournament_id" in createNewTournamentResponse) {
-	// 						this.id = createNewTournamentResponse.tournament_id;
-	// 						this.startDate = createNewTournamentResponse.date;
-	// 						this.isStarted = true;
-	// 						// this.onSessionStart(createNewTournamentResponse.date, createNewTournamentResponse.tournament_id);
-	// 						this.goToMatchmaking();
-	// 					}
-	// 				}
-	// 	}
-	// 	const setLobbyCheck = setInterval(lobbyCheck, TOURNAMENT_LOBBY_CHECK_PERIOD)
-	// }
-
-	// goToMatchmaking = (users: Users) => {
-	// 	const matchmakingCheck = () => {
-	// 		if (this.isFinished) {
-	// 			clearInterval(setMatchmakingCheck);
-	// 		}
-	// 		const activePlayers = this.getActivePlayers();
-	// 		if (!activePlayers)
-	// 			return;
-
-	// 		let pair: number[] | null = null;
-	// 		while (pair = this.getTournamentPair()) {
-	// 			const matchmaking: TournamentMatchmaking = {
-	// 				first_user_id: pair[0],
-	// 				second_user_id: pair[1],
-	// 				first_user_response: -1,
-	// 				second_user_response: -1
-	// 			};
-	// 			this.matchmakingPool.add(matchmaking.first_user_id, matchmaking.second_user_id);
-	// 			const time = Date.now();
-	// 			pair.forEach((userId, id) => {
-	// 				this.users.setMatchmakingStateToUser(userId);
-	// 				const message = {
-	// 					recipient: 'tournament',
-	// 					tournament_id: this.getId(),
-	// 					event: 'matchmaking',
-	// 					time: time,
-	// 					opponent_name: this.users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
-	// 				}
-	// 				this.users.sendDataToChatSockets(userId, message);
-	// 			})
-	// 		}
-	// 		if (this.checkTournamentOnFinishedCondition())
-	// 			this.goToEndTournament();
-	// 	}
-	// 	const setMatchmakingCheck = setInterval(matchmakingCheck, TOURNAMENT_LOBBY_CHECK_PERIOD);
-	// }
-
-	matchmakingIteration = (onlineUsers: number[]) => {
-
+	setId = (id: number) => {
+		this.id = id;
 	}
 
+	matchmakingIteration = (users: Users) => {
+		const onlineUsers = users.getOnlineUsers();
+		if (onlineUsers.length === 0)
+			return;
+		let pair: number[] | null = null;
+		while (pair = this.matches.getUnplayedPairFromCollection(users.getOnlineUsers())) {
+			const matchmaking: TournamentMatchmaking = {
+				first_user_id: pair[0],
+				second_user_id: pair[1],
+				first_user_response: -1,
+				second_user_response: -1
+			};
+			this.matchmakingPool.add(matchmaking.first_user_id, matchmaking.second_user_id);
+			const time = Date.now();
+			pair.forEach((userId, id) => {
+				users.setMatchmakingStateToUser(userId);
+				const message = {
+					recipient: 'tournament',
+					tournament_id: this.getId(),
+					event: 'matchmaking',
+					time: time,
+					opponent_name: users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
+				}
+				users.sendDataToChatSockets(userId, message);
+			})
+		}
+	}
 
-	handleUsersParticipation = (tournament_id:number, user_id: number) => {
+	handleUsersParticipationMessage = (tournament_id: number, user_id: number) => {
 		if (this.getId() !== tournament_id)
 			return;
 		this.usersPool.add(user_id);
-		// if (this.usersPool.size === 1)
-			// this.goToFillingOfLobbyCheck();
+		this.matches.initUserMatch(user_id);
+		this.ratings.setRating(user_id, 0);
+		if (tournament_id)
+			post_new_tournament_user(tournament_id, user_id);
 	}
 
-	handleMatchmaking = (tournament_id:number, user_id: number, reply: boolean) => {
+	handleMatchmakingMessage = (tournament_id: number, user_id: number, reply: boolean, users: Users) => {
+		if (this.getId() !== tournament_id)
+			return;
 
+		const matchmakingRecord = this.matchmakingPool.update(user_id, reply ? 1 : 0);
+		if (!matchmakingRecord)
+			return;
+
+		if (matchmakingRecord.first_user_response && matchmakingRecord.second_user_response) {
+			// TODO:: send each user response about the start of the game
+			console.log('start game');
+			const data = {
+				recipient: 'tournament',
+				tournament_id: this.getId(),
+				event: 'match',
+				time: Date.now(),
+				opponent_name: users.getUserNameById(matchmakingRecord.second_user_id),
+			}
+			users.sendDataToChatSockets(matchmakingRecord.first_user_id, data);
+			data.opponent_name = users.getUserNameById(matchmakingRecord.first_user_id);
+			users.sendDataToChatSockets(matchmakingRecord.second_user_id, data);
+
+		}
+		// some of users disagreed to play
+		else {
+			// technical forfeit guarantee the winner 3 points and looser 0 points
+			// join response: (false, false) gives (+0, +0)
+			// (true, false) gives (+3, +0)
+			// (false, true) gives (+0, +3)
+
+			const data: ScoreRequestBody = {
+				first_user_id: matchmakingRecord.first_user_id,
+				second_user_id: matchmakingRecord.second_user_id,
+				first_user_name: users.getUserNameById(matchmakingRecord.first_user_id) || '',
+				second_user_name: users.getUserNameById(matchmakingRecord.second_user_id) || '',
+				score: [
+					matchmakingRecord.first_user_response ? 3 : 0,
+					matchmakingRecord.second_user_response ? 3 : 0
+				],
+				game_mode: 'tournament'
+			};
+			post_new_tournament_score(this.getId(), data);
+
+			this.matches.addMatch(data.first_user_id, data.second_user_id);
+			this.ratings.incrementRating(data.first_user_id, data.score[0]);
+			this.ratings.incrementRating(data.second_user_id, data.score[1]);
+
+			this.matchmakingPool.delete(data.first_user_id);
+
+			if (users.getUserStatus(data.first_user_id) === Status.MATCHMAKING)
+				users.setOnlineStatusToUser(data.first_user_id);
+			if (users.getUserStatus(data.second_user_id) === Status.MATCHMAKING)
+				users.setOnlineStatusToUser(data.second_user_id);
+
+			const time = Date.now();
+			const user_response = {
+				recipient: 'tournament',
+				tournament_id: this.getId(),
+				event: 'match_result',
+				time: time,
+			}
+
+			const first_user_response = {
+				...user_response,
+				opponent: users.getUserNameById(data.second_user_id),
+				option: matchmakingRecord.first_user_response === 1 ? MatchOptions.TECHNICAL_WIN : MatchOptions.FORFEIT
+			};
+			users.sendDataToChatSockets(matchmakingRecord.first_user_id, first_user_response);
+
+			const second_user_response = {
+				...user_response,
+				opponent: users.getUserNameById(data.first_user_id),
+				option: matchmakingRecord.second_user_response === 1 ? MatchOptions.TECHNICAL_WIN : MatchOptions.FORFEIT
+			}
+			users.sendDataToChatSockets(data.second_user_id, second_user_response);
+		}
 	}
 
-	handleMatch = () => {
+	handleMatchMessage = (data: ScoreRequestBody) => {
 
 	}
 
