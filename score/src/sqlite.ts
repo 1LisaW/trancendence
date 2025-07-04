@@ -157,6 +157,7 @@ export const finishTournament = async (tournament_id: number) => {
 	const db = new sqlite3.Database(DB_PATH);
 	try {
 		await execute(db, `UPDATE tournaments SET is_finished = 1 WHERE id = ?`, [tournament_id.toString()]);
+		return ({ tournament_id: tournament_id });
 	} catch (err) {
 		console.log(err);
 	} finally {
@@ -208,9 +209,12 @@ export const getTournamentMatches = async (tournament_id: number) => {
 
 export const getTournamentHistory = async (tournament_id: number) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql = `SELECT * FROM tournaments_users
-		LEFT JOIN tournaments_scores ON tournaments_users.user_id = tournaments_scores.first_user_id OR tournaments_users.user_id = tournaments_scores.second_user_id
+	const sql = `SELECT tournaments_scores.*, tournaments_users.*, tournaments.*
+	    FROM tournaments_users
 		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id
+		LEFT JOIN tournaments_scores ON
+		   tournaments_scores.tournament_id =  tournaments.id AND
+		  (tournaments_users.user_id = tournaments_scores.first_user_id OR tournaments_users.user_id = tournaments_scores.second_user_id)
 		WHERE tournaments_users.tournament_id = ?`;
 
 	try {
@@ -227,7 +231,8 @@ export const getTournamentHistory = async (tournament_id: number) => {
 export const getAllTournamentsHistory = async () => {
 	const db = new sqlite3.Database(DB_PATH);
 	const sql = `SELECT * FROM tournaments_users
-		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
+		LEFT JOIN tournaments_users.tournament_id = tournaments_scores.tournament_id AND
+			(tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id)
 		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id)`;
 
 	try {
@@ -243,9 +248,12 @@ export const getAllTournamentsHistory = async () => {
 
 export const getUsersTournamentHistory = async (user_id: number) => {
 	const db = new sqlite3.Database(DB_PATH);
+
 	const sql = `SELECT * FROM tournaments_users
-		LEFT JOIN tournament_scores ON tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id
 		LEFT JOIN tournaments ON tournaments_users.tournament_id = tournaments.id
+		LEFT JOIN tournament_scores ON
+		  tournaments_users.tournament_id = tournament_scores.tournament_id AND
+		  (tournaments_users.user_id = tournament_scores.first_user_id OR tournaments_users.user_id = tournament_scores.second_user_id)
 		WHERE tournaments_users.tournament_id in ( SELECT tournament_id FROM tournaments_users WHERE user_id = ?)`;
 
 	try {
@@ -268,6 +276,19 @@ export const getUserTournaments = async (user_id: number) => {
 	} catch (err) {
 		console.log(err);
 		return ({ tournaments: null });
+	} finally {
+		db.close();
+	}
+}
+
+export const deleteTournament = async (tournament_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	try {
+		await execute(db, `DELETE FROM tournaments WHERE id = ?`, [tournament_id.toString()]);
+		await execute(db, `DELETE FROM tournaments_users WHERE tournament_id = ?`, [tournament_id.toString()]);
+		await execute(db, `DELETE FROM tournaments_scores WHERE tournament_id = ?`, [tournament_id.toString()]);
+	} catch (err) {
+		console.log(err);
 	} finally {
 		db.close();
 	}

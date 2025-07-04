@@ -42,11 +42,16 @@ export default class TournamentMatches {
 		return this.matches.find(match => match.user === user_id);
 	}
 
-	addUserPlayed = (user_id: number, opponent_id: number) => {
+	private addUserPlayed = (user_id: number, opponent_id: number) => {
 		let match = this.matches.find(match => match.user === user_id);
 		if (!match)
 			match = this.initUserMatch(user_id);
 		match.played.add(opponent_id);
+	}
+
+	addMatch = (first_user_id: number, second_user_id: number) => {
+		this.addUserPlayed(first_user_id, second_user_id);
+		this.addUserPlayed(second_user_id, first_user_id);
 	}
 
 	getUnplayedPairFromCollection = (usersPool: number[]): number[] | null => {

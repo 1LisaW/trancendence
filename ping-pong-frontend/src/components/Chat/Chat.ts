@@ -210,6 +210,13 @@ class Chat {
 
 
 	private addInviteToTournamentMatchMessage(tournament_id: number, time: number, opponent_name:string) {
+		// let accepted = false;
+		const handleAcceptMatch = () => {
+			// accepted = true;
+			clearInterval(countDown);
+			this.onJoinTournamentMatch();
+		}
+
 		this.tournamentMatches.push({tournament_id, opponent_name})
 
 		const messageBlock = this.addChatBubble('tournament', time, 'you have match to participate', 1);
@@ -217,7 +224,7 @@ class Chat {
 
 		const joinButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
 		joinButton.innerText = 'Join';
-		joinButton.addEventListener('click', this.onJoinTournamentMatch);
+		joinButton.addEventListener('click', handleAcceptMatch);
 		buttonBlock.appendChild(joinButton);
 
 		const forfeitButton = createCustomElement('button', 'text-sm text-blue-700 dark:text-blue-500 font-medium inline-flex items-center hover:underline');
@@ -225,6 +232,7 @@ class Chat {
 		forfeitButton.innerText = `Forfeit (${count} sec)`;
 		const countDown = setInterval(() => {
 			count = Math.round((time - Date.now() + 30000) / 1000);
+
 			if (count <= 0)
 			{
 				clearInterval(countDown);
@@ -317,7 +325,7 @@ class Chat {
 				this.addStartTournamentMessage(data.tournament_id, data.time);
 			else if (data.event === 'matchmaking')
 				this.addInviteToTournamentMatchMessage(data.tournament_id, data.time, data.opponent );
-			else if (data.event === 'match')
+			else if (data.event === 'match_result')
 				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent, data.option);
 			else if (data.event === 'finish')
 				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);

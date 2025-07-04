@@ -135,12 +135,19 @@ export class SPA {
 	}
 
 	syncChatFromWs = (data: ChatTournamentMessage) => {
+		if (data.recipient === 'tournament' && data.event === 'match') {
+			this.navigate('/game');
+			location.pathname = '/game';
+			console.log('syncWsFromChat navigate to game ', data);
+		}
+		else {
 		console.log('syncChatFromWs', data);
 		this.chat.update(data);
+		}
 	}
 
 	syncWsFromChat = (data: ChatTournamentReply) => {
-		this.chat_ws.send(JSON.stringify(data));
+			this.chat_ws.send(JSON.stringify(data));
 	}
 
 	// joinTournament =  () => {

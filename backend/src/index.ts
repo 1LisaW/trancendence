@@ -12,7 +12,7 @@ import TournamentSessionManager from "./tournament/TournamentSessionManager";
 
 const users = new Users();
 const tournamentSessionManager = new TournamentSessionManager(users);
-const tournament = new Tournament(users);
+// const tournament = new Tournament(users);
 
 const Fastify = fastify();
 Fastify.register(require('@fastify/websocket'));
@@ -163,7 +163,7 @@ Fastify.register(async function (fastify) {
       const user_id = socket.id;
       if (user_id && 'recipient' in msg && 'event' in msg) {
         if (msg.recipient === 'tournament') {
-          tournament.onChatWSMessage(user_id, msg);
+          tournamentSessionManager.handleChatMessage(user_id, msg);
         }
       }
     });

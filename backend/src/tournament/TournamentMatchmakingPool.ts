@@ -35,12 +35,20 @@ export default class TournamentMatchmakingPool {
 	update(user_id: number, response: number) {
 		const match = this.getMatchmakingByUserId(user_id);
 		if (match === undefined)
-			return;
+			return null;
 		if (match.first_user_id === user_id)
 			match.first_user_response = response;
 		else
 			match.second_user_response = response;
-
+		if (match.first_user_response === TournamentMatchmakingResponse.UNDEFINED
+				|| match.second_user_response === TournamentMatchmakingResponse.UNDEFINED)
+			return null;
+		return {
+			first_user_id: match.first_user_id,
+			second_user_id: match.second_user_id,
+			first_user_response: match.first_user_response,
+			second_user_response: match.second_user_response
+		};
 	}
 
 	delete(user_id: number) {
@@ -48,6 +56,10 @@ export default class TournamentMatchmakingPool {
 		if (match === undefined)
 			return;
 		this.pool = this.pool.filter(m => m !== match);
+	}
+
+	find(user_id) {
+		const matchmakingRecord = this.pool.filter( elem => elem.first_user_id === user_id || elem.second_user_id === user_id);
 	}
 
 }

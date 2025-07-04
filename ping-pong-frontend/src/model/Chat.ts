@@ -38,17 +38,17 @@ export interface ChatTournamentMatchmakingMessage {
 	opponent: string;
 }
 
-export interface ChatTournamentMatchMessage {
+export interface ChatTournamentMatchResultMessage {
 	recipient: 'tournament';
 	tournament_id: number;
-	event: 'match';
+	event: 'match_result';
 	time: number;
 	opponent: string;
 	option: MatchOptions;
 }
 
 export type ChatTournamentMessage = ChatTournamentInviteMessage | ChatTournamentStartMessage
-	| ChatTournamentMatchmakingMessage | ChatTournamentMatchMessage | ChatTournamentFinishMessage;
+	| ChatTournamentMatchmakingMessage | ChatTournamentMatchResultMessage | ChatTournamentFinishMessage | ChatTournamentMatchInitMessage;
 
 
 export interface ChatTournamentInviteReply {
@@ -64,6 +64,15 @@ export interface ChatTournamentMatchmakingReply {
 	event: 'matchmaking';
 	opponent: string;
 	reply: boolean;
+}
+
+export interface ChatTournamentMatchInitMessage {
+	recipient: 'tournament';
+	tournament_id: number;
+	event: 'match';
+	time: number;
+	opponent: string;
+	option: MatchOptions;
 }
 
 export type ChatTournamentReply = ChatTournamentInviteReply | ChatTournamentMatchmakingReply;
