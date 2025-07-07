@@ -8,6 +8,10 @@ import { Button, Image, Rectangle, TextBlock } from "@babylonjs/gui";
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import Environment from "./Environment";
 import { getToken } from "../../../utils/auth";
+import Win from "../Win";
+import Lose from "../Lose";
+import { DictionaryType } from "../../../lang/dictionary";
+
 
 enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3, WAITING = 4 }
 
@@ -17,6 +21,7 @@ const defaultAvatar = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSU
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export default class App {
 	// General Entire Application
+	gameResult: string | null = null;
 	private _scene!: Scene;
 	_canvas: HTMLCanvasElement;
 	private _engine!: Engine;
@@ -66,8 +71,25 @@ export default class App {
 			}
 			else if ('gameResult' in data)
 			{
-				this.scores[2].text = `You ${data.gameResult[this.order]}`;
-				console.log("FRONT APP gameResult: ", data.gameResult[this.order]);
+/* 				this.scores[2].text = `You ${data.gameResult[this.order]}`;
+				console.log("FRONT APP gameResult: ", data.gameResult[this.order]); */
+	const result = data.gameResult[this.order]; // "win" or "lose"
+	console.log("FRONT APP gameResult: ", result);
+
+	// Clean up game UI
+	const parent = this._canvas?.parentElement;
+	if (!parent) return;
+	parent.innerHTML = "";
+
+	// Display fireworks screen
+	const dictionary = {} as DictionaryType; // Use actual dictionary if needed
+
+	if (result === "win") {
+		new Win("div", parent, dictionary);
+	} else {
+		new Lose("div", parent, dictionary);
+	}
+
 			}
 			else if ('score' in data)
 			{
@@ -649,5 +671,4 @@ export default class App {
 		}
 
 	}
-
 }
