@@ -32,6 +32,7 @@ export default class App {
 	private gameId: string | undefined;
 	private order = 0;
 	private opponent = '';
+	private gameMode: 'pvp' | 'pvc' | 'tournament' | null = null;
 	private avatarSrcs = [defaultAvatar, defaultAvatar];
 	private gameObjects: Mesh[] = [];
 	private usersAvatars: Rectangle[] = [];
@@ -39,6 +40,7 @@ export default class App {
 
     constructor() {
 		this._canvas = this._createCanvas();
+		console.log("gameMode: ", this.gameMode);
 		this._init();
     }
 
@@ -62,7 +64,7 @@ export default class App {
 				if (data.avatars[1])
 					this.avatarSrcs[1] = data.avatars[0];
 				this._goToGame();
-				// console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatarSrcs);
+				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent);//, this.avatarSrcs);
 			}
 			else if ('gameResult' in data)
 			{
@@ -99,8 +101,6 @@ export default class App {
 					this.gameObjects[2].position.z = data.ball[2];
 				}
 			}
-			// console.log(this.gameId);
-			//   message.innerHTML += `<br /> ${message}`
 			}
 			// 5
 			this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
@@ -119,6 +119,16 @@ export default class App {
 	{
 		parent.appendChild(this._canvas);
 		// this._engine.resize();
+	}
+
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent_name = "") => {
+		this.gameMode = mode;
+		if (this.gameMode === 'tournament')
+		{
+			this.opponent = opponent_name;
+		// 	// this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "tournament", "opponent": this.opponent}));
+		// 	// this._goToWaitingRoom();
+		}
 	}
 
 	addMeshToCollection = (object: Mesh) => {
@@ -165,15 +175,6 @@ export default class App {
 					this._scene.render();
 						break;
                 case State.GAME:
-                    //if 240seconds/ 4mins have have passed, go to the lose state
-                    // if (this._ui.time >= 240 && !this._player.win) {
-                    //     this._goToLose();
-                    //     this._ui.stopTimer();
-                    // }
-                    // if (this._ui.quit) {
-                    //     this._goToStart();
-                    //     this._ui.quit = false;
-                    // }
                     this._scene.render();
                     break;
                 case State.LOSE:
@@ -198,6 +199,11 @@ export default class App {
 		this._engine.displayLoadingUI();
 
 		await this.init_game_ws();
+		if (this.gameMode === 'tournament')
+		{
+			await this._goToWaitingRoom();
+			return ;
+		}
 		this._scene.detachControl();
 		const scene =new Scene(this._engine);
 		scene.clearColor = new Color4(0, 0, 0, 1);
@@ -231,13 +237,17 @@ export default class App {
 		multiSinglePlayerButton.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 		guiMenu.addControl(multiSinglePlayerButton);
 
-		startSinglePlayerButton.onPointerDownObservable.add(() => {
+		startSinglePlayerButton.onPointerDownObservable.add(async() => {
+			this.setGameMode('pvc');
+			// this._goToGame();
+			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvc"}));
-			this._goToGame();
+
 			scene.detachControl(); //observables disabled
 		})
 		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
 			// TODO: search for the opponent
+			this.setGameMode('pvp');
 			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvp"}));
 			scene.detachControl();
@@ -275,9 +285,11 @@ export default class App {
 		this._scene = scene;
 		this._state = State.LOSE;
 	}
+
 	private async _goToWaitingRoom(): Promise<void> {
 		this._engine.displayLoadingUI();
 
+		// for tournament mode, jin response from user
 		//--SCENE SETUP--
 		this._scene.detachControl();
 		const scene = new Scene(this._engine);
@@ -285,7 +297,8 @@ export default class App {
 
 		const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
 
-		MeshBuilder.CreateText('notification', "Waiting for match", fontData, {
+		const notification = `Waiting for ${this.gameMode == 'pvc' ? "AI session" :  this.gameMode == 'pvp' ? "match" : this.opponent}`;
+		MeshBuilder.CreateText('notification', notification, fontData, {
             size: 0.5,
 			depth: 0.05,
 			resolution: 32
@@ -362,7 +375,12 @@ export default class App {
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
-			this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+			if (this.gameMode === 'pvp')
+				this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+			this.gameMode = null;
+			this.gameId = undefined;
+			this.order = 0;
+			this.opponent = '';
 			this.close_game_ws();
 			this._goToStart();
 		});
@@ -375,60 +393,8 @@ export default class App {
 		this._scene = scene;
 		this._state = State.WAITING;
 	}
-	// private async _goToWaitRoom() {
-
-	// 	this._engine.displayLoadingUI();
-	// 	this._scene.detachControl();
-	// 	const scene = new Scene(this._engine);
-	// 	scene.clearColor = new Color4(0, 0, 0, 1);
 
 
-
-	// 	const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
-    //     const myText = MeshBuilder.CreateText(`pending`, `Waiting for the opponent`, fontData, {
-    //         size: 2,
-    //         resolution: 64,
-    //         depth: 10,
-
-    //     });
-	// 	 const mat = new StandardMaterial(`mat`);
-	// 	if (myText)
-	// 	myText.material = mat;
-	// 	const camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
-	// 	camera.setTarget(Vector3.Zero());
-
-	// 	// const textToAnimate = new TextBlock();
-	// 	// textToAnimate.text = "Text To Animate";
-	// 	// textToAnimate.color = "#FFFFFF";
-	// 	// textToAnimate.fontSize = "100px";
-
-
-
-	// 	const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-	// 	//dont detect any inputs from this ui while the game is loading
-	// 	scene.detachControl();
-	// 	//--GUI--
-	// 	const loseBtn = Button.CreateSimpleButton("leave", "LEAVE");
-	// 	loseBtn.width = 0.2
-	// 	loseBtn.height = "40px";
-	// 	loseBtn.color = "white";
-	// 	loseBtn.top = "-14px";
-	// 	loseBtn.thickness = 0;
-	// 	loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-	// 	playerUI.addControl(loseBtn);
-
-	// 	//this handles interactions with the start button attached to the scene
-	// 	loseBtn.onPointerDownObservable.add(() => {
-	// 		this._goToLose();
-	// 		scene.detachControl(); //observables disabled
-	// 	});
-	// 	await scene.whenReadyAsync();
-	// 	this._engine.hideLoadingUI();
-	// 	this._scene.dispose();
-	// 	this._scene = scene;
-	// 	this._state = State.WAITING;
-	// 	this._scene.attachControl();
-	// }
 
 	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
 		this.usersAvatars = [];
@@ -578,28 +544,7 @@ export default class App {
 		//--GUI--
 		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 		this._setGameGUI(playerUI);
-		// if (playerUI.layer)
-			// playerUI.layer?.layerMask = 0x10000000;
 
-
-
-
-
-
-
-		// const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
-		// scoreLabelLeft.color = "white";
-		// scoreLabelLeft.fontSize = 24;
-		// scoreLabelLeft.top = "10%";
-        // scoreLabelLeft.left = "10%";
-		// playerUI.addControl(scoreLabelLeft);
-		// const scoreLabelRight = new TextBlock(`score-${this.order?'you': this.opponent}`, `Score: 0`);
-		// scoreLabelRight.color = "white";
-		// scoreLabelRight.fontSize = 24;
-		// scoreLabelRight.top = "10%";
-        // scoreLabelRight.left = "-10%";
-		// playerUI.addControl(scoreLabelRight);
-		//dont detect any inputs from this ui while the game is loading
 		scene.detachControl();
 
 		//create a simple button
@@ -619,9 +564,7 @@ export default class App {
 		});
 
 		//temporary scene objects
-		// const light1: HemisphericLight =
 		new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-		// const sphere: Mesh =
 		MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
 
 		//get rid of start scene, switch to gamescene and change states

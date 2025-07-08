@@ -2,7 +2,7 @@
 
 import fastify from "fastify";
 import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
-import { GAME_MODE, GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
 import TournamentSessionManager from "./tournament/TournamentSessionManager";
@@ -33,11 +33,14 @@ Fastify.register(async function (fastify) {
       if ("gameResult" in request.body)
       {
         const { score } = request.body;
+        const first_user_result =score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const second_user_result = score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
         const data: ScoreRequestBody = {
           first_user_id: players[0],
           second_user_id: players[1],
           first_user_name: users.getUserNameById(players[0]) || '',
           second_user_name: users.getUserNameById(players[1]) || '',
+          game_results: [first_user_result, second_user_result],
           score: score,
           game_mode: 'pvp'
         };
@@ -95,7 +98,7 @@ Fastify.register(async function (fastify) {
         const mode = msg.mode as GAME_MODE;
         if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
-          const data = await users.matchmaking(user_id, socket, mode);
+          const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
           const json = await data.json();
 
           if ('gameId' in json) {
@@ -115,7 +118,7 @@ Fastify.register(async function (fastify) {
               users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
             });
           }
-        }
+       }
       }
       // bat movements from frontend
       else if ('gameId' in msg) {

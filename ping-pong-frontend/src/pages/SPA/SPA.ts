@@ -72,7 +72,7 @@ export class SPA {
 		this.container = parent;
 		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
 		this.chat_ws = new Chat_WS(this.syncChatFromWs);
-		this.chat = new Chat(this.syncWsFromChat);
+		this.chat = new Chat(this.syncWsFromChat, this.goToTournamentMatch);
 
 		this.update().then(()=>{
 			this.initSubscriptions();
@@ -134,15 +134,28 @@ export class SPA {
 		this.outlets["header"]?.update(this.avatar);
 	}
 
-	syncChatFromWs = (data: ChatTournamentMessage) => {
-		if (data.recipient === 'tournament' && data.event === 'match') {
-			this.navigate('/game');
-			location.pathname = '/game';
-			console.log('syncWsFromChat navigate to game ', data);
+	goToTournamentMatch = async (opponent = "") => {
+		await this.navigate('/game');
+		if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+				(this.outlets["game"] as Game).handleJoinTournamentMatch(opponent );
+	}
+}
+
+	syncChatFromWs = async (data: ChatTournamentMessage) => {
+		if (data.recipient === 'tournament' && data.event === 'match_result' && this.router.currentRoute === '/game') {
+			this.navigate('/');
+			console.log("SPA received tournament match result event", data);
+			// console.log("SPA syncChatFromWs", "tournament match event", data);
+			// await this.navigate('/game');
+			// if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+			// 	(this.outlets["game"] as Game).setGameMode('tournament', data.opponent || '');
+			// }
+			// // location.pathname = '/game';
+			// console.log('syncWsFromChat navigate to game ', data);
 		}
 		else {
-		console.log('syncChatFromWs', data);
-		this.chat.update(data);
+			console.log('syncChatFromWs', data);
+			this.chat.update(data);
 		}
 	}
 

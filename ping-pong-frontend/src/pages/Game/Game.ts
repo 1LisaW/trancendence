@@ -2,9 +2,9 @@
 import { DictionaryType } from "../../lang/dictionary";
 import Component from "../../components/Component";
 import App from "./App/App";
-// import App from "./App/App";
 
 export default class Game extends Component {
+	app: App | null = null;
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType)
 	{
 		super(tag, parent, dictionary);
@@ -14,15 +14,9 @@ export default class Game extends Component {
 	createChildren(): void {
 		const div = document.createElement('div');
 		div.className = "max-w-[1300px] flex flex-col justify-center h-full w-screen m-auto rotate-90 lg:rotate-0";
-		// div.textContent = "Game";
-		// const canvas = new App();
-		const app = new App();
-		app.appendTo(div);
+		this.app = new App();
+		this.app.appendTo(div);
 
-		// setTimeout(()=> {
-			// div.appendChild(canvas._canvas)
-		// }, 1300)
-		//div.append(canvas._canvas);
 		this.container.appendChild(div);
 	}
 	addSubscriptions(): void {
@@ -33,5 +27,15 @@ export default class Game extends Component {
 	}
 	render(): void {
 
+	}
+
+	handleJoinTournamentMatch = (opponent = "") => {
+		this.setGameMode('tournament', opponent);
+	}
+
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent = "") => {
+		if (!this.app)
+			return
+		this.app.setGameMode(mode, opponent);
 	}
 }

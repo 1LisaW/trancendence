@@ -7,6 +7,8 @@ down:
 up:
 	$(DOCKER_COMPOSE) up
 
+reboot: down rm_images
+	$(DOCKER_COMPOSE) up
 
 IMAGES = $(shell docker images -qa)
 
@@ -24,3 +26,5 @@ endif
 
 rm_all:
 	rm_images
+
+

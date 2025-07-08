@@ -1,4 +1,4 @@
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service, post_matchmaking_with_specific_user__game_service } from "./api";
 import { Status, WSocket } from "./model";
 
 export class Users {
@@ -89,13 +89,17 @@ export class Users {
 	// 	this.chatUserSockets.delete(user_id);
 	// }
 
-	matchmaking(user_id: number, socket: WSocket, mode: 'pvp' | 'pvc') {
+	matchmaking(user_id: number, socket: WSocket, mode: 'pvp' | 'pvc' | 'tournament', opponentId?: number) {
 		// this.addGameSocket(user_id, socket);
 		this.setStatus(user_id, Status.MATCHMAKING);
 		console.log("this.matchmaking in process ", socket.id);
 
+		if (mode === 'tournament' && opponentId !== undefined)
+			return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
 		return post_matchmaking__game_service(user_id, mode);
 	}
+
+
 
 	removeUserFromMatchmaking(user_id: number) {
 		delete_user_from_matchmaking(user_id);

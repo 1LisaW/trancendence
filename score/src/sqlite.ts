@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import { execute, fetchAll, fetchFirst } from "./sql";
-import { SCORE_GAME_MODE, SCORE_GAME_RESULT, SCORE_ScoreDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO, SCORE_TournamentUserDTO } from "./model";
+import { SCORE_GAME_MODE, MatchOptions, SCORE_ScoreDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO, SCORE_TournamentUserDTO } from "./model";
 
 export const DB_PATH = "/db/scores.db";
 export interface UserDTO {
@@ -25,8 +25,8 @@ export const initDB = async () => {
 			second_user_name TEXT NOT NULL,
 			first_user_score INTEGER NOT NULL,
 			second_user_score INTEGER NOT NULL,
-			first_user_result TEXT NOT NULL,
-			second_user_result TEXT NOT NULL,
+			first_user_result INTEGER NOT NULL,
+			second_user_result INTEGER NOT NULL,
 			game_mode TEXT NOT NULL)`
 		);
 		await execute(
@@ -57,8 +57,8 @@ export const initDB = async () => {
 			second_user_name TEXT NOT NULL,
 			first_user_score INTEGER NOT NULL,
 			second_user_score INTEGER NOT NULL,
-			first_user_result TEXT NOT NULL,
-			second_user_result TEXT NOT NULL,
+			first_user_result INTEGER NOT NULL,
+			second_user_result INTEGER NOT NULL,
    			FOREIGN KEY(tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE ON UPDATE CASCADE)`
 		);
 	} catch (error) {
@@ -74,7 +74,7 @@ export const createNewScoreRecord = async (
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],
-	game_results: SCORE_GAME_RESULT[],
+	game_results: MatchOptions[],
 	game_mode: SCORE_GAME_MODE
 ) => {
 	const db = new sqlite3.Database(DB_PATH);
@@ -82,7 +82,7 @@ export const createNewScoreRecord = async (
 	const tableName = game_mode === SCORE_GAME_MODE.TOURNAMENT ? 'tournaments_scores':  'scores';
 	const sql = `INSERT INTO ${tableName}(date, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score, first_user_result, second_user_result,  game_mode) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 	try {
-		await execute(db, sql, [date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_results[0], game_results[1], game_mode]);
+		await execute(db, sql, [date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_results[0].toString(), game_results[1].toString(), game_mode]);
 	} catch (err) {
 		console.log(err);
 	} finally {
@@ -138,12 +138,12 @@ export const addNewTournamentUser = async (tournament_id: number, user_id: numbe
 	}
 }
 
-export const addTournamentMatch = async (tournament_id: number, first_user_id: number, second_user_id: number, first_user_name: string, second_user_name: string, score: number[]) => {
+export const addTournamentMatch = async (tournament_id: number, first_user_id: number, second_user_id: number, first_user_name: string, second_user_name: string, game_results: number[], score: number[]) => {
 	const db = new sqlite3.Database(DB_PATH);
 	const date = Date.now();
-	const sql = `INSERT INTO tournaments_scores(tournament_id, date, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`;
+	const sql = `INSERT INTO tournaments_scores(tournament_id, date, first_user_id, second_user_id, first_user_name, second_user_name, first_user_score, second_user_score, first_user_result, second_user_result) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 	try {
-		await execute(db, sql, [tournament_id.toString(), date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString()]);
+		await execute(db, sql, [tournament_id.toString(), date.toString(), first_user_id.toString(), second_user_id.toString(), first_user_name, second_user_name, score[0].toString(), score[1].toString(), game_results[0].toString(), game_results[1].toString()]);
 		await execute(db, `UPDATE tournaments_users SET rating = rating + ? WHERE tournament_id = ? AND user_id = ?`, [score[0].toString(), tournament_id.toString(), first_user_id.toString()]);
 		return ({ tournament_id: tournament_id });
 	} catch (err) {
