@@ -94,9 +94,11 @@ export class Users {
 		this.setStatus(user_id, Status.MATCHMAKING);
 		console.log("this.matchmaking in process ", socket.id);
 
-		if (mode === 'tournament' && opponentId !== undefined)
+		// FIX:: send post only when 2 users sockets exists
+		if (mode === 'tournament' && opponentId !== undefined && this.getGameSocketById(opponentId))
 			return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
-		return post_matchmaking__game_service(user_id, mode);
+		if (mode !== 'tournament')
+			return post_matchmaking__game_service(user_id, mode);
 	}
 
 

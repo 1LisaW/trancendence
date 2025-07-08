@@ -122,10 +122,10 @@ class Chat {
 		// send socket data
 	}
 
-	private onJoinTournamentMatch = () => {
+	private onJoinTournamentMatch = async () => {
 		const lastMatchMessage = this.getLastTournamentMatchMessage();
 		console.log('onJoinTournamentMatch', lastMatchMessage);
-		this.goToTournamentMatch(lastMatchMessage?.opponent_name || '');
+		await this.goToTournamentMatch(lastMatchMessage?.opponent_name || '');
 		this.onTournamentMatchChoice(true);
 		// if (match.textBlock)
 		// 	match.textBlock.innerText = `You join the match against ${match.opponent_name}`;

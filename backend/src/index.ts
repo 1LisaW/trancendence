@@ -99,6 +99,8 @@ Fastify.register(async function (fastify) {
         if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
           const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
+          if (!data)
+            return;
           const json = await data.json();
 
           if ('gameId' in json) {
