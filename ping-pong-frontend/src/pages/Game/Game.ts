@@ -33,7 +33,7 @@ export default class Game extends Component {
 	// 	this.setGameMode('tournament', opponent);
 	// }
 
-	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent = "", opponentId = 0, isInitiator= false) => {
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament'| null, opponent = "", opponentId = 0, isInitiator= false) => {
 		if (!this.app)
 			return
 		this.app.setGameMode(mode, opponent, opponentId, isInitiator);

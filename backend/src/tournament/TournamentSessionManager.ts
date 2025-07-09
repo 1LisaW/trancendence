@@ -160,7 +160,7 @@ export default class TournamentSessionManager {
 		}
 	}
 
-	handleGameMessage(msg: string) {
-
+	onGameResult = (players: number[], score:number[]) => {
+		this.tournamentSession.onGameResult(players, score);
 	}
 }

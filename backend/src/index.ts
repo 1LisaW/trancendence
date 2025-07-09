@@ -32,6 +32,7 @@ Fastify.register(async function (fastify) {
 
       if ("gameResult" in request.body)
       {
+        console.log("Backend: game result received: ", request.body);
         const { score } = request.body;
         const first_user_result =score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
         const second_user_result = score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
@@ -42,14 +43,20 @@ Fastify.register(async function (fastify) {
           second_user_name: users.getUserNameById(players[1]) || '',
           game_results: [first_user_result, second_user_result],
           score: score,
-          game_mode: 'pvp'
+          game_mode: request.body.mode || GAME_MODE.PVP,
         };
         post_score_data(data);
+        users.setOnlineStatusToUser(players[0]);
+        users.setOnlineStatusToUser(players[1]);
+        if (request.body.mode === GAME_MODE.TOURNAMENT)
+          tournamentSessionManager.onGameResult(players, score);
       }
       reply.code(200).send({ message: "Message received" });
+
       return;
     }
-    post_terminate_game(gameId);
+    const disconnectedPlayers = players.filter(player => !users.gameSocketIsAlive(player));
+    post_terminate_game(gameId, disconnectedPlayers[0]);
     players.forEach((player, id) => {
       if (users.gameSocketIsAlive(player))
       {
@@ -57,6 +64,7 @@ Fastify.register(async function (fastify) {
         if (sockets && sockets.length)
           sockets.forEach(socket => socket
             .send(JSON.stringify({ message: `${users.getUserNameById(players[(1-id)])} leave the room` })));
+        users.setOnlineStatusToUser(player);
       }
     })
     // TODO terminate game
@@ -103,11 +111,12 @@ Fastify.register(async function (fastify) {
         // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
           const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
-      console.log("-|-|- Backend game socket matchmaking data: ", data);
 
           if (!data)
             return;
           const json = await data.json();
+          console.log("-|-|- Backend game socket matchmaking data: ", json);
+
 
           if ('gameId' in json) {
             const gameUsers: number[] = json.users;

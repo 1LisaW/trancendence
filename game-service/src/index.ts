@@ -104,9 +104,10 @@ interface GamePostParams {
     gameId: string
 }
 
-Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
+Fastify.post<{ Params: GamePostParams, Body: {userId: number} }>('/terminate/:gameId', (request, reply) => {
     const { gameId } = request.params;
-    gameSessionFactory.removeSession(gameId);
+    const userId = request.body.userId;
+    gameSessionFactory.removeSession(gameId, userId);
     reply.status(200).send({ message: "game was terminated" })
 })
 

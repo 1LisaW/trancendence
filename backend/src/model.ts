@@ -22,7 +22,8 @@ export interface ScoreState {
 export interface GameResult {
 	players: number[],
 	gameResult: string[],
-	score: number[]
+	score: number[],
+	mode: 'pvp' | 'pvc' | 'tournament',
 }
 export interface WSocket extends WebSocket {
 	id?: number,

@@ -122,6 +122,14 @@ class TournamentSession {
 			post_new_tournament_user(tournament_id, user_id);
 	}
 
+	onGameResult = (players: number[], score:number[]) => {
+		this.matches.addMatch(players[0], players[1]);
+		this.ratings.incrementRating(players[0], score[0]);
+		this.ratings.incrementRating(players[1], score[1]);
+
+		this.matchmakingPool.delete(players[0]);
+	}
+
 	handleMatchmakingMessage = (tournament_id: number, user_id: number, reply: boolean, users: Users) => {
 		if (this.getId() !== tournament_id)
 			return;
@@ -142,6 +150,9 @@ class TournamentSession {
 				opponentId: matchmakingRecord.second_user_id,
 				isInitiator: true,
 			}
+
+			this.matchmakingPool.delete(matchmakingRecord.first_user_id);
+
 			users.sendDataToChatSockets(matchmakingRecord.first_user_id, data);
 			data.opponent_name = users.getUserNameById(matchmakingRecord.first_user_id);
 			data.opponentId = matchmakingRecord.first_user_id;

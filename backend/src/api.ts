@@ -38,12 +38,13 @@ export const post_bat_move__game_service = (gameSessionId: string, socketId: num
 	);
 }
 
-export const post_terminate_game = (gameId: string): Promise<Response> => {
+export const post_terminate_game = (gameId: string, disconnectedPlayer: number): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/terminate/${gameId}`, {
 		method: "POST",
-		// headers: {
-		//   'Content-Type': 'application/json',
-		// },
+		headers: {
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({userId: disconnectedPlayer}),
 	  })
 	);
 }
