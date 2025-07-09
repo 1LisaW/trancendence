@@ -1,10 +1,19 @@
 
-export enum SCORE_GAME_RESULT {
-	WIN = "win",
-	LOSE = "lose",
-	DRAW = "draw",
-	TECHNICAL_WIN = "technical_win",
-	TECHNICAL_LOSE = "technical_lose",
+// export enum SCORE_GAME_RESULT {
+// 	WIN = "win",
+// 	LOSE = "lose",
+// 	DRAW = "draw",
+// 	TECHNICAL_WIN = "technical_win",
+// 	TECHNICAL_LOSE = "technical_lose",
+// }
+
+export enum MatchOptions {
+	START,
+	FORFEIT,
+	TECHNICAL_WIN,
+	WIN,
+	LOSE,
+	DRAW
 }
 
 export enum SCORE_GAME_MODE {
@@ -19,7 +28,7 @@ export interface SCORE_PostNewScoreRequestBody {
 	first_user_name: string,
 	second_user_name: string,
 	score: number[],
-	game_results: SCORE_GAME_RESULT[],
+	game_results: MatchOptions[],
 	game_mode: SCORE_GAME_MODE,
 }
 

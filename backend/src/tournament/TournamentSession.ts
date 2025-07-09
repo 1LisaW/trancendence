@@ -1,4 +1,4 @@
-import { post_new_tournament, post_new_tournament_score, post_new_tournament_user, ScoreRequestBody } from "../api";
+import { post_matchmaking_with_specific_user__game_service, post_new_tournament, post_new_tournament_score, post_new_tournament_user, ScoreRequestBody } from "../api";
 import { MatchOptions, SCORE_TournamentDataDTO, Status } from "../model";
 import { Tournament } from "../Tournament";
 import { Users } from "../Users";
@@ -131,7 +131,7 @@ class TournamentSession {
 
 		if (matchmakingRecord.first_user_response && matchmakingRecord.second_user_response) {
 			// TODO:: send each user response about the start of the game
-			console.log('start game');
+			console.log('start tournament!! game');
 			const data = {
 				recipient: 'tournament',
 				tournament_id: this.getId(),
@@ -143,6 +143,9 @@ class TournamentSession {
 			data.opponent_name = users.getUserNameById(matchmakingRecord.first_user_id);
 			users.sendDataToChatSockets(matchmakingRecord.second_user_id, data);
 
+			post_matchmaking_with_specific_user__game_service(matchmakingRecord.first_user_id, 'tournament', matchmakingRecord.second_user_id);
+
+
 		}
 		// some of users disagreed to play
 		else {
@@ -151,11 +154,23 @@ class TournamentSession {
 			// (true, false) gives (+3, +0)
 			// (false, true) gives (+0, +3)
 
+			let first_user_result = MatchOptions.FORFEIT;
+			let second_user_result = MatchOptions.FORFEIT;
+
+			if (matchmakingRecord.first_user_response === 1 && matchmakingRecord.second_user_response === 0) {
+				first_user_result = MatchOptions.TECHNICAL_WIN;
+				second_user_result = MatchOptions.FORFEIT;
+			} else if (matchmakingRecord.first_user_response === 0 && matchmakingRecord.second_user_response === 1) {
+				first_user_result = MatchOptions.FORFEIT;
+				second_user_result = MatchOptions.TECHNICAL_WIN;
+			}
+
 			const data: ScoreRequestBody = {
 				first_user_id: matchmakingRecord.first_user_id,
 				second_user_id: matchmakingRecord.second_user_id,
 				first_user_name: users.getUserNameById(matchmakingRecord.first_user_id) || '',
 				second_user_name: users.getUserNameById(matchmakingRecord.second_user_id) || '',
+				game_results: [first_user_result,second_user_result],
 				score: [
 					matchmakingRecord.first_user_response ? 3 : 0,
 					matchmakingRecord.second_user_response ? 3 : 0

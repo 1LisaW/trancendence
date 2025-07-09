@@ -12,14 +12,20 @@
      ```
    - Refer to the project documentation or team lead for the complete list of required variables.
 
+TODO Also `.env` shoul be copied to `auth` (for now)
+
 2. **Using the Makefile to Run Docker Containers**:
    - Ensure you have Docker and `make` installed on your system.
    - Use the following commands:
-     - `make build`: Build the Docker containers.
      - `make up`: Start the Docker containers.
      - `make down`: Stop the Docker containers.
      - `make logs`: View the logs of the running containers.
      - `make rm_images`: Remove Docker images to ensure they are updated during the development process.
+     - `make reboot`: Build the Docker containers with pruning images&containers before.
    - Check the `Makefile` for additional commands and their descriptions.
 
+You could also remove databases in `_db` folder if needed.
+
 For further assistance, contact the development team.
+
+Run https://localhost:8443/

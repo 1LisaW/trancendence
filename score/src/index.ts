@@ -162,14 +162,14 @@ Fastify.register(async function (fastify) {
 		const id = request.params.tournament_id;
 		console.log(`**SCORE** /tournament/score/:tournament_id  post   tournament_id: ${id}, body: ${JSON.stringify(request.body)}`);
 
-		const { first_user_id, second_user_id, first_user_name, second_user_name, score, game_mode } = request.body;
-		if (!first_user_id || !second_user_id || !first_user_name || !second_user_name || !score || !game_mode) {
+		const { first_user_id, second_user_id, first_user_name, second_user_name, score, game_results, game_mode } = request.body;
+		if (!first_user_id || !second_user_id || !first_user_name || !second_user_name || !score || !game_results || !game_mode) {
 			reply.status(400).send({ error: "Bad request", details: "Not enough data" });
 			return;
 		}
 
 		try {
-			const response = await addTournamentMatch(id, first_user_id, second_user_id, first_user_name, second_user_name, score);
+			const response = await addTournamentMatch(id, first_user_id, second_user_id, first_user_name, second_user_name, game_results, score);
 			reply.send(response);
 
 		} catch (e) {

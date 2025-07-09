@@ -1,2 +1,7 @@
 /sqlite
 .env
+
+.idea
+.vscode
+
+_db

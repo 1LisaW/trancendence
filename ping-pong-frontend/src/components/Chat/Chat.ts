@@ -33,8 +33,11 @@ class Chat {
 	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
 
 	syncWsFromChat: (data: ChatTournamentReply) => void ;
-	constructor(syncWsFromChat: (data: ChatTournamentReply) => void) {
+	goToTournamentMatch:(opponent:string) => void ;
+
+	constructor(syncWsFromChat: (data: ChatTournamentReply) => void, goToTournamentMatch:(opponent:string) => void) {
 		this.syncWsFromChat = syncWsFromChat;
+		this.goToTournamentMatch = goToTournamentMatch;
 		this.initChat();
 		// this.addInviteTournamentMessage(0, Date.now());
 		// this.addInviteToTournamentMatchMessage(0, 'user1', Date.now());
@@ -119,7 +122,10 @@ class Chat {
 		// send socket data
 	}
 
-	private onJoinTournamentMatch = () => {
+	private onJoinTournamentMatch = async () => {
+		const lastMatchMessage = this.getLastTournamentMatchMessage();
+		console.log('onJoinTournamentMatch', lastMatchMessage);
+		await this.goToTournamentMatch(lastMatchMessage?.opponent_name || '');
 		this.onTournamentMatchChoice(true);
 		// if (match.textBlock)
 		// 	match.textBlock.innerText = `You join the match against ${match.opponent_name}`;
