@@ -29,13 +29,19 @@ export default class Game extends Component {
 
 	}
 
-	handleJoinTournamentMatch = (opponent = "") => {
-		this.setGameMode('tournament', opponent);
-	}
+	// handleJoinTournamentMatch = (opponent = "") => {
+	// 	this.setGameMode('tournament', opponent);
+	// }
 
-	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent = "") => {
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent = "", opponentId = 0, isInitiator= false) => {
 		if (!this.app)
 			return
-		this.app.setGameMode(mode, opponent);
+		this.app.setGameMode(mode, opponent, opponentId, isInitiator);
+	}
+
+	updateGameSockets = (isAuth: boolean) => {
+		if (!this.app)
+			return;
+		this.app.updateSocket(isAuth);
 	}
 }

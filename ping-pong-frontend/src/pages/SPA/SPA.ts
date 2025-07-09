@@ -72,7 +72,10 @@ export class SPA {
 		this.container = parent;
 		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
 		this.chat_ws = new Chat_WS(this.syncChatFromWs);
-		this.chat = new Chat(this.syncWsFromChat, this.goToTournamentMatch);
+		this.chat = new Chat(this.syncWsFromChat);//, this.goToTournamentMatch);
+
+		this.initOutlet('game');
+		this.outlets["game"]?.removeFromDOM();
 
 		this.update().then(()=>{
 			this.initSubscriptions();
@@ -134,12 +137,12 @@ export class SPA {
 		this.outlets["header"]?.update(this.avatar);
 	}
 
-	goToTournamentMatch = async (opponent = "") => {
-		await this.navigate('/game');
-		if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
-				(this.outlets["game"] as Game).handleJoinTournamentMatch(opponent );
-	}
-}
+	// goToTournamentMatch = async (opponent = "") => {
+		// await this.navigate('/game');
+		// if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+		// 		(this.outlets["game"] as Game).handleJoinTournamentMatch(opponent);
+	// }
+// }
 
 	syncChatFromWs = async (data: ChatTournamentMessage) => {
 		if (data.recipient === 'tournament' && data.event === 'match_result' && this.router.currentRoute === '/game') {
@@ -151,6 +154,18 @@ export class SPA {
 			// 	(this.outlets["game"] as Game).setGameMode('tournament', data.opponent || '');
 			// }
 			// // location.pathname = '/game';
+			// console.log('syncWsFromChat navigate to game ', data);
+		}
+		// TODO::
+		else if (data.recipient === 'tournament' && data.event === 'match') {
+			console.log("SPA received tournament match event", data);
+			if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+				(this.outlets["game"] as Game).setGameMode('tournament', data.opponent_name || '', data.opponentId || 0, data.isInitiator || false);
+			}
+			if (this.router.currentRoute !== '/game') {
+				await this.navigate('/game');
+			}
+			// location.pathname = '/game';
 			// console.log('syncWsFromChat navigate to game ', data);
 		}
 		else {
@@ -204,6 +219,11 @@ export class SPA {
 			return ;
 		}
 		this.isAuth = isAuth;
+
+		const game = this.outlets["game"];
+		if (game && game instanceof Game)
+			game.updateGameSockets(this.isAuth);
+
 		if (this.isAuth)
 		{
 			// this.init_chat_ws();
@@ -243,6 +263,9 @@ export class SPA {
 				return ;
 			}
 		}
+		if (location.pathname === '/game' && this.outlets["game"] && this.outlets["game"] instanceof Game)
+			(this.outlets["game"] as Game).setGameMode('pvp');
+
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();

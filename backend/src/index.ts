@@ -66,6 +66,8 @@ Fastify.register(async function (fastify) {
 
   //ws:
   Fastify.get('/game', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
+
+    console.log("||| New game socket connection ");
     const token = req.headers['sec-websocket-protocol'] || '';
     let userData = await users.addUser(token);
 
@@ -73,6 +75,7 @@ Fastify.register(async function (fastify) {
       userData = userData as Auth_UserDTO;
       const user_id = userData.user.id;
       socket.id = user_id;
+      console.log("|||   ||| userData: ", userData);
 
       users.addGameSocket(user_id, socket);
     }
@@ -82,6 +85,7 @@ Fastify.register(async function (fastify) {
 
     socket.on('message', async message => {
 
+      console.log("-|-|- Backend game socket recv msg, user_id: ", socket.id, " message: ", JSON.parse(message.toString()));
       const user_id = socket.id;
       if (user_id === undefined)
         return;
@@ -96,9 +100,11 @@ Fastify.register(async function (fastify) {
       // message for matchmaking
       else if ('mode' in msg) {
         const mode = msg.mode as GAME_MODE;
-        if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
+        // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
           const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
+      console.log("-|-|- Backend game socket matchmaking data: ", data);
+
           if (!data)
             return;
           const json = await data.json();
@@ -119,7 +125,7 @@ Fastify.register(async function (fastify) {
               users.setPlayingStateToUser(gameSocketId);
               users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
             });
-          }
+          // }
        }
       }
       // bat movements from frontend
@@ -130,7 +136,7 @@ Fastify.register(async function (fastify) {
     });
     socket.on('close', () => {
       users.removeGameSocket(socket);
-      console.log("Disconnected", socket.id);
+      console.log("Disconnected game socket", socket.id);
       socket.send('server socket is closed');
     });
   })

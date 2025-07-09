@@ -105,6 +105,7 @@ class TournamentSession {
 					event: 'matchmaking',
 					time: time,
 					opponent_name: users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
+					// opponentId: pair?.at(id === 0 ? 1 : 0),
 				}
 				users.sendDataToChatSockets(userId, message);
 			})
@@ -138,12 +139,18 @@ class TournamentSession {
 				event: 'match',
 				time: Date.now(),
 				opponent_name: users.getUserNameById(matchmakingRecord.second_user_id),
+				opponentId: matchmakingRecord.second_user_id,
+				isInitiator: true,
 			}
 			users.sendDataToChatSockets(matchmakingRecord.first_user_id, data);
 			data.opponent_name = users.getUserNameById(matchmakingRecord.first_user_id);
+			data.opponentId = matchmakingRecord.first_user_id;
+			data.isInitiator = false;
 			users.sendDataToChatSockets(matchmakingRecord.second_user_id, data);
 
-			post_matchmaking_with_specific_user__game_service(matchmakingRecord.first_user_id, 'tournament', matchmakingRecord.second_user_id);
+			//TODO::
+			//
+			// setTimeout(() => post_matchmaking_with_specific_user__game_service(matchmakingRecord.first_user_id, 'tournament', matchmakingRecord.second_user_id), 1000);
 
 
 		}

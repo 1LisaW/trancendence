@@ -121,13 +121,15 @@ export default class App {
 		// this._engine.resize();
 	}
 
-	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent_name = "") => {
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament', opponent_name = "", opponentId = 0, isInitiator = false) => {
+		console.log("0.0. GAME APP - setGameMode, mode: ", mode, " opponent_name: ", opponent_name);
 		this.gameMode = mode;
-		if (this.gameMode === 'tournament')
+		if (this.gameMode === 'tournament' && !!opponent_name)
 		{
 			this.opponent = opponent_name;
-		// 	// this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "tournament", "opponent": this.opponent}));
-		// 	// this._goToWaitingRoom();
+			if (isInitiator)
+				this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "tournament", "opponentId": opponentId}));
+			this._goToWaitingRoom();
 		}
 	}
 
@@ -196,11 +198,13 @@ export default class App {
 	}
 
 	private async _goToStart() {
+		console.log("1.0. GAME APP - _goToStart, game mode: ", this.gameMode);
 		this._engine.displayLoadingUI();
 
 		await this.init_game_ws();
 		if (this.gameMode === 'tournament')
 		{
+			console.log("1.1.  GAME APP - _goToStart, game mode: tournament");
 			await this._goToWaitingRoom();
 			return ;
 		}
@@ -589,6 +593,18 @@ export default class App {
 			await this._environment.load(); //environment
 		} else {
 			console.error("WebSocket is not initialized.");
+		}
+
+	}
+
+
+
+	updateSocket = (isAuth: boolean) => {
+		if (!isAuth) {
+			this.close_game_ws();
+			// this._goToStart();
+		} else {
+			this.init_game_ws();
 		}
 
 	}
