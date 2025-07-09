@@ -107,5 +107,5 @@ volumes:
       type: none
       o: bind
       # device: C:\Projects\_mariadb_volume
-      device: /home/tklimova/sgoinfre/_mariadb_volume
+      device: ./_db
 
