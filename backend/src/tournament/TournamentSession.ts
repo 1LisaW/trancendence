@@ -188,13 +188,14 @@ class TournamentSession {
 				second_user_id: matchmakingRecord.second_user_id,
 				first_user_name: users.getUserNameById(matchmakingRecord.first_user_id) || '',
 				second_user_name: users.getUserNameById(matchmakingRecord.second_user_id) || '',
-				game_results: [first_user_result,second_user_result],
+				game_results: [first_user_result, second_user_result],
 				score: [
 					matchmakingRecord.first_user_response ? 3 : 0,
 					matchmakingRecord.second_user_response ? 3 : 0
 				],
 				game_mode: 'tournament'
 			};
+			console.log('2.0. BACKEND tournament match result: ', data);
 			post_new_tournament_score(this.getId(), data);
 
 			this.matches.addMatch(data.first_user_id, data.second_user_id);

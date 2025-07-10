@@ -169,7 +169,7 @@ Fastify.register(async function (fastify) {
 		}
 
 		try {
-			const response = await addTournamentMatch(id, first_user_id, second_user_id, first_user_name, second_user_name, game_results, score);
+			const response = await addTournamentMatch(id, first_user_id, second_user_id, first_user_name, second_user_name, game_results, score, game_mode);
 			reply.send(response);
 
 		} catch (e) {
