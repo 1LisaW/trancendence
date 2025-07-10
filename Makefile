@@ -9,7 +9,7 @@ up:
 
 
 IMAGES = $(shell docker images -qa)
-
+t 
 EMPTY =
 
 rm_containers:

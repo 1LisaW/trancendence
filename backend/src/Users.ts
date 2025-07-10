@@ -79,10 +79,18 @@ export class Users {
 		return (this.statuses.get(user_id));
 	}
 
+	//getUserNameById(user_id: number) {
+	//	console.log("getUserNameById: ", typeof user_id, " ", this.idToUsers.get(user_id), this.idToUsers.keys(), this.idToUsers.values());
+	//	return (this.idToUsers.get(user_id));
+	//}
+
+	// Simona -POTENTIAL CHANGE TO HANDLE AI PLAYER
 	getUserNameById(user_id: number) {
+		if (user_id === -1) return 'AI'; // Handle AI player
 		console.log("getUserNameById: ", typeof user_id, " ", this.idToUsers.get(user_id), this.idToUsers.keys(), this.idToUsers.values());
 		return (this.idToUsers.get(user_id));
 	}
+
 
 	// private remove(user_id: number) {
 	// 	this.setStatus(user_id, Status.OFFLINE);

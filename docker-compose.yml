@@ -41,6 +41,19 @@ services:
     hostname: game-service
     ports:
       - 8081:8081
+      
+  ai-service:
+    container_name: ai-service
+    image: ai-service
+    build:
+      context: ./ai-service
+      dockerfile: ./Dockerfile
+    hostname: ai-service
+    ports:
+      - 8086:8086
+    links:
+      - backend:backend
+    
   nginx:
     container_name: reverse-proxy-nginx
     image: reverse-proxy-nginx
@@ -106,6 +119,5 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: C:\Projects\_mariadb_volume
-      # device: /home/tklimova/sgoinfre/_mariadb_volume
-
+      #device: C:\Projects\_mariadb_volume
+      device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb

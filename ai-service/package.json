@@ -1,0 +1,19 @@
+{
+    "name": "ai-service",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "scripts": {
+        "start": "ts-node src/index.ts",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "fastify": "^5.4.0",
+        "nanoid": "^3.3.11",
+        "ws": "^8.18.3"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.18.1",
+        "ts-node": "^10.0.0",
+        "typescript": "^5.0.0"
+    }
+}
