@@ -181,20 +181,71 @@ export interface SCORE_ScoreDTO {
 export default class Profile extends Component {
 	avatar: HTMLElement;
 	popup: HTMLElement | null = null;
+	statistics: HTMLElement;
 	updateAvatarSrc: () => void;
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
 		this.container.className = "flex flex-col h-full items-center bg-(--color-paper-base) justify-center";
 		this.avatar = document.createElement('div');
+		this.statistics = document.createElement('div');
 		this.updateAvatarSrc = updateAvatarSrc;
 		this.update(avatarSrc);
 		this.init();
 	}
-	createScoreTable(parent: HTMLElement, data: {scores: SCORE_ScoreDTO[], user_id:number}){
-		if (data.scores.length === 0)
+
+	createStatistics() {
+		const h2 = document.createElement('h2');
+		h2.className = "mb-4 text-2xl font-semibold text-gray-900 dark:text-white";
+		h2.innerText = "Users game statistics:";
+		this.statistics.appendChild(h2);
+
+		const h3 = document.createElement('h3');
+		h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+		h3.innerText = "PVP with PVC:";
+		this.statistics.appendChild(h3);
+		fetch(`${SCORE_HOSTNAME}/score`, {
+			method: "GET",
+			headers: {
+				"Authorization": getToken(),
+			},
+		}).then(
+			(res) => res.json()
+		).then(res => {
+			if ('user_id' in res)
+			{
+				res = res as SCORE_ScoreDTO
+				console.log("Score get res: ",res);
+				this.createScoreTable(res);
+
+			}
+		});
+		const h4 = document.createElement('h3');
+		h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+		h4.innerText = "Tournaments:";
+		this.statistics.appendChild(h3);
+		fetch(`${SCORE_HOSTNAME}/tournament/user`, {
+			method: "GET",
+			headers: {
+				"Authorization": getToken(),
+			},
+		}).then(
+			(res) => res.json()
+		).then(res => {
+			if ('user_id' in res)
+			{
+				res = res as SCORE_ScoreDTO
+				console.log("Tournament Score get res: ",res);
+				this.createScoreTable(res);
+
+			}
+		});
+
+	}
+	createScoreTable(data: {scores: SCORE_ScoreDTO[], user_id:number}){
+		if (data.scores.length === 0 || !this.statistics)
 			return;
-		const tableWrapper = document.createElement('div');
-		tableWrapper.className = "relative overflow-x-auto shadow-md sm:rounded-lg";
+		// const tableWrapper = document.createElement('div');
+		// tableWrapper.className = "relative overflow-x-auto shadow-md sm:rounded-lg";
 
 		const table = document.createElement('table');
 		table.className = "w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400";
@@ -261,8 +312,8 @@ export default class Profile extends Component {
 			tbody.appendChild(tr);
 		})
 		table.appendChild(tbody);
-		tableWrapper.appendChild(table);
-		parent.appendChild(tableWrapper);
+		this.statistics.appendChild(table);
+		// parent.appendChild(this.statistics);
 
 	}
 	createChildren(): void {
@@ -272,23 +323,25 @@ export default class Profile extends Component {
 		this.avatar.className = 'rounded-full shadow-2xl shadow-(color:--color-accent) size-[100px] overflow-hidden';
 		this.avatar.addEventListener('click', () => this.avatarEditor(this.container));
 
+		this.statistics.className = "relative overflow-x-auto shadow-md sm:rounded-lg";
 		// fetch()
-		fetch(`${SCORE_HOSTNAME}/score`, {
-			method: "GET",
-			headers: {
-				"Authorization": getToken(),
-			},
-		}).then(
-			(res) => res.json()
-		).then(res => {
-			if ('user_id' in res)
-			{
-				res = res as SCORE_ScoreDTO
-				console.log("Score get res: ",res);
-				this.createScoreTable(this.container, res);
+		// fetch(`${SCORE_HOSTNAME}/score`, {
+		// 	method: "GET",
+		// 	headers: {
+		// 		"Authorization": getToken(),
+		// 	},
+		// }).then(
+		// 	(res) => res.json()
+		// ).then(res => {
+		// 	if ('user_id' in res)
+		// 	{
+		// 		res = res as SCORE_ScoreDTO
+		// 		console.log("Score get res: ",res);
+		// 		this.createScoreTable(this.container, res);
 
-			}
-		});
+		// 	}
+		// });
+		// this.createStatistics();
 		// if avatar is not uploaded
 
 		// fetch(`${AUTH_HOSTNAME}/profile`, {
@@ -325,6 +378,7 @@ export default class Profile extends Component {
 		grid.appendChild(name);
 
 		this.container.appendChild(grid);
+		this.container.appendChild(this.statistics);
 	}
 
 	avatarEditor(parent: HTMLElement) {
@@ -391,6 +445,26 @@ export default class Profile extends Component {
 		}
 		else
 			this.avatar.innerHTML = `<img src="${avatar}"/>`;
+	}
+
+	updateDynamicData(): void {
+		console.log("Profile updateDynamicData");
+		this.statistics.innerHTML = '';
+		this.createStatistics();
+		// if (this.popup) {
+		// 	this.popup.classList.toggle('hidden');
+		// 	this.popup = null;
+		// }
+		// if (this.updateAvatarSrc)
+		// 	this.updateAvatarSrc();
+		// if (this.avatar)
+		// 	this.avatar.classList.remove('cursor-pointer');
+		// if (this.container)
+		// 	this.container.classList.remove('cursor-pointer');
+		// if (this.avatar.firstChild && this.avatar.firstChild.nodeName === 'IMG')
+		// 	this.avatar.firstChild.classList.add('rounded-full');
+		// else
+		// 	this.avatar.classList.add('rounded-full');
 	}
 
 }

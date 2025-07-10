@@ -278,8 +278,11 @@ export class SPA {
 				this.outlets[value].addToDOM(null);
 			}
 			if (this.outlets[value] )
+			{
 				this.appliedOutlets.push({key: value as OutletKeysType, component: this.outlets[value]});
-		})
+				this.outlets[value]?.updateDynamicData();
+			}
+			})
 	}
 }
 
