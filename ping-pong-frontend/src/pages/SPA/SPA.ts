@@ -250,7 +250,7 @@ export class SPA {
 	update = async() => {
 		await this.checkIsAuth();
 		// this.isAuth = !!(userName);
-		this.outlets["header"]?.update();
+		this.outlets["header"]?.update(this.avatar);
 		if (!this.isAuth)
 		{
 			// removeToken();
