@@ -72,7 +72,15 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
                     return
             }
             break;
-
+        //*** SIMONA / Addition */ Potential Way toHandle AI service connection
+        case GAME_MODE.PVC:
+            // Create game with AI opponent
+            const aiOpponentId = -1;
+            const pvcGame = gameSessionFactory.createSession(aiOpponentId, socket_id, mode);
+            reply.send({ gameId: pvcGame.getId(), users: [aiOpponentId, socket_id] }); // AI left, human right
+            gameSessionFactory.startGameLoop(pvcGame.getId());
+            console.log("Game-service: PVC matchmaking done");
+            return;
     }
 
 
@@ -114,6 +122,13 @@ Fastify.post<{ Params: GamePostParams, Body: GamePostBody }>('/game/:gameId', (r
     gameSessionFactory.updateGameSessionUserData(gameId, userId, step);
     reply.status(200).send({ message: "bat data updated" })
 })
+
+// Simona's addition -  new endpoint to expose scene parameters
+Fastify.get('/scene-params', (request, reply) => {
+    // Import the scene parameters from the same source as GameSession
+    const sceneParams = require('../configuration.json');
+    reply.status(200).send(sceneParams);
+});
 
 Fastify.listen({ port: 8081, host: '0.0.0.0' }, (err, address) => {
     if (err) {
