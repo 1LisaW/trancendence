@@ -32,7 +32,6 @@ interface SceneProps {
 	}
 }
 let sceneParams: SceneProps = require('../configuration.json');
-// sceneParams = sceneParams as SceneProps;
 
 interface PlayerProp {
 	id: number | undefined;
@@ -44,7 +43,6 @@ type Players = Record<string, PlayerProp>
 
 interface BallProp {
 	pos: Tuple3<number>,
-	// dest: Tuple3<number>,
 	speed: number,
 	normal: Tuple3<number>,
 }
@@ -54,7 +52,9 @@ export type ModeProp = 'pvp' | 'pvc' | 'tournament';
 const batZTopPos = (sceneParams.ground.height - sceneParams.bat.width) / 2;
 const ballZTopPos = (sceneParams.ground.height - sceneParams.ball.diameter) / 2;
 const ballXRightBatPos = sceneParams.opponent.startPosition[0] - (sceneParams.bat.depth + sceneParams.ball.diameter) / 2;
+const ballXLeftBatPos = sceneParams.player.startPosition[0] + (sceneParams.bat.depth + sceneParams.ball.diameter) / 2;
 const ballXRightPos = (sceneParams.ground.width + sceneParams.ball.diameter) / 2;
+const ballXLeftPos = -(sceneParams.ground.width + sceneParams.ball.diameter) / 2;
 const batZToEdge = sceneParams.bat.width / 2;
 
 const batStep = sceneParams.bat.width / 2;
@@ -71,8 +71,8 @@ export class GameSession {
 	private sendDataToUser;
 
 	private terminated = false;
-	private countdownActive = true; // simona added this
-	private countdownTimer: NodeJS.Timeout | null = null; // simona added this
+	private countdownActive = true;
+	private countdownTimer: NodeJS.Timeout | null = null;
 
 	constructor(mode: ModeProp, playerId: number, opponentId: number, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
 		this.sendDataToUser = sendDataToUser;
@@ -80,7 +80,7 @@ export class GameSession {
 		this._players = {};
 		
 		if (mode === 'pvc') {
-			// Simona - for PVC: AI should be first (left), Human should be second (right)
+			// For PVC: AI should be first (left), Human should be second (right)
 			this._ids.push(opponentId, playerId); // AI first, Human second
 			
 			// Human (playerId) gets RIGHT position, AI (opponentId) gets LEFT position
@@ -121,49 +121,49 @@ export class GameSession {
 		};
 		this.initBall();
 
-		// Simona's addition -  Start countdown timer
+		// Start countdown timer
 		this.countdownTimer = setTimeout(() => {
 			this.countdownActive = false;
 			console.log(`Game ${this._id}: Countdown finished, game is now active`);
 		}, 6000); // 6 seconds to match AI countdown
 	}
+
 	getId() {
 		return this._id;
 	}
+
 	matchUserSocketId(socketId: string) {
 		if (socketId in this._ids)
 			return ([...this._ids]);
 		return (null);
 	}
+
 	initBall() {
 		this._ball.pos = [0, sceneParams.ball.diameter / 2, 0];
 		
-		// while (!this._ball.normal[0])
-		//this._ball.normal[0] = 0.5 + 0.5 * Math.random(); // Simona commented this out 
-
-		// Simona - Randomize ball direction: 50% chance to go left or right
+		// Randomize ball direction: 50% chance to go left or right
 		const directionX = Math.random() < 0.5 ? -1 : 1;
 		this._ball.normal[0] = directionX * (0.5 + 0.5 * Math.random());
 
 		// Randomize Z direction (up/down)
 		const directionZ = Math.random() < 0.5 ? -1 : 1;
 		this._ball.normal[2] = directionZ * Math.sqrt(1 - Math.pow(this._ball.normal[0], 2));
+		this._ball.normal[1] = 0; // Ensure Y component is 0
 		this._ball.speed = 1;
+		
+		//console.log(`🏓 Ball initialized: pos=${JSON.stringify(this._ball.pos)}, normal=${JSON.stringify(this._ball.normal)}, speed=${this._ball.speed}`);
 	}
 
 	setBatMove(id: number, step: number) {
-		// Simona's log 
-		console.log(`🔧 setBatMove called: id=${id}, step=${step}`);
+		//console.log(`🔧 setBatMove called: id=${id}, step=${step}`);
 		const bat = this._players[id];
 		
-		// Simona added this as a safety check (might be removable tho)
 		if (!bat) {
 			console.log(`setBatMove: Player ${id} not found`);
 			return;
 		}
 
-		// Simona's log 
-		console.log(`🔧 Before move: bat.pos=${JSON.stringify(bat.pos)}, bat.dest=${JSON.stringify(bat.dest)}, bat.speed=${bat.speed}`);
+		//console.log(`🔧 Before move: bat.pos=${JSON.stringify(bat.pos)}, bat.dest=${JSON.stringify(bat.dest)}, bat.speed=${bat.speed}`);
 		
 		let z = bat.dest[2];
 		
@@ -176,62 +176,132 @@ export class GameSession {
 			this._players[id].speed = Math.max(this._players[id].speed + step, -3);
 		}
 		
-		console.log(`🔧 After move: bat.pos=${JSON.stringify(this._players[id].pos)}, bat.dest=${JSON.stringify(this._players[id].dest)}, bat.speed=${this._players[id].speed}`);
+		//console.log(`🔧 After move: bat.pos=${JSON.stringify(this._players[id].pos)}, bat.dest=${JSON.stringify(this._players[id].dest)}, bat.speed=${this._players[id].speed}`);
 	}
 
-	private hasLoseRound(x: number, z: number, x_sign: number) {
-		// Simona - added - Don't score during countdown (might be removable now -- to be checked)
+	private hasLoseRound(x: number, z: number): boolean {
+		// Don't score during countdown
 		if (this.countdownActive) {
 			return false;
 		}
 		
+		// Check if ball went past right boundary (left player scores)
 		if (x >= ballXRightPos) {
+			console.log(`🎯 Right boundary crossed! Ball at x=${x}, boundary=${ballXRightPos}`);
 			this._score[0]++;
 			this._ball.speed = 1;
 			this.sendDataToUser(this._id, {players: this._ids, score: this._score});
-			return (true)
+			return true;
 		}
-		if (x <= -ballXRightPos) {
+		
+		// Check if ball went past left boundary (right player scores)
+		if (x <= ballXLeftPos) {
+			console.log(`🎯 Left boundary crossed! Ball at x=${x}, boundary=${ballXLeftPos}`);
 			this._score[1]++;
 			this._ball.speed = 1;
 			this.sendDataToUser(this._id, {players: this._ids, score: this._score});
-			return (true)
+			return true;
 		}
+		
 		return false;
 	}
 
-	private hasWallCollision(x: number, z: number, z_sign: number) {
-		if (z > ballZTopPos || z < -ballZTopPos) {
-			const koef = (z_sign * ballZTopPos - z) / this._ball.normal[2];
-			this._ball.pos[0] = x - koef * this._ball.normal[0];
-			this._ball.pos[2] = ballZTopPos * z_sign;
-			this._ball.speed = Math.min(this._ball.speed - 0.2, 1);
+	private hasWallCollision(x: number, z: number): boolean {
+		const ballRadius = sceneParams.ball.diameter / 2;
+		
+		// Check collision with top or bottom wall
+		if (z + ballRadius >= ballZTopPos || z - ballRadius <= -ballZTopPos) {
+			//console.log(`🧱 Wall collision detected! Ball z=${z}, ballRadius=${ballRadius}, boundary=${ballZTopPos}`);
+			
+			// Calculate collision point and reflect
+			const targetZ = z + ballRadius >= ballZTopPos ? ballZTopPos - ballRadius : -ballZTopPos + ballRadius;
+			
+			// Set ball position at the wall boundary
+			this._ball.pos[0] = x;
+			this._ball.pos[2] = targetZ;
+			
+			// Reflect the Z component of the normal vector
 			this._ball.normal[2] *= -1;
+			
+			// Reduce speed slightly on wall collision
+			this._ball.speed = Math.max(this._ball.speed - 0.1, 0.5);
+			
+			//console.log(`🧱 After wall collision: pos=${JSON.stringify(this._ball.pos)}, normal=${JSON.stringify(this._ball.normal)}`);
 			return true;
 		}
+		
 		return false;
 	}
 
-
-	private hasBatCollision(x: number, z: number, x_sign: number) {
-		if ((x >= ballXRightBatPos
-			&& z >= this._players[this._ids[1]].pos[2] - batZToEdge
-			&& z <= this._players[this._ids[1]].pos[2] + batZToEdge)
-			|| (x <= -ballXRightBatPos
-				&& z >= this._players[this._ids[0]].pos[2] - batZToEdge
-				&& z <= this._players[this._ids[0]].pos[2] + batZToEdge)
-		) {
-			const koef = (x_sign * ballXRightBatPos - x) / this._ball.normal[0];
-			this._ball.pos[0] = ballXRightBatPos * x_sign;
-			this._ball.pos[2] = z - koef * this._ball.normal[2];
-			this._ball.normal[0] *= -1;
-			this._ball.speed = Math.min(this._ball.speed + 0.5, 3);
-			return true;
+	private hasBatCollision(x: number, z: number): boolean {
+		const ballRadius = sceneParams.ball.diameter / 2;
+		
+		// Check collision with right bat (opponent)
+		if (x + ballRadius >= ballXRightBatPos && this._ball.normal[0] > 0) {
+			const rightBatZ = this._players[this._ids[1]].pos[2];
+			if (z >= rightBatZ - batZToEdge && z <= rightBatZ + batZToEdge) {
+				//console.log(`🏓 Right bat collision! Ball x=${x}, bat boundary=${ballXRightBatPos}, bat z=${rightBatZ}`);
+				
+				// Position ball at bat boundary
+				this._ball.pos[0] = ballXRightBatPos - ballRadius;
+				this._ball.pos[2] = z;
+				
+				// Reflect X component and add slight randomness
+				this._ball.normal[0] = -Math.abs(this._ball.normal[0]);
+				
+				// Add slight variation based on where ball hits bat
+				const hitOffset = (z - rightBatZ) / batZToEdge; // -1 to 1
+				this._ball.normal[2] += hitOffset * 0.3;
+				
+				// Normalize the normal vector
+				const normalMagnitude = Math.sqrt(this._ball.normal[0] ** 2 + this._ball.normal[2] ** 2);
+				this._ball.normal[0] /= normalMagnitude;
+				this._ball.normal[2] /= normalMagnitude;
+				
+				// Increase speed slightly
+				this._ball.speed = Math.min(this._ball.speed + 0.3, 3);
+				
+				//console.log(`🏓 After right bat collision: pos=${JSON.stringify(this._ball.pos)}, normal=${JSON.stringify(this._ball.normal)}`);
+				return true;
+			}
 		}
+		
+		// Check collision with left bat (player)
+		if (x - ballRadius <= ballXLeftBatPos && this._ball.normal[0] < 0) {
+			const leftBatZ = this._players[this._ids[0]].pos[2];
+			if (z >= leftBatZ - batZToEdge && z <= leftBatZ + batZToEdge) {
+				//console.log(`🏓 Left bat collision! Ball x=${x}, bat boundary=${ballXLeftBatPos}, bat z=${leftBatZ}`);
+				
+				// Position ball at bat boundary
+				this._ball.pos[0] = ballXLeftBatPos + ballRadius;
+				this._ball.pos[2] = z;
+				
+				// Reflect X component and add slight randomness
+				this._ball.normal[0] = Math.abs(this._ball.normal[0]);
+				
+				// Add slight variation based on where ball hits bat
+				const hitOffset = (z - leftBatZ) / batZToEdge; // -1 to 1
+				this._ball.normal[2] += hitOffset * 0.3;
+				
+				// Normalize the normal vector
+				const normalMagnitude = Math.sqrt(this._ball.normal[0] ** 2 + this._ball.normal[2] ** 2);
+				this._ball.normal[0] /= normalMagnitude;
+				this._ball.normal[2] /= normalMagnitude;
+				
+				// Increase speed slightly
+				this._ball.speed = Math.min(this._ball.speed + 0.3, 3);
+				
+				//console.log(`🏓 After left bat collision: pos=${JSON.stringify(this._ball.pos)}, normal=${JSON.stringify(this._ball.normal)}`);
+				return true;
+			}
+		}
+		
 		return false;
 	}
+
 	updateBatState(id: number) {
-		const bat = this._players[id]
+		const bat = this._players[id];
+		
 		if (bat.pos[2] > bat.dest[2] && bat.speed > 0)
 			bat.speed = -1;
 		if (bat.pos[2] < bat.dest[2] && bat.speed < 0)
@@ -242,9 +312,11 @@ export class GameSession {
 			bat.speed = 0;
 			return;
 		}
+		
 		bat.pos[2] += bat.speed * frameStep;
+		
 		if (bat.speed > 0)
-		bat.pos[2] = Math.min(bat.dest[2], bat.pos[2]);
+			bat.pos[2] = Math.min(bat.dest[2], bat.pos[2]);
 		if (bat.speed < 0)
 			bat.pos[2] = Math.max(bat.dest[2], bat.pos[2]);
 		if (bat.pos[2] > batZTopPos)
@@ -252,28 +324,45 @@ export class GameSession {
 		if (bat.pos[2] < -batZTopPos)
 			bat.pos[2] = -batZTopPos;
 	}
+
 	updateBallState() {
-		// Simona - Don't update ball position during countdown
+		// Don't update ball position during countdown
 		if (this.countdownActive) {
 			return;
 		}
 		
 		const step = this._ball.speed * frameStep;
-		const z_sign = this._ball.normal[2] / Math.abs(this._ball.normal[2]);
-		const x_sign = this._ball.normal[0] / Math.abs(this._ball.normal[0]);
-		let x = this._ball.pos[0] + step * this._ball.normal[0];
-		let z = this._ball.pos[2] + step * this._ball.normal[2];
-		if (this.hasLoseRound(x, z, x_sign))
+		
+		// Calculate next position
+		const nextX = this._ball.pos[0] + step * this._ball.normal[0];
+		const nextZ = this._ball.pos[2] + step * this._ball.normal[2];
+		
+		//console.log(`🎾 Ball update: current pos=${JSON.stringify(this._ball.pos)}, next pos=[${nextX}, ${this._ball.pos[1]}, ${nextZ}], normal=${JSON.stringify(this._ball.normal)}, speed=${this._ball.speed}`);
+		
+		// Check for scoring FIRST - this is critical!
+		if (this.hasLoseRound(nextX, nextZ)) {
+			console.log(`🎯 Goal scored! Reinitializing ball`);
 			this.initBall();
-		else if (!this.hasWallCollision(x, z, z_sign) && !this.hasBatCollision(x, z, x_sign))
-		{
-		// if (!this.hasLoseRound(x, z, x_sign) && !this.hasBatCollision(x, z, x_sign) && !this.hasWallCollision(x, z, z_sign)) {
-			this._ball.pos[0] = x;
-			this._ball.pos[2] = z;
+			return;
 		}
-		// else
-			// this.initBall();
-
+		
+		// Check for wall collision
+		if (this.hasWallCollision(nextX, nextZ)) {
+			// Ball position and normal are already updated in hasWallCollision
+			return;
+		}
+		
+		// Check for bat collision LAST
+		if (this.hasBatCollision(nextX, nextZ)) {
+			// Ball position and normal are already updated in hasBatCollision
+			return;
+		}
+		
+		// No collision, update ball position normally
+		this._ball.pos[0] = nextX;
+		this._ball.pos[2] = nextZ;
+		
+		//console.log(`🎾 Ball moved to: ${JSON.stringify(this._ball.pos)}`);
 	}
 
 	getState() {
@@ -285,64 +374,59 @@ export class GameSession {
 		const res = {
 			players: [player1Id, player2Id],
 			pos: [player1.pos, player2.pos],
-			ball: this._ball.pos
+			ball: this._ball.pos,
+			ballSpeed: this._ball.speed,  // ✅ Added this
+			ballNormal: this._ball.normal  // ✅ Added this too
 		}
 		this.sendDataToUser(this._id, res);
-		return (res);
+		return res;
 	}
 
 	updateState() {
 		this._ids.forEach(id => this.updateBatState(id));
 		this.updateBallState();
 		this.getState();
-		// return()
 	}
+
 	isFinished() {
 		return (this._score[0] >= 5 || this._score[1] >= 5);
 	}
+
 	gameLoop() {
 		console.log("*** GAME LOOP *** (game-service)");
 		const tickLengthMs = 1000 / 20;
 		let previousTick = Date.now();
 		let actualTicks = 0;
 
-		// const sessionPool = this.sessionPool;
 		const gameLoop = () => {
-			if (this.isFinished())
-			{
-				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose'; // Simona commented this out to avoid error
-				const player1Result = this._score[0] > this._score[1] ? 'win' : 'lose'; // Simona added this
-				const player2Result = this._score[1] > this._score[0] ? 'win' : 'lose'; // Check player2's score
+			if (this.isFinished()) {
+				const player1Result = this._score[0] > this._score[1] ? 'win' : 'lose';
+				const player2Result = this._score[1] > this._score[0] ? 'win' : 'lose';
 				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
 				return;
 			}
 			if (this.terminated)
 				return;
-			let now = Date.now()
-
-			actualTicks++
+			
+			let now = Date.now();
+			actualTicks++;
+			
 			if (previousTick + tickLengthMs <= now) {
-				const delta = (now - previousTick) / 1000
 				previousTick = now;
-
 				this.updateState();
-				// this.getState();
-				// session.updateState();
-				//send response to backend
-
-				// console.log('delta', delta, '(target: ' + tickLengthMs + ' ms)', 'node ticks', actualTicks)
-				actualTicks = 0
+				actualTicks = 0;
 			}
 
 			if (Date.now() - previousTick < tickLengthMs - 16) {
-				setTimeout(gameLoop)
+				setTimeout(gameLoop);
 			} else {
-				setImmediate(gameLoop)
+				setImmediate(gameLoop);
 			}
 		}
 		gameLoop();
 	}
-	terminate() { // simona added this
+
+	terminate() {
 		if (this.countdownTimer) {
 			clearTimeout(this.countdownTimer);
 			this.countdownTimer = null;
