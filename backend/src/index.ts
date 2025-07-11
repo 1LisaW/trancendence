@@ -46,13 +46,15 @@ Fastify.register(async function (fastify) {
 
       if ("gameResult" in request.body) {
         const { score } = request.body;
+        const isPvcGame = players.includes(-1);
+        
         const data: ScoreRequestBody = {
           first_user_id: players[0],
           second_user_id: players[1],
-          first_user_name: users.getUserNameById(players[0]) || '',
-          second_user_name: users.getUserNameById(players[1]) || '',
+          first_user_name: players[0] === -1 ? 'AI' : (users.getUserNameById(players[0]) || ''),
+          second_user_name: players[1] === -1 ? 'AI' : (users.getUserNameById(players[1]) || ''),
           score: score,
-          game_mode: players.includes(-1) ? 'pvc' : 'pvp'
+          game_mode: isPvcGame ? 'pvc' : 'pvp'
         };
         post_score_data(data);
       }

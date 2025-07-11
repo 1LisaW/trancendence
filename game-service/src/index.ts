@@ -72,7 +72,7 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
                     return
             }
             break;
-        //*** SIMONA / Addition */ Potential Way toHandle AI service connection
+        //*** Simona - Potential Way toHandle AI service connection
         case GAME_MODE.PVC:
             // Create game with AI opponent
             const aiOpponentId = -1;
@@ -99,8 +99,6 @@ Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, repl
     reply.send({ message: "User removed from queue" });
 }
 );
-
-
 
 interface GamePostBody {
     userId: number,
