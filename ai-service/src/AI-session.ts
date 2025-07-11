@@ -313,33 +313,63 @@ export class AISession {
       this.lastValidPosition = [...validAIPaddlePos];
     }
     
-    // Calculate ball direction and speed
-    let ballDirection: [number, number, number] = [1, 0, 0];
+    // ✅ USE ACTUAL BALL SPEED AND NORMAL FROM GAME STATE
     let ballSpeed = 1;
+    let ballNormal: [number, number, number] = [1, 0, 0];
     
+    // Check if game state includes ballSpeed and ballNormal
+    if (gameState.ballSpeed !== undefined && gameState.ballNormal !== undefined) {
+      ballSpeed = gameState.ballSpeed;
+      ballNormal = gameState.ballNormal;
+      
+      // Ensure ballNormal is properly formatted as [x, y, z]
+      if (Array.isArray(ballNormal) && ballNormal.length >= 3) {
+        ballNormal = [ballNormal[0], ballNormal[1] || 0, ballNormal[2]];
+      } else {
+        // Fallback to calculated direction if normal is invalid
+        ballNormal = this.calculateBallDirection(ballPos);
+      }
+    } else {
+      // Fallback to old calculation method if new fields are not available
+      ballNormal = this.calculateBallDirection(ballPos);
+      ballSpeed = this.calculateBallSpeed(ballPos);
+    }
+    
+    return {
+      pos: validAIPaddlePos,
+      ballPos: ballPos,
+      ballSpeed: ballSpeed,
+      ballNormal: ballNormal
+    };
+  }
+
+  // ✅ ADD HELPER METHODS FOR FALLBACK CALCULATIONS
+  private calculateBallDirection(ballPos: [number, number, number]): [number, number, number] {
     if (this.previousState && this.previousState.ball && ballPos) {
       const prevBall = this.previousState.ball;
       const dx = ballPos[0] - prevBall[0];
       const dy = ballPos[1] - prevBall[1];
       const dz = ballPos[2] - prevBall[2];
       
-      ballSpeed = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const speed = Math.sqrt(dx*dx + dy*dy + dz*dz);
       
-      if (ballSpeed > 0.01) {
-        ballDirection = [dx/ballSpeed, dy/ballSpeed, dz/ballSpeed];
-      } else {
-        ballSpeed = 1;
+      if (speed > 0.01) {
+        return [dx/speed, dy/speed, dz/speed];
       }
     }
-    
-    // Score data is no longer used by AI logic
-    
-    return {
-      pos: validAIPaddlePos,
-      ballPos: ballPos,
-      ballSpeed: ballSpeed,
-      ballNormal: ballDirection
-    };
+    return [1, 0, 0]; // Default direction
+  }
+
+  private calculateBallSpeed(ballPos: [number, number, number]): number {
+    if (this.previousState && this.previousState.ball && ballPos) {
+      const prevBall = this.previousState.ball;
+      const dx = ballPos[0] - prevBall[0];
+      const dy = ballPos[1] - prevBall[1];
+      const dz = ballPos[2] - prevBall[2];
+      
+      return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    }
+    return 1; // Default speed
   }
 
   private getDefaultState(): {
