@@ -71,8 +71,10 @@ export interface ChatTournamentMatchInitMessage {
 	tournament_id: number;
 	event: 'match';
 	time: number;
-	opponent: string;
+	opponent_name: string;
+	opponentId: number;
 	option: MatchOptions;
+	isInitiator: boolean;
 }
 
 export type ChatTournamentReply = ChatTournamentInviteReply | ChatTournamentMatchmakingReply;

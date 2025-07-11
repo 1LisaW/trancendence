@@ -13,9 +13,9 @@ export class GameSessionFactory {
 		return (newGameSession);
 	}
 
-	removeSession(session_id: string) {
+	removeSession(session_id: string, userId: number) {
 		const session = this.sessionPool.find(session => session.getId() === session_id);
-		session?.terminate();
+		session?.terminate(userId);
 		this.sessionPool = this.sessionPool.filter((session) => session.getId()!= session_id);
 	}
 

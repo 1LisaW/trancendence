@@ -1,4 +1,4 @@
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service, post_matchmaking_with_specific_user__game_service } from "./api";
 import { Status, WSocket } from "./model";
 
 export class Users {
@@ -72,6 +72,7 @@ export class Users {
 	}
 
 	private setStatus(user_id: number, status: Status) {
+		console.log("🕵🏻‍♀️ USER: ", user_id, " changed status to ", status.toString());
 		this.statuses.set(user_id, status);
 	}
 
@@ -89,13 +90,44 @@ export class Users {
 	// 	this.chatUserSockets.delete(user_id);
 	// }
 
-	matchmaking(user_id: number, socket: WSocket, mode: 'pvp' | 'pvc') {
+	matchmaking(user_id: number, socket: WSocket, mode: 'pvp' | 'pvc' | 'tournament', opponentId?: number) {
+		// console.log("matchmaking user_id: ", user_id, " mode: ", mode, " opponentId: ", opponentId);
+		// console.log("this.getUserStatus(user_id): ", this.getUserStatus(user_id));
+		// if (opponentId!= undefined)
+		// 	console.log(" opponentId: ", opponentId, " this.getUserStatus(opponentId): ", this.getUserStatus(opponentId));
+		// if (this.getUserStatus(user_id) !== Status.ONLINE || (opponentId !== undefined && this.getUserStatus(opponentId) !== Status.ONLINE))
+		// 	return;
 		// this.addGameSocket(user_id, socket);
-		this.setStatus(user_id, Status.MATCHMAKING);
+		switch (mode) {
+			case 'pvp':
+				this.setStatus(user_id, Status.MATCHMAKING);
+				return post_matchmaking__game_service(user_id, mode);
+				break;
+			case 'pvc':
+				// if (this.getUserStatus(user_id) !== Status.ONLINE)
+				return;
+				break;
+			case 'tournament':
+				if (opponentId !== undefined)
+					return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
+				break;
+			default:
+				console.error("Unknown game mode: ", mode);
+				return;
+		}
+		// this.setStatus(user_id, Status.MATCHMAKING);
+		// if (opponentId!= undefined)
+		// 	this.setStatus(opponentId, Status.MATCHMAKING);
 		console.log("this.matchmaking in process ", socket.id);
 
-		return post_matchmaking__game_service(user_id, mode);
+		// // FIX:: send post only when 2 users sockets exists
+		// if (mode === 'tournament' && opponentId !== undefined)
+		// 	return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
+		// if (mode !== 'tournament')
+		// 	return post_matchmaking__game_service(user_id, mode);
 	}
+
+
 
 	removeUserFromMatchmaking(user_id: number) {
 		delete_user_from_matchmaking(user_id);

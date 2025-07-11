@@ -72,7 +72,10 @@ export class SPA {
 		this.container = parent;
 		this.container.classList.add("h-[100%]", "w-[100%]" , "flex", "flex-col", "bg-(--color-paper-base)");
 		this.chat_ws = new Chat_WS(this.syncChatFromWs);
-		this.chat = new Chat(this.syncWsFromChat);
+		this.chat = new Chat(this.syncWsFromChat);//, this.goToTournamentMatch);
+
+		this.initOutlet('game');
+		this.outlets["game"]?.removeFromDOM();
 
 		this.update().then(()=>{
 			this.initSubscriptions();
@@ -134,15 +137,40 @@ export class SPA {
 		this.outlets["header"]?.update(this.avatar);
 	}
 
-	syncChatFromWs = (data: ChatTournamentMessage) => {
-		if (data.recipient === 'tournament' && data.event === 'match') {
-			this.navigate('/game');
-			location.pathname = '/game';
-			console.log('syncWsFromChat navigate to game ', data);
+	// goToTournamentMatch = async (opponent = "") => {
+		// await this.navigate('/game');
+		// if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+		// 		(this.outlets["game"] as Game).handleJoinTournamentMatch(opponent);
+	// }
+// }
+
+	syncChatFromWs = async (data: ChatTournamentMessage) => {
+		if (data.recipient === 'tournament' && data.event === 'match_result' && this.router.currentRoute === '/game') {
+			this.navigate('/');
+			console.log("SPA received tournament match result event", data);
+			// console.log("SPA syncChatFromWs", "tournament match event", data);
+			// await this.navigate('/game');
+			// if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+			// 	(this.outlets["game"] as Game).setGameMode('tournament', data.opponent || '');
+			// }
+			// // location.pathname = '/game';
+			// console.log('syncWsFromChat navigate to game ', data);
+		}
+		// TODO::
+		else if (data.recipient === 'tournament' && data.event === 'match') {
+			console.log("SPA received tournament match event", data);
+			if (this.outlets["game"] && this.outlets["game"] instanceof Game) {
+				(this.outlets["game"] as Game).setGameMode('tournament', data.opponent_name || '', data.opponentId || 0, data.isInitiator || false);
+			}
+			if (this.router.currentRoute !== '/game') {
+				await this.navigate('/game');
+			}
+			// location.pathname = '/game';
+			// console.log('syncWsFromChat navigate to game ', data);
 		}
 		else {
-		console.log('syncChatFromWs', data);
-		this.chat.update(data);
+			console.log('syncChatFromWs', data);
+			this.chat.update(data);
 		}
 	}
 
@@ -191,6 +219,11 @@ export class SPA {
 			return ;
 		}
 		this.isAuth = isAuth;
+
+		const game = this.outlets["game"];
+		if (game && game instanceof Game)
+			game.updateGameSockets(this.isAuth);
+
 		if (this.isAuth)
 		{
 			// this.init_chat_ws();
@@ -217,7 +250,7 @@ export class SPA {
 	update = async() => {
 		await this.checkIsAuth();
 		// this.isAuth = !!(userName);
-		this.outlets["header"]?.update();
+		this.outlets["header"]?.update(this.avatar);
 		if (!this.isAuth)
 		{
 			// removeToken();
@@ -230,6 +263,9 @@ export class SPA {
 				return ;
 			}
 		}
+		// if (location.pathname === '/game' && this.outlets["game"] && this.outlets["game"] instanceof Game)
+		// 	(this.outlets["game"] as Game).setGameMode(null);
+
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
 		const currentOutlets = this.router.getRouteOutlets();
@@ -242,8 +278,11 @@ export class SPA {
 				this.outlets[value].addToDOM(null);
 			}
 			if (this.outlets[value] )
+			{
 				this.appliedOutlets.push({key: value as OutletKeysType, component: this.outlets[value]});
-		})
+				this.outlets[value]?.updateDynamicData();
+			}
+			})
 	}
 }
 

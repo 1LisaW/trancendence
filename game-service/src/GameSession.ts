@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid"
 import { GameState, ScoreState, GameResult } from "./api";
+import { SCORE_GAME_PERSONAL_RESULT } from "./model";
 type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLength };
 
 type Tuple3<T> = Tuple<T, 3>;
@@ -59,6 +60,15 @@ const batZToEdge = sceneParams.bat.width / 2;
 
 const batStep = sceneParams.bat.width / 2;
 const frameStep = 1.5;
+
+export enum MatchOptions {
+	START,
+	FORFEIT,
+	TECHNICAL_WIN,
+	WIN,
+	LOSE,
+	DRAW
+}
 
 export class GameSession {
 	private _id = nanoid();
@@ -243,6 +253,21 @@ export class GameSession {
 	isFinished() {
 		return (this._score[0] >= 5 || this._score[1] >= 5);
 	}
+
+	getGameResult(userId = 0): GameResult {
+		const win = userId ? SCORE_GAME_PERSONAL_RESULT.TECHNICAL_WIN: SCORE_GAME_PERSONAL_RESULT.WIN;
+		const lose = userId ? SCORE_GAME_PERSONAL_RESULT.FORFEIT: SCORE_GAME_PERSONAL_RESULT.LOSE;
+
+		const player1Result = this._score[0] < this._score[1] ? win : lose;
+		const player2Result = this._score[0] > this._score[1] ? win : lose;
+		const gameResult: GameResult = {
+			players: this._ids,
+			gameResult:[player1Result, player2Result],
+			score: this._score,
+			mode: this._mode
+		};
+		return gameResult;
+	}
 	gameLoop() {
 		console.log("*** GAME LOOP *** (game-service)");
 		const tickLengthMs = 1000 / 20;
@@ -253,9 +278,10 @@ export class GameSession {
 		const gameLoop = () => {
 			if (this.isFinished())
 			{
-				const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
-				const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
-				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
+				const gameResult = this.getGameResult();
+				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
+				//const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
+				this.sendDataToUser(this._id, gameResult);
 				return;
 			}
 			if (this.terminated)
@@ -284,8 +310,13 @@ export class GameSession {
 		}
 		gameLoop();
 	}
-	terminate() {
+	terminate(userId = 0) {
 		console.log("GAME SERVICE GAME TERMINATED ****");
 		this.terminated = true;
+		if (this._mode === 'tournament')
+		{
+			const gameResult = this.getGameResult(userId);
+			this.sendDataToUser(this._id, gameResult);
+		}
 	}
 }

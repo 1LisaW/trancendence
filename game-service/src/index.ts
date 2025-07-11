@@ -58,7 +58,7 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
                 reply.send({ gameId: game.getId(), users: [opponent, socket_id] });
                 gameSessionFactory.startGameLoop(game.getId());
                 console.log("Game-service: matchmaking done");
-                return
+                return ;
             }
             reply.send({ message: "User set in queue" });
             break;
@@ -66,10 +66,12 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
             if ('opponentId' in request.body) {
                 const opponentId = Number(request.body.opponentId);
                 const game = gameSessionFactory.createSession(socket_id, opponentId, mode);
-                reply.send({ gameId: game.getId(), users: [opponentId, socket_id] });
-                    gameSessionFactory.startGameLoop(game.getId());
-                    console.log("Game-service: matchmaking done");
-                    return
+                console.log("Game-service (TOURNAMENT): matchmaking done ", { gameId: game.getId(), users: [opponentId, socket_id] });
+                const gameId = game.getId();
+                reply.send({ gameId: gameId, users: [opponentId, socket_id] });
+                gameSessionFactory.startGameLoop(gameId);
+                console.log("Game-service (TOURNAMENT): matchmaking done");
+                return ;
             }
             break;
 
@@ -102,9 +104,10 @@ interface GamePostParams {
     gameId: string
 }
 
-Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
+Fastify.post<{ Params: GamePostParams, Body: {userId: number} }>('/terminate/:gameId', (request, reply) => {
     const { gameId } = request.params;
-    gameSessionFactory.removeSession(gameId);
+    const userId = request.body.userId;
+    gameSessionFactory.removeSession(gameId, userId);
     reply.status(200).send({ message: "game was terminated" })
 })
 

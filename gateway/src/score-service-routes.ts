@@ -36,6 +36,23 @@ const registerScoreServiceRoutes = (Fastify: FastifyInstance, SCORE_SERVICE: str
 			reply.status(500).send({ error: "Server error", details: e });
 		}
 	})
+
+	Fastify.get<{ Params: SCORE_GetUserScoreRequestParams, Reply: { scores: SCORE_ScoreDTO[] } | SCORE_ServerErrorReply }>('/score/tournament/user', async (request, reply) => {
+		const token = request.headers.authorization || '';
+
+		const isAuthResponse = await Fastify.isAuthenticated(token);
+		if (!isAuthResponse.isAuth)
+			return reply.status(401).send({ error: 'Access denied' });
+		const user_id = isAuthResponse.user_id;
+
+		try {
+			await Fastify.proxyRequest<{ scores:SCORE_ScoreDTO[], user_id: number } | SCORE_ServerErrorReply>(
+				`${SCORE_SERVICE}/tournament/user/${user_id}`, 'GET', request, reply, true
+			);
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
 }
 
 export default registerScoreServiceRoutes;

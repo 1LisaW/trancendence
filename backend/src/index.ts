@@ -1,8 +1,8 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
-import { GAME_MODE, GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
 import TournamentSessionManager from "./tournament/TournamentSessionManager";
@@ -32,21 +32,34 @@ Fastify.register(async function (fastify) {
 
       if ("gameResult" in request.body)
       {
-        const { score } = request.body;
+        console.log("Backend: game result received: ", request.body);
+        const { score, gameResult } = request.body;
+        const first_user_result =  gameResult[0];//score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const second_user_result = gameResult[1];// score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
         const data: ScoreRequestBody = {
           first_user_id: players[0],
           second_user_id: players[1],
           first_user_name: users.getUserNameById(players[0]) || '',
           second_user_name: users.getUserNameById(players[1]) || '',
+          game_results: [first_user_result, second_user_result],
           score: score,
-          game_mode: 'pvp'
+          game_mode: request.body.mode || GAME_MODE.PVP,
         };
-        post_score_data(data);
+        if (data.game_mode === GAME_MODE.TOURNAMENT)
+          post_new_tournament_score(tournamentSessionManager.getTournamentId(), data);
+        else
+          post_score_data(data);
+        users.setOnlineStatusToUser(players[0]);
+        users.setOnlineStatusToUser(players[1]);
+        if (request.body.mode === GAME_MODE.TOURNAMENT)
+          tournamentSessionManager.onGameResult(players, score);
       }
       reply.code(200).send({ message: "Message received" });
+
       return;
     }
-    post_terminate_game(gameId);
+    const disconnectedPlayers = players.filter(player => !users.gameSocketIsAlive(player));
+    post_terminate_game(gameId, disconnectedPlayers[0]);
     players.forEach((player, id) => {
       if (users.gameSocketIsAlive(player))
       {
@@ -54,6 +67,7 @@ Fastify.register(async function (fastify) {
         if (sockets && sockets.length)
           sockets.forEach(socket => socket
             .send(JSON.stringify({ message: `${users.getUserNameById(players[(1-id)])} leave the room` })));
+        users.setOnlineStatusToUser(player);
       }
     })
     // TODO terminate game
@@ -63,6 +77,8 @@ Fastify.register(async function (fastify) {
 
   //ws:
   Fastify.get('/game', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
+
+    console.log("||| New game socket connection ");
     const token = req.headers['sec-websocket-protocol'] || '';
     let userData = await users.addUser(token);
 
@@ -70,6 +86,7 @@ Fastify.register(async function (fastify) {
       userData = userData as Auth_UserDTO;
       const user_id = userData.user.id;
       socket.id = user_id;
+      console.log("|||   ||| userData: ", userData);
 
       users.addGameSocket(user_id, socket);
     }
@@ -79,6 +96,7 @@ Fastify.register(async function (fastify) {
 
     socket.on('message', async message => {
 
+      console.log("-|-|- Backend game socket recv msg, user_id: ", socket.id, " message: ", JSON.parse(message.toString()));
       const user_id = socket.id;
       if (user_id === undefined)
         return;
@@ -93,10 +111,15 @@ Fastify.register(async function (fastify) {
       // message for matchmaking
       else if ('mode' in msg) {
         const mode = msg.mode as GAME_MODE;
-        if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
+        // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
-          const data = await users.matchmaking(user_id, socket, mode);
+          const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
+
+          if (!data)
+            return;
           const json = await data.json();
+          console.log("-|-|- Backend game socket matchmaking data: ", json);
+
 
           if ('gameId' in json) {
             const gameUsers: number[] = json.users;
@@ -114,8 +137,8 @@ Fastify.register(async function (fastify) {
               users.setPlayingStateToUser(gameSocketId);
               users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
             });
-          }
-        }
+          // }
+       }
       }
       // bat movements from frontend
       else if ('gameId' in msg) {
@@ -125,7 +148,7 @@ Fastify.register(async function (fastify) {
     });
     socket.on('close', () => {
       users.removeGameSocket(socket);
-      console.log("Disconnected", socket.id);
+      console.log("Disconnected game socket", socket.id);
       socket.send('server socket is closed');
     });
   })
