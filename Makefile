@@ -7,9 +7,11 @@ down:
 up:
 	$(DOCKER_COMPOSE) up
 
+reboot: down rm_images
+	$(DOCKER_COMPOSE) up
 
 IMAGES = $(shell docker images -qa)
-t 
+
 EMPTY =
 
 rm_containers:

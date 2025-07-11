@@ -137,9 +137,17 @@ export class GameSession {
 	}
 	initBall() {
 		this._ball.pos = [0, sceneParams.ball.diameter / 2, 0];
+		
 		// while (!this._ball.normal[0])
-		this._ball.normal[0] = 0.5 + 0.5 * Math.random();
-		this._ball.normal[2] = Math.sqrt(1 - Math.pow(this._ball.normal[0], 2));
+		//this._ball.normal[0] = 0.5 + 0.5 * Math.random(); // Simona commented this out 
+
+		// Simona - Randomize ball direction: 50% chance to go left or right
+		const directionX = Math.random() < 0.5 ? -1 : 1;
+		this._ball.normal[0] = directionX * (0.5 + 0.5 * Math.random());
+
+		// Randomize Z direction (up/down)
+		const directionZ = Math.random() < 0.5 ? -1 : 1;
+		this._ball.normal[2] = directionZ * Math.sqrt(1 - Math.pow(this._ball.normal[0], 2));
 		this._ball.speed = 1;
 	}
 
