@@ -1,7 +1,7 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
 import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
@@ -33,9 +33,9 @@ Fastify.register(async function (fastify) {
       if ("gameResult" in request.body)
       {
         console.log("Backend: game result received: ", request.body);
-        const { score } = request.body;
-        const first_user_result =score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
-        const second_user_result = score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const { score, gameResult } = request.body;
+        const first_user_result =  gameResult[0];//score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const second_user_result = gameResult[1];// score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
         const data: ScoreRequestBody = {
           first_user_id: players[0],
           second_user_id: players[1],
@@ -45,7 +45,10 @@ Fastify.register(async function (fastify) {
           score: score,
           game_mode: request.body.mode || GAME_MODE.PVP,
         };
-        post_score_data(data);
+        if (data.game_mode === GAME_MODE.TOURNAMENT)
+          post_new_tournament_score(tournamentSessionManager.getTournamentId(), data);
+        else
+          post_score_data(data);
         users.setOnlineStatusToUser(players[0]);
         users.setOnlineStatusToUser(players[1]);
         if (request.body.mode === GAME_MODE.TOURNAMENT)

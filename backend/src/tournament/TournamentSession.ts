@@ -83,7 +83,25 @@ class TournamentSession {
 		this.id = id;
 	}
 
+	logState = (users:Users) => {
+		console.log('🎠 TournamentSession state:');
+		console.log('id: ', this.id);
+		console.log('startDate: ', this.startDate);
+		this.usersPool.forEach((userId) => {
+			const matches = this.matches.getByUser(userId)?.played;
+			const rating = this.ratings.getRating(userId);
+			const matchmaking = this.matchmakingPool.find(userId);
+			console.log('-- userId: ', userId, ' rating: ', rating, ' matches: ', matches ? Array.from(matches) : [], ' matchmaking: ', matchmaking, 'status: ', users.getUserStatus(userId));
+		});
+	}
+
 	matchmakingIteration = (users: Users) => {
+
+		// this.usersPool.forEach((userId) => {
+		console.log('🎠 TournamentSession matchmakingIteration before iteration');
+		this.logState(users);
+		// })
+
 		const onlineUsers = users.getOnlineUsers();
 		if (onlineUsers.length === 0)
 			return;
@@ -110,6 +128,8 @@ class TournamentSession {
 				users.sendDataToChatSockets(userId, message);
 			})
 		}
+		console.log('🎠 TournamentSession matchmakingIteration before iteration');
+		this.logState(users);
 	}
 
 	handleUsersParticipationMessage = (tournament_id: number, user_id: number) => {

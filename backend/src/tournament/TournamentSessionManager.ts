@@ -30,6 +30,10 @@ export default class TournamentSessionManager {
 		}
 	}
 
+	getTournamentId = () => {
+		return this.tournamentSession.getId();
+	}
+
 	syncTournamentDataWithDB = async () => {
 		const activeTournament = await get_active_tournaments();
 		if ('tournament' in activeTournament) {

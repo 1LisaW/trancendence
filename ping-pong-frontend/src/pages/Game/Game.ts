@@ -44,4 +44,7 @@ export default class Game extends Component {
 			return;
 		this.app.updateSocket(isAuth);
 	}
+	updateDynamicData(): void {
+		console.log("Game updateDynamicData called");
+	}
 }

@@ -178,6 +178,11 @@ export interface SCORE_ScoreDTO {
 	second_user_score: number,
 	game_mode: string
 }
+
+export interface SCORE_UsersScoreDTO {
+	scores: SCORE_ScoreDTO[],
+	user_id: number
+}
 export default class Profile extends Component {
 	avatar: HTMLElement;
 	popup: HTMLElement | null = null;
@@ -199,10 +204,7 @@ export default class Profile extends Component {
 		h2.innerText = "Users game statistics:";
 		this.statistics.appendChild(h2);
 
-		const h3 = document.createElement('h3');
-		h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-		h3.innerText = "PVP with PVC:";
-		this.statistics.appendChild(h3);
+
 		fetch(`${SCORE_HOSTNAME}/score`, {
 			method: "GET",
 			headers: {
@@ -213,16 +215,17 @@ export default class Profile extends Component {
 		).then(res => {
 			if ('user_id' in res)
 			{
-				res = res as SCORE_ScoreDTO
-				console.log("Score get res: ",res);
-				this.createScoreTable(res);
+				const h3 = document.createElement('h3');
+				h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+				h3.innerText = "PVP with PVC:";
+				this.statistics.appendChild(h3);
+				const data = res as SCORE_UsersScoreDTO;
+				console.log("Score get res: ",data);
+				this.createScoreTable(data);
 
 			}
 		});
-		const h4 = document.createElement('h3');
-		h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-		h4.innerText = "Tournaments:";
-		this.statistics.appendChild(h3);
+
 		fetch(`${SCORE_HOSTNAME}/tournament/user`, {
 			method: "GET",
 			headers: {
@@ -231,11 +234,15 @@ export default class Profile extends Component {
 		}).then(
 			(res) => res.json()
 		).then(res => {
-			if ('user_id' in res)
+			if ('tournaments' in res && res.tournaments.length > 0)
 			{
-				res = res as SCORE_ScoreDTO
-				console.log("Tournament Score get res: ",res);
-				this.createScoreTable(res);
+				const h4 = document.createElement('h3');
+				h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+				h4.innerText = "Tournaments:";
+				this.statistics.appendChild(h4);
+				const data:SCORE_UsersScoreDTO  = {scores: res.tournaments, user_id: res.tournaments[0].user_id};
+				console.log("Tournament Score get res: ",data);
+				this.createScoreTable(data);
 
 			}
 		});
@@ -272,7 +279,7 @@ export default class Profile extends Component {
 			const th = document.createElement('th');
 			th.setAttribute("scope", "row");
 			th.className = "px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
-			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.first_user_name :  scoreData.second_user_name;
+			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.second_user_name : scoreData.first_user_name;
 			tr.appendChild(th);
 
 			const dateTd = document.createElement('td');

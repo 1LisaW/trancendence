@@ -122,7 +122,7 @@ export interface ScoreRequestBody {
 	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
-	game_results: MatchOptions[],
+	game_results: number[],
 	score: number[],
 	game_mode: string
 }

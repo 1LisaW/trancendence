@@ -263,8 +263,8 @@ export class SPA {
 				return ;
 			}
 		}
-		if (location.pathname === '/game' && this.outlets["game"] && this.outlets["game"] instanceof Game)
-			(this.outlets["game"] as Game).setGameMode(null);
+		// if (location.pathname === '/game' && this.outlets["game"] && this.outlets["game"] instanceof Game)
+		// 	(this.outlets["game"] as Game).setGameMode(null);
 
 		this.appliedOutlets.forEach((component) => component.component.removeFromDOM());
 		this.appliedOutlets = [];
