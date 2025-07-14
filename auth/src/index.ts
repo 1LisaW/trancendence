@@ -2,8 +2,11 @@ import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import fastify from "fastify";
-import { createUser, getUserByEmail, getUserByEmailAndPassword, getUserByName, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName } from "./sqlite";
+import { createUser, getUserByEmail, getUserByEmailAndPassword, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName } from "./sqlite";
 import { AUTH_UserDTO, AUTH_AvatarRequestParams, AUTH_LoginRequestBody, AUTH_ProfileUpdateRequestBody, AUTH_SignInRequestBody, AUTH_CreateUserDTO, AUTH_LoginDTO, AUTH_ProfileUpdateResponse, AUTH_ServerErrorDTO, AUTH_UserDeleteDTO, AUTH_AuthErrorDTO, AUTH_ProfileDTO, AUTH_AvatarDTO, AUTH_IsAuthResponse, AUTH_GetUserDTO } from "./model";
+import { handleGoogleAuth } from "./google-auth"; // Simona - Google Auth
+import { GoogleAuthRequestBody, GoogleAuthResponse } from "./google-models"; // Simona - Google Models
+import { initGoogleAuthDB, createUserWithGoogle, getUserByName } from "./google-sqlite"; // Simona - Google SQLite
 
 dotenv.config();
 
@@ -13,6 +16,7 @@ const Fastify = fastify({logger: true});
 
 Fastify.register(async function (fastify) {
 	await initDB();
+	await initGoogleAuthDB(); // Simona - Initialize Google Auth DB
 
 	Fastify.get<{Reply: AUTH_IsAuthResponse}>('/is-auth', async (request, reply) => {
 		const token = request.headers.authorization;
@@ -133,6 +137,74 @@ Fastify.register(async function (fastify) {
 			reply.status(500).send({ error: "Server error", details: e });
 		}
 	})
+
+	// Simona - Google Auth
+	Fastify.post<{ Body: GoogleAuthRequestBody, Reply: GoogleAuthResponse }>('/google-auth', async (request, reply) => {
+		try {
+			const response = await handleGoogleAuth(request.body);
+			
+			if (response.error) {
+				return reply.status(400).send(response);
+			}
+			
+			return reply.send(response);
+		} catch (error) {
+			console.error('Google auth route error:', error);
+			return reply.status(500).send({ error: 'Internal server error' });
+		}
+	});
+
+	Fastify.post<{ Body: { username: string, email: string, googleId: string }, Reply: GoogleAuthResponse }>('/google-complete', async (request, reply) => {
+		try {
+			const { username, email, googleId } = request.body;
+			
+			console.log('Google complete request:', { username, email, googleId });
+			
+			// Validate username
+			if (!username || username.length < 3) {
+				return reply.status(400).send({ error: 'Username must be at least 3 characters' });
+			}
+
+			// Check if username is available
+			const existingUser = await getUserByName(username);
+			if (existingUser) {
+				return reply.status(400).send({ error: 'Username already taken' });
+			}
+
+			// Create user with Google data
+			const user = await createUserWithGoogle(googleId, username, email);
+			
+			console.log('User created:', user);
+			
+			if (!user) {
+				return reply.status(500).send({ error: 'Failed to create user' });
+			}
+
+			// Generate JWT token
+			const token = jwt.sign(
+				{ userId: user.id }, 
+				process.env.TOKEN_SECRET || "", 
+				{ expiresIn: '1h' }
+			);
+
+			const response = {
+				token,
+				user: {
+					id: user.id,
+					name: user.name,
+					email: user.email,
+					avatar: user.avatar
+				}
+			};
+			
+			console.log('Sending response:', response);
+			return reply.send(response);
+
+		} catch (error) {
+			console.error('Google complete error:', error);
+			return reply.status(500).send({ error: 'Internal server error' });
+		}
+	});
 })
 
 Fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {

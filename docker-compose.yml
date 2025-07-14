@@ -5,8 +5,11 @@ services:
     build:
       context: ./ping-pong-frontend
       dockerfile: ./Dockerfile
+      args:
+        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID} 
     environment:
       NODE_ENV: production
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}  
     hostname: ping-pong-frontend
     ports:
       - 3000:3000
@@ -85,6 +88,8 @@ services:
       - db:/db
     ports:
       - 8083:8083
+    env_file:  # Simona - Load auth's .env file (we can also make .env fully move to root instead of auth/.env)
+      - ./auth/.env
 
   score:
     container_name: score
@@ -114,10 +119,5 @@ services:
 
 volumes:
   db:
-    name: db
+    name: db_simple
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      #device: C:\Projects\_mariadb_volume
-      device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb

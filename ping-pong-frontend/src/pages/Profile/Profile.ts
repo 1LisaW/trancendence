@@ -13,12 +13,19 @@ class ImageEditor {
 	// imgPreview: HTMLImageElement | null = null;
 	avatar: HTMLElement;
 	buttonWrapper: HTMLElement;
+	// Add these properties to ImageEditor
+	popup: HTMLElement | null = null;
+	updateAvatarSrc: () => void;
+	avatarSrc: string;
 
-	constructor(parent: HTMLElement, buttonWrapper: HTMLElement, avatar: HTMLElement) {
+	constructor(parent: HTMLElement, buttonWrapper: HTMLElement, avatar: HTMLElement, popup: HTMLElement | null, updateAvatarSrc: () => void, avatarSrc: string) {
 		this.container = document.createElement('div');
 		this.container.className = 'flex items-center justify-center w-full';
 		this.avatar = avatar;
 		this.buttonWrapper = buttonWrapper;
+		this.popup = popup;
+		this.updateAvatarSrc = updateAvatarSrc;
+		this.avatarSrc = avatarSrc;
 
 		const label = document.createElement('label');
 		label.setAttribute("for", "dropzone-file");
@@ -75,28 +82,42 @@ class ImageEditor {
 		return canvas;
 	}
 
-	sendImageData = (cropper: Cropper) => {
-		// Upload cropped image to server if the browser supports `HTMLCanvasElement.toBlob`.
-		// The default value for the second parameter of `toBlob` is 'image/png', change it if necessary.
+	sendImageData = async (cropper: Cropper) => {
+		try {
+			const base64 = cropper.getCroppedCanvas().toDataURL('image/jpeg');
 
-		const base64 = cropper.getCroppedCanvas().toDataURL('image/jpeg'); // => {
-		// const formData = new FormData();
-		// Pass the image file name as the third parameter if necessary.
-		// if (!blob)
-		// return ;
-		// formData.append('croppedImage', blob/*, 'example.png' */);
-		// console.log(base64);
-		fetch(`${AUTH_HOSTNAME}/profile`, {
-			method: "POST",
-			headers: {
-				"Authorization": getToken(),
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ avatar: base64 }),
-		});
-		// fetch()
-		this.avatar.innerHTML = `<img src="${base64}"/>`;
-		// });
+			const response = await fetch(`${AUTH_HOSTNAME}/profile`, {
+				method: "POST",
+				headers: {
+					"Authorization": getToken(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ avatar: base64 }),
+			});
+
+			if (response.ok) {
+				// Update the avatar display immediately
+				this.avatar.innerHTML = `<img src="${base64}"/>`;
+
+				// Update the global avatar state
+				this.avatarSrc = base64;
+				this.updateAvatarSrc();
+
+				// Close the popup
+				if (this.popup) {
+					this.popup.remove();
+					this.popup = null;
+				}
+
+				console.log('Avatar updated successfully');
+			} else {
+				console.error('Failed to update avatar:', response.status);
+				alert('Failed to update avatar. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error updating avatar:', error);
+			alert('Error updating avatar. Please try again.');
+		}
 	}
 
 	onImageUpload = (event: Event) => {
@@ -182,11 +203,13 @@ export default class Profile extends Component {
 	avatar: HTMLElement;
 	popup: HTMLElement | null = null;
 	updateAvatarSrc: () => void;
+	avatarSrc: string; // Simona - added this property
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
 		this.container.className = "flex flex-col h-full items-center bg-(--color-paper-base) justify-center";
 		this.avatar = document.createElement('div');
 		this.updateAvatarSrc = updateAvatarSrc;
+		this.avatarSrc = avatarSrc; // Store the avatarSrc
 		this.update(avatarSrc);
 		this.init();
 	}
@@ -266,13 +289,65 @@ export default class Profile extends Component {
 
 	}
 	createChildren(): void {
+		// Clear any existing content first
+		this.container.innerHTML = '';
+
+		console.log("Profile createChildren - fetching user data...");
+
 		const grid = document.createElement('div');
 		grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 w-full justify-items-center';
+
+		// Update avatar with current avatarSrc
+		this.avatar = document.createElement('div');
 		this.avatar.setAttribute('id', 'user_avatar');
 		this.avatar.className = 'rounded-full shadow-2xl shadow-(color:--color-accent) size-[100px] overflow-hidden';
 		this.avatar.addEventListener('click', () => this.avatarEditor(this.container));
 
-		// fetch()
+		// Update avatar display immediately
+		this.update(this.avatarSrc);
+
+		// Get user info to display actual username
+		fetch('/gateway/auth/user', {
+			method: "GET",
+			headers: {
+				"Authorization": getToken(),
+			},
+		}).then((res) => {
+			console.log("User fetch response status:", res.status);
+			return res.json();
+		})
+		.then(res => {
+			console.log("User data fetched:", res); // Add debug logging
+			if (res.user && res.user.name) {
+				console.log("Setting username to:", res.user.name);
+				const name = document.createElement('div');
+				name.className = 'col-span-1 col-start-1';
+				name.innerHTML = res.user.name; // Use actual username
+				grid.appendChild(this.avatar);
+				grid.appendChild(name);
+				this.container.appendChild(grid);
+			} else {
+				console.error('No user data found in response:', res);
+				// Fallback to hardcoded name if no user data
+				const name = document.createElement('div');
+				name.className = 'col-span-1 col-start-1';
+				name.innerHTML = 'User'; // Fallback name
+				grid.appendChild(this.avatar);
+				grid.appendChild(name);
+				this.container.appendChild(grid);
+			}
+		}).catch(error => {
+			console.error('Error fetching user info:', error);
+			// Fallback to hardcoded name if fetch fails
+			const name = document.createElement('div');
+			name.className = 'col-span-1 col-start-1';
+			name.innerHTML = 'User'; // Fallback name
+			grid.appendChild(this.avatar);
+			grid.appendChild(name);
+			this.container.appendChild(grid);
+		});
+
+		// fetch score data
 		fetch(`${SCORE_HOSTNAME}/score`, {
 			method: "GET",
 			headers: {
@@ -281,50 +356,12 @@ export default class Profile extends Component {
 		}).then(
 			(res) => res.json()
 		).then(res => {
-			if ('user_id' in res)
-			{
-				res = res as SCORE_ScoreDTO
-				console.log("Score get res: ",res);
+			if ('user_id' in res) {
+				res = res as SCORE_ScoreDTO;
+				console.log("Score get res: ", res);
 				this.createScoreTable(this.container, res);
-
 			}
 		});
-		// if avatar is not uploaded
-
-		// fetch(`${AUTH_HOSTNAME}/profile`, {
-		// 	method: "GET",
-		// 	headers: {
-		// 		"Authorization": getToken(),
-		// 	},
-		// }).then((res) => res.json()
-		// ).then(res => {
-		// 	console.log("Profile get res: ",res);
-		// 	if (res.error)
-		// 	{
-		// 		const emptyAvatar = document.createElement('div');
-		// 		emptyAvatar.setAttribute('id', 'upload_avatar');
-		// 		emptyAvatar.className = 'relative w-full h-full cursor-pointer [text-shadow:_0_2px_4px_rgb(99_102_241_/_0.8)] flex justify-center text-6xl p-2 bg-(--color-form-base) text-(--color-paper-base)';
-		// 		emptyAvatar.innerText = '+';
-		// 		this.avatar.appendChild(emptyAvatar);
-		// 		return;
-		// 	}
-		// 	if (res.profile.avatar)
-		// 		this.avatar.innerHTML = `<img src="${res.profile.avatar}"/>`;
-		// });
-		// const emptyAvatar = document.createElement('div');
-		// emptyAvatar.setAttribute('id', 'upload_avatar');
-		// emptyAvatar.className = 'relative w-full h-full cursor-pointer [text-shadow:_0_2px_4px_rgb(99_102_241_/_0.8)] flex justify-center text-6xl p-2 bg-(--color-form-base) text-(--color-paper-base)';
-		// emptyAvatar.innerText = '+';
-		// this.avatar.appendChild(emptyAvatar);
-
-		// this.avatar.innerText = '+';
-		const name = document.createElement('div');
-		name.className = 'col-span-1 col-start-1';
-		name.innerHTML = 'NameOfUser';
-		grid.appendChild(this.avatar);
-		grid.appendChild(name);
-
-		this.container.appendChild(grid);
 	}
 
 	avatarEditor(parent: HTMLElement) {
@@ -357,7 +394,8 @@ export default class Profile extends Component {
 
 		const buttonWrapper = document.createElement('div');
 		buttonWrapper.className = 'bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6';
-		new ImageEditor(editor, buttonWrapper, this.avatar);
+		// Pass the required parameters to ImageEditor
+		new ImageEditor(editor, buttonWrapper, this.avatar, this.popup, this.updateAvatarSrc, this.avatarSrc);
 		editor.appendChild(buttonWrapper);
 		const cancelButton = document.createElement('button');
 		cancelButton.className = 'ml-3 text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent) font-medium rounded-md text-sm px-5 py-2.5 mt-5 text-center';
@@ -382,15 +420,20 @@ export default class Profile extends Component {
 	}
 
 	update = (avatar: string) => {
+		console.log("Profile update called with avatar:", avatar);
+		this.avatarSrc = avatar; //Simona-  Update the stored avatar
+
 		if (avatar === '') {
 			const emptyAvatar = document.createElement('div');
 			emptyAvatar.setAttribute('id', 'upload_avatar');
 			emptyAvatar.className = 'relative w-full h-full cursor-pointer [text-shadow:_0_2px_4px_rgb(99_102_241_/_0.8)] flex justify-center text-6xl p-2 bg-(--color-form-base) text-(--color-paper-base)';
 			emptyAvatar.innerText = '+';
+			this.avatar.innerHTML = '';
 			this.avatar.appendChild(emptyAvatar);
 		}
-		else
+		else {
 			this.avatar.innerHTML = `<img src="${avatar}"/>`;
+		}
 	}
 
 }

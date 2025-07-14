@@ -4,6 +4,7 @@ import { setI18nData } from "../../utils/i18n";
 import Component from "../../components/Component";
 import Warning from "../../components/Warning/Warning";
 import { setToken } from "../../utils/auth";
+import { GoogleSignIn } from "../../components/GoogleSignIn/GoogleSignIn"; // Simona - Google Sign-in
 
 const AUTH_HOSTNAME = "/gateway/auth";
 export default class Login extends Component {
@@ -11,6 +12,7 @@ export default class Login extends Component {
 	inputList: { id: string; type: string; required: boolean }[] = [];
 	form: HTMLFormElement | null = null;
 	warnings: Warning[] = [];
+	googleSignIn: GoogleSignIn | null = null; // Simona - Google Sign-in
 
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, navigate: (route:string)=>void)
 	{
@@ -93,27 +95,58 @@ export default class Login extends Component {
 			form.append(div);
 		})
 
+		// Regular submit button
 		const button = document.createElement('button');
-		button.className = `text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent) font-medium rounded-md text-sm px-5 py-2.5 mt-5 text-center`;
+		button.className = `text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent) font-medium rounded-md text-sm px-5 py-2.5 w-full`;
 		button.setAttribute('type', 'submit');
 		setI18nData(button, this.dictionary[this.dictionary.currLang], "login", "title");
-
 		form.appendChild(button);
-		this.container.appendChild(form);
 
-		this.form =form;
+		// Separator
+		const separator = document.createElement('div');
+		separator.className = "flex items-center my-4";
+		separator.innerHTML = `
+			<div class="flex-1 border-t border-gray-300"></div>
+			<span class="px-3 text-sm text-gray-500">or</span>
+			<div class="flex-1 border-t border-gray-300"></div>
+		`;
+		form.appendChild(separator);
+
+		// Google Sign-in button container
+		const googleButtonContainer = document.createElement('div');
+		googleButtonContainer.className = "w-full flex justify-center";
+		googleButtonContainer.id = "google-signin-button";
+		form.appendChild(googleButtonContainer);
+
+		this.container.appendChild(form);
+		this.form = form;
 	}
 
 	addSubscriptions(): void {
 		this.form?.addEventListener('submit', this.handleSubmit);
-		// this.form?.addEventListener('click', () =>console.log("click"));
-		console.log("Login addEventListener to form on submit")
+
+		// Simona - Initialize Google Sign-in
+		this.googleSignIn = new GoogleSignIn(
+			document.getElementById('google-signin-button')!,
+			(_token: string) => {  // Simona -  Added underscore to indicate unused parameter?
+				// Success callback - same as normal login
+				this.navigate('/');
+			},
+			(_error: string) => {
+				// Error callback
+				const container = this.form?.querySelector('#login-container-email') as HTMLElement;
+				if (container)
+					this.warnings.push(new Warning(container, this.dictionary[this.dictionary.currLang], 'google-auth-failed'));
+			}
+		);
 	}
+
 	removeSubscriptions(): void {
 		this.form?.removeEventListener('submit', this.handleSubmit);
 		// this.form?.addEventListener('click', () =>console.log("click"));
-		console.log("Login removeEventListener to form on submit")
+		//console.log("Login removeEventListener to form on submit") // Simona - Commented out
 	}
+
 	render(): void {
 		this.parent.append(this.container);
 	}

@@ -405,7 +405,7 @@ docker-compose logs -f ai-service backend game-service
 
 ## 🐛 Recent Bug Fixes & Improvements
 
-### ✅ **Fixed: Game Starts During Countdown**
+### Game Starts During Countdown**
 **Problem**: Game became playable immediately while countdown animation was still showing.
 
 **Root Cause**: Frontend showed 5-second countdown visually but didn't delay actual game control activation.
@@ -430,7 +430,7 @@ if (this.gameObjects.length === 3 && this._state === State.GAME) {
 }
 ```
 
-### ✅ **Fixed: Game Continues After User Disconnects**
+### Game Continues After User Disconnects**
 **Problem**: When user clicked "LOSE" or disconnected, AI continued receiving game state updates indefinitely.
 
 **Root Cause**: Backend detected player disconnection but didn't call game-service termination function.

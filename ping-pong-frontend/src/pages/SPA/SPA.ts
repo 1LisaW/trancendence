@@ -235,6 +235,11 @@ export class SPA {
 		const currentOutlets = this.router.getRouteOutlets();
 		console.log(currentOutlets);
 		currentOutlets.forEach((value) => {
+			// Simona - Force recreation of Profile component when user changes
+			if (value === 'profile' && this.outlets[value]) {
+				this.outlets[value] = null; // Simona - Force recreation
+			}
+			
 			if (!this.outlets[value])
 				this.initOutlet(value);
 			else

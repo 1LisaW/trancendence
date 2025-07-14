@@ -7,6 +7,27 @@ import {
 	AUTH_ProfileDTO,
 } from "./auth-model";
 
+export interface GoogleAuthRequestBody {
+	idToken: string;
+}
+
+export interface GoogleAuthResponse {
+	token?: string;
+	error?: string;
+	user?: {
+		id: number;
+		name: string;
+		email: string;
+		avatar?: string;
+	};
+	needsUsername?: boolean; // Add this field
+	googleUser?: {
+		email: string;
+		name: string;
+		picture?: string;
+	};
+}
+
 const registerAuthRoutes = (Fastify: FastifyInstance, AUTH_SERVICE: string) => {
 	Fastify.get<{
 		Reply: GW_IsAuthDTO
@@ -99,6 +120,28 @@ const registerAuthRoutes = (Fastify: FastifyInstance, AUTH_SERVICE: string) => {
 				reply.status(500).send({ error: "Server error", details: e });
 			}
 		})
+
+	Fastify.post<{ Body: GoogleAuthRequestBody, Reply: GoogleAuthResponse }>('/auth/google-auth',
+		async (request, reply) => {
+			try {
+				await Fastify.proxyRequest<GoogleAuthResponse>(
+					`${AUTH_SERVICE}/google-auth`, 'POST', request, reply, false
+				);
+			} catch (e) {
+				reply.status(500).send({ error: "Server error" });
+			}
+		});
+
+	Fastify.post<{ Body: { username: string, email: string, googleId: string }, Reply: GoogleAuthResponse }>('/auth/google-complete',
+		async (request, reply) => {
+			try {
+				await Fastify.proxyRequest<GoogleAuthResponse>(
+					`${AUTH_SERVICE}/google-complete`, 'POST', request, reply, false
+				);
+			} catch (e) {
+				reply.status(500).send({ error: "Server error" });
+			}
+		});
 }
 
 export default registerAuthRoutes;

@@ -16,7 +16,9 @@
 
     "jsonwebtoken": "^9.0.2",
 
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+
+    "google-auth-library": "^9.0.0"
 
   },
 
