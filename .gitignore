@@ -1,5 +1,4 @@
 /sqlite
 .env
 .env
-auth/.env.template
-auth/.env.template
+
