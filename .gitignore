@@ -1,2 +1,2 @@
-#/sqlite
-#.env
+/sqlite
+.env
