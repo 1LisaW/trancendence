@@ -217,7 +217,14 @@ export class SPA {
 	update = async() => {
 		await this.checkIsAuth();
 		// this.isAuth = !!(userName);
-		this.outlets["header"]?.update();
+		// this.outlets["header"]?.update(); // Simona commented this out because it was updating the header with the old avatar
+
+		// Simona added this line: Update avatar before updating header
+		if (this.isAuth) {
+			await this.updateAvatar();
+		}
+
+		this.outlets["header"]?.update(this.avatar); // Simona added this line: Pass the avatar
 		if (!this.isAuth)
 		{
 			// removeToken();
@@ -239,7 +246,12 @@ export class SPA {
 			if (value === 'profile' && this.outlets[value]) {
 				this.outlets[value] = null; // Simona - Force recreation
 			}
-			
+
+			// Simona added this line: Force header recreation when avatar changes
+			if (value === 'header' && this.outlets[value]) {
+				this.outlets[value] = null; // Force header recreation with new avatar
+			}
+
 			if (!this.outlets[value])
 				this.initOutlet(value);
 			else
