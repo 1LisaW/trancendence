@@ -142,7 +142,7 @@ export default class SignUp extends Component {
 	addSubscriptions(): void {
 		this.form?.addEventListener('submit', this.handleSubmit);
 
-        // this.form?.addEventListener('click', () =>console.log("click"));
+		// this.form?.addEventListener('click', () =>console.log("click"));
         // console.log("addEventListener to form on submit") // Simona - Commented out
 
 		// Simona - Initialize Google Sign-in for signup
