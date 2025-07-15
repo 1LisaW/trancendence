@@ -17,8 +17,9 @@ export interface ScoreState {
 
 export interface GameResult {
 	players: number[],
-	gameResult: string[],
-	score: number[]
+	gameResult: number[],
+	score: number[],
+	mode: 'pvp' | 'pvc' | 'tournament',
 }
 
 

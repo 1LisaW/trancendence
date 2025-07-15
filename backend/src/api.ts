@@ -1,17 +1,28 @@
 // game-service
 
-import { SCORE_ErrorDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO } from "./model";
+import { MatchOptions, SCORE_ErrorDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO } from "./model";
 
 const GAME_SESSION_HOSTNAME = 'game-service';
 const GAME_SESSION_PORT = 8081;
 
-export const post_matchmaking__game_service = (socketId: number, mode: 'pvp'|'pvc'): Promise<Response> => {
+export const post_matchmaking__game_service = (socketId: number, mode: 'pvp'|'pvc'|'tournament'): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
 		method: "POST",
 		headers: {
 		  'Content-Type': 'application/json',
 		},
 		body: JSON.stringify({mode}),
+	  })
+	);
+}
+
+export const post_matchmaking_with_specific_user__game_service = (socketId: number, mode: 'pvp' | 'pvc' |'tournament', opponentId: number): Promise<Response> => {
+	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
+		method: "POST",
+		headers: {
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({mode, opponentId}),
 	  })
 	);
 }
@@ -27,12 +38,13 @@ export const post_bat_move__game_service = (gameSessionId: string, socketId: num
 	);
 }
 
-export const post_terminate_game = (gameId: string): Promise<Response> => {
+export const post_terminate_game = (gameId: string, disconnectedPlayer: number): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/terminate/${gameId}`, {
 		method: "POST",
-		// headers: {
-		//   'Content-Type': 'application/json',
-		// },
+		headers: {
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({userId: disconnectedPlayer}),
 	  })
 	);
 }
@@ -110,6 +122,7 @@ export interface ScoreRequestBody {
 	second_user_id: number,
 	first_user_name: string,
 	second_user_name: string,
+	game_results: number[],
 	score: number[],
 	game_mode: string
 }
@@ -197,4 +210,19 @@ export const delete_tournament = async (tournament_id: number) => {
 	});
 	// const data: {message: string} | SCORE_ErrorDTO = await response.json();
 	// return (data);
+}
+
+// ai-service
+
+const AI_SESSION_HOSTNAME = 'ai-service';
+const AI_SESSION_PORT = 8086;
+
+export const post_new_ai_session = (user_id: number): Promise<Response> => {
+	return (fetch(`http://${AI_SESSION_HOSTNAME}:${AI_SESSION_PORT}/session/new/${user_id}`, {
+		method: "POST",
+		// headers: {
+		//   'Content-Type': 'application/json',
+		// },
+	  })
+	);
 }

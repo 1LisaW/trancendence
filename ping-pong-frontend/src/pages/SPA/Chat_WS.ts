@@ -19,10 +19,11 @@ class Chat_WS {
 		this.ws.onmessage = (msg) => {
 			const message = msg.data;
 			const data: ChatTournamentMessage = JSON.parse(message);
-			console.log('I got a message!', message)
+			console.log('I got a message!', message, data)
 			if (data.recipient === 'tournament') {
-				// console.log('message.recipient === tournament');
+			// 	// console.log('message.recipient === tournament');
 				this.syncChatFromWs(data);
+				// if (data.event === 'match') {}
 			}
 			//   message.innerHTML += `<br /> ${message}`
 		}

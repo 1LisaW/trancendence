@@ -10,7 +10,7 @@ enum TournamentState {
 	FINISHED = 'finished',
 }
 
-const TOURNAMENT_LOBBY_CHECK_PERIOD = 1000 * 60; // 1 minute
+const TOURNAMENT_LOBBY_CHECK_PERIOD = 1000 * 60 / 4; // 1 minute // 15 sec
 const TOURNAMENT_EXPIRE_PERIOD = 1000 * 60 * 15; // 15 minutes
 export default class TournamentSessionManager {
 	private tournamentSession: TournamentSession;
@@ -28,6 +28,10 @@ export default class TournamentSessionManager {
 		if (this.logging) {
 			console.log(" 🎠 [TournamentSessionManager]: ", msg);
 		}
+	}
+
+	getTournamentId = () => {
+		return this.tournamentSession.getId();
 	}
 
 	syncTournamentDataWithDB = async () => {
@@ -160,7 +164,7 @@ export default class TournamentSessionManager {
 		}
 	}
 
-	handleGameMessage(msg: string) {
-
+	onGameResult = (players: number[], score:number[]) => {
+		this.tournamentSession.onGameResult(players, score);
 	}
 }

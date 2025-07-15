@@ -1,4 +1,4 @@
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service, post_matchmaking_with_specific_user__game_service, post_new_ai_session } from "./api";
 import { Status, WSocket } from "./model";
 
 export class Users {
@@ -47,14 +47,34 @@ export class Users {
 		return this.chatUserSockets.get(userId);
 	}
 	addGameSocket(userId: number, socket: WSocket) {
+		if (this.gameUserSockets.has(userId) === false) {
+			this.gameUserSockets.set(userId, []);
+		}
 		this.gameUserSockets.get(userId)?.push(socket);
-
 	}
+
+	addUsersGameSocket(user_id: number, socket: WSocket) {
+		 socket.id = user_id;
+     	 this.addGameSocket(user_id, socket);
+	}
+
+
+	addAIGameSocket(user_id: number, socket: WSocket) {
+		socket.id = user_id; // AI session id
+		this.addGameSocket(user_id, socket);
+		socket.timeStamp = Date.now();
+	}
+
 	removeGameSocket(socket: WSocket) {
 		const user_id = socket.id;
 		if (user_id === undefined)
 			return;
 		const newState = this.gameUserSockets.get(user_id)?.filter((value) => value != socket) || [];
+		if (user_id < 0) {
+			this.gameUserSockets.delete(user_id);
+			this.userPool.delete(user_id.toString());
+			return;
+		}
 		this.gameUserSockets.set(user_id, newState)
 		if (this.getUserStatus(user_id) === Status.PLAYING && newState.length === 0)
 			this.setStatus(user_id, Status.ONLINE);
@@ -72,6 +92,7 @@ export class Users {
 	}
 
 	private setStatus(user_id: number, status: Status) {
+		console.log("🕵🏻‍♀️ USER: ", user_id, " changed status to ", status.toString());
 		this.statuses.set(user_id, status);
 	}
 
@@ -86,7 +107,7 @@ export class Users {
 
 	// Simona -POTENTIAL CHANGE TO HANDLE AI PLAYER
 	getUserNameById(user_id: number) {
-		if (user_id === -1) return 'AI'; // Handle AI player
+		if (user_id < 0) return 'AI'; // Handle AI player
 		console.log("getUserNameById: ", typeof user_id, " ", this.idToUsers.get(user_id), this.idToUsers.keys(), this.idToUsers.values());
 		return (this.idToUsers.get(user_id));
 	}
@@ -97,13 +118,58 @@ export class Users {
 	// 	this.chatUserSockets.delete(user_id);
 	// }
 
-	matchmaking(user_id: number, socket: WSocket, mode: 'pvp' | 'pvc') {
+	matchmaking = async (user_id: number, socket: WSocket, mode: 'pvp' | 'pvc' | 'tournament', opponentId?: number) => {
+		// console.log("matchmaking user_id: ", user_id, " mode: ", mode, " opponentId: ", opponentId);
+		// console.log("this.getUserStatus(user_id): ", this.getUserStatus(user_id));
+		// if (opponentId!= undefined)
+		// 	console.log(" opponentId: ", opponentId, " this.getUserStatus(opponentId): ", this.getUserStatus(opponentId));
+		// if (this.getUserStatus(user_id) !== Status.ONLINE || (opponentId !== undefined && this.getUserStatus(opponentId) !== Status.ONLINE))
+		// 	return;
 		// this.addGameSocket(user_id, socket);
-		this.setStatus(user_id, Status.MATCHMAKING);
+		switch (mode) {
+			case 'pvp':
+				this.setStatus(user_id, Status.MATCHMAKING);
+				return post_matchmaking__game_service(user_id, mode);
+				break;
+			case 'pvc':
+				this.setStatus(user_id, Status.MATCHMAKING);
+				console.log("user.matchmaking::  post_new_ai_session user_id: ", user_id);
+        		console.log('IN MATCHMAKING USER');
+
+				const data = await post_new_ai_session(user_id);
+				if (!data)
+					return ;
+				// console.log("+++post_new_ai_session data: ", data);
+				const json = await data.json();
+				console.log("+++post_new_ai_session json: ", json);
+				if ('user_id' in json && parseInt(json.user_id) === -user_id) {
+					return  post_matchmaking_with_specific_user__game_service(user_id, mode, json.user_id as number);
+				}
+				return ;
+				// if ('user' in json && ) {}
+				// if (this.getUserStatus(user_id) !== Status.ONLINE)
+				break;
+			case 'tournament':
+				if (opponentId !== undefined)
+					return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
+				break;
+			default:
+				console.error("Unknown game mode: ", mode);
+				return;
+		}
+		// this.setStatus(user_id, Status.MATCHMAKING);
+		// if (opponentId!= undefined)
+		// 	this.setStatus(opponentId, Status.MATCHMAKING);
 		console.log("this.matchmaking in process ", socket.id);
 
-		return post_matchmaking__game_service(user_id, mode);
+		// // FIX:: send post only when 2 users sockets exists
+		// if (mode === 'tournament' && opponentId !== undefined)
+		// 	return post_matchmaking_with_specific_user__game_service(user_id, mode, opponentId);
+		// if (mode !== 'tournament')
+		// 	return post_matchmaking__game_service(user_id, mode);
 	}
+
+
 
 	removeUserFromMatchmaking(user_id: number) {
 		delete_user_from_matchmaking(user_id);

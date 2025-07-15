@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid"
 import { GameState, ScoreState, GameResult } from "./api";
+import { SCORE_GAME_PERSONAL_RESULT } from "./model";
 type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLength };
 
 type Tuple3<T> = Tuple<T, 3>;
@@ -60,6 +61,15 @@ const batZToEdge = sceneParams.bat.width / 2;
 const batStep = sceneParams.bat.width / 2;
 const frameStep = 1.5;
 
+export enum MatchOptions {
+	START,
+	FORFEIT,
+	TECHNICAL_WIN,
+	WIN,
+	LOSE,
+	DRAW
+}
+
 export class GameSession {
 	private _id = nanoid();
 	private _ids: number[] = [];
@@ -78,11 +88,11 @@ export class GameSession {
 		this.sendDataToUser = sendDataToUser;
 		this._mode = mode;
 		this._players = {};
-		
+
 		if (mode === 'pvc') {
 			// Simona - for PVC: AI should be first (left), Human should be second (right)
 			this._ids.push(opponentId, playerId); // AI first, Human second
-			
+
 			// Human (playerId) gets RIGHT position, AI (opponentId) gets LEFT position
 			this._players[playerId] = {
 				id: playerId,
@@ -99,7 +109,7 @@ export class GameSession {
 		} else {
 			// Normal PVP mode
 			this._ids.push(playerId, opponentId);
-			
+
 			this._players[playerId] = {
 				id: playerId,
 				pos: [...sceneParams.player.startPosition] as Tuple3<number>,
@@ -113,7 +123,7 @@ export class GameSession {
 				speed: 0
 			};
 		}
-		
+
 		this._ball = {
 			pos: [0, sceneParams.ball.diameter / 2, 0],
 			speed: 0,
@@ -137,9 +147,9 @@ export class GameSession {
 	}
 	initBall() {
 		this._ball.pos = [0, sceneParams.ball.diameter / 2, 0];
-		
+
 		// while (!this._ball.normal[0])
-		//this._ball.normal[0] = 0.5 + 0.5 * Math.random(); // Simona commented this out 
+		//this._ball.normal[0] = 0.5 + 0.5 * Math.random(); // Simona commented this out
 
 		// Simona - Randomize ball direction: 50% chance to go left or right
 		const directionX = Math.random() < 0.5 ? -1 : 1;
@@ -152,21 +162,21 @@ export class GameSession {
 	}
 
 	setBatMove(id: number, step: number) {
-		// Simona's log 
+		// Simona's log
 		console.log(`🔧 setBatMove called: id=${id}, step=${step}`);
 		const bat = this._players[id];
-		
+
 		// Simona added this as a safety check (might be removable tho)
 		if (!bat) {
 			console.log(`setBatMove: Player ${id} not found`);
 			return;
 		}
 
-		// Simona's log 
+		// Simona's log
 		console.log(`🔧 Before move: bat.pos=${JSON.stringify(bat.pos)}, bat.dest=${JSON.stringify(bat.dest)}, bat.speed=${bat.speed}`);
-		
+
 		let z = bat.dest[2];
-		
+
 		if (step > 0) {
 			this._players[id].dest[2] = Math.min(z + batStep, batZTopPos);
 			this._players[id].speed = Math.min(this._players[id].speed + step, 3);
@@ -175,7 +185,7 @@ export class GameSession {
 			this._players[id].dest[2] = Math.max(z - batStep, -batZTopPos);
 			this._players[id].speed = Math.max(this._players[id].speed + step, -3);
 		}
-		
+
 		console.log(`🔧 After move: bat.pos=${JSON.stringify(this._players[id].pos)}, bat.dest=${JSON.stringify(this._players[id].dest)}, bat.speed=${this._players[id].speed}`);
 	}
 
@@ -184,7 +194,7 @@ export class GameSession {
 		if (this.countdownActive) {
 			return false;
 		}
-		
+
 		if (x >= ballXRightPos) {
 			this._score[0]++;
 			this._ball.speed = 1;
@@ -257,7 +267,7 @@ export class GameSession {
 		if (this.countdownActive) {
 			return;
 		}
-		
+
 		const step = this._ball.speed * frameStep;
 		const z_sign = this._ball.normal[2] / Math.abs(this._ball.normal[2]);
 		const x_sign = this._ball.normal[0] / Math.abs(this._ball.normal[0]);
@@ -300,6 +310,21 @@ export class GameSession {
 	isFinished() {
 		return (this._score[0] >= 5 || this._score[1] >= 5);
 	}
+
+	getGameResult(userId = 0): GameResult {
+		const win = userId ? SCORE_GAME_PERSONAL_RESULT.TECHNICAL_WIN: SCORE_GAME_PERSONAL_RESULT.WIN;
+		const lose = userId ? SCORE_GAME_PERSONAL_RESULT.FORFEIT: SCORE_GAME_PERSONAL_RESULT.LOSE;
+
+		const player1Result = this._score[0] < this._score[1] ? win : lose;
+		const player2Result = this._score[0] > this._score[1] ? win : lose;
+		const gameResult: GameResult = {
+			players: this._ids,
+			gameResult:[player1Result, player2Result],
+			score: this._score,
+			mode: this._mode
+		};
+		return gameResult;
+	}
 	gameLoop() {
 		console.log("*** GAME LOOP *** (game-service)");
 		const tickLengthMs = 1000 / 20;
@@ -310,10 +335,17 @@ export class GameSession {
 		const gameLoop = () => {
 			if (this.isFinished())
 			{
-				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose'; // Simona commented this out to avoid error
-				const player1Result = this._score[0] > this._score[1] ? 'win' : 'lose'; // Simona added this
-				const player2Result = this._score[1] > this._score[0] ? 'win' : 'lose'; // Check player2's score
-				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
+// <<<<<<< HEAD
+// 				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose'; // Simona commented this out to avoid error
+// 				const player1Result = this._score[0] > this._score[1] ? 'win' : 'lose'; // Simona added this
+// 				const player2Result = this._score[1] > this._score[0] ? 'win' : 'lose'; // Check player2's score
+// 				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
+// =======
+				const gameResult = this.getGameResult();
+				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
+				//const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
+				this.sendDataToUser(this._id, gameResult);
+// >>>>>>> origin/dev
 				return;
 			}
 			if (this.terminated)
@@ -342,12 +374,26 @@ export class GameSession {
 		}
 		gameLoop();
 	}
-	terminate() { // simona added this
+// <<<<<<< HEAD
+// 	terminate() { // simona added this
+// 		if (this.countdownTimer) {
+// 			clearTimeout(this.countdownTimer);
+// 			this.countdownTimer = null;
+// 		}
+// =======
+	terminate(userId = 0) {
+// >>>>>>> origin/dev
+		console.log("GAME SERVICE GAME TERMINATED ****");
+		// simona added this
 		if (this.countdownTimer) {
 			clearTimeout(this.countdownTimer);
 			this.countdownTimer = null;
 		}
-		console.log("GAME SERVICE GAME TERMINATED ****");
 		this.terminated = true;
+		if (this._mode === 'tournament')
+		{
+			const gameResult = this.getGameResult(userId);
+			this.sendDataToUser(this._id, gameResult);
+		}
 	}
 }
