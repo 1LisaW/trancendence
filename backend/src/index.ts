@@ -9,7 +9,7 @@ import TournamentSessionManager from "./tournament/TournamentSessionManager";
 
 
 
-
+const DELAY_MSG_TO_AI = 1000;
 const users = new Users();
 const tournamentSessionManager = new TournamentSessionManager(users);
 // const tournament = new Tournament(users);
@@ -23,9 +23,22 @@ Fastify.register(async function (fastify) {
   Fastify.post<{ Params: GameLoopParams, Body: GameState | ScoreState | GameResult }>('/game/:gameId', (request, reply) => {
     const { gameId } = request.params;
     const { players } = request.body;
+    // console.log("POST /game/:gameId Backend: game loop data received: ", request.body, " gameId: ", gameId, " players: ", players);
     if (players.every(player => users.gameSocketIsAlive(player))) {
       players.forEach(player => {
         const sockets = users.getGameSocketById(player);
+        // send data to AI only once in delay_min
+        if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp && (sockets[0].timeStamp + DELAY_MSG_TO_AI) > Date.now())
+          return ;
+        if (player < 0 && sockets && sockets[0].timeStamp)// && (sockets[0].timeStamp + DELAY_MSG_TO_AI) < Date.now())
+        {
+            const date = Date.now();
+            sockets.forEach(socket => {
+              socket.timeStamp = date;
+              socket.send(JSON.stringify(request.body));
+            });
+        }
+
         if (sockets && sockets.length)
           sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
       })
@@ -78,20 +91,26 @@ Fastify.register(async function (fastify) {
   //ws:
   Fastify.get('/game', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
 
-    console.log("||| New game socket connection ");
+    console.log("5.1.||| New game socket connection ");
     const token = req.headers['sec-websocket-protocol'] || '';
     let userData = await users.addUser(token);
+
+    console.log("5.2.||| userData: ", userData, " token: ", token);
 
     if ('user' in userData) {
       userData = userData as Auth_UserDTO;
       const user_id = userData.user.id;
-      socket.id = user_id;
-      console.log("|||   ||| userData: ", userData);
-
-      users.addGameSocket(user_id, socket);
+      users.addUsersGameSocket(user_id, socket);
     }
     else if ('error' in userData) {
-      socket.close();
+      // if token is from AI, leave a session be
+      const numberToken = parseInt(token, 10);
+      if (isNaN(numberToken) || numberToken >= 0) {
+        socket.close();
+      }
+      else {
+        users.addAIGameSocket(numberToken, socket);
+      }
     }
 
     socket.on('message', async message => {
@@ -113,10 +132,13 @@ Fastify.register(async function (fastify) {
         const mode = msg.mode as GAME_MODE;
         // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
+        // console.log('BEFORE MATCHMAKING USER');
           const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
 
           if (!data)
             return;
+          // console.log('AFTER MATCHMAKING USER', data);
+
           const json = await data.json();
           console.log("-|-|- Backend game socket matchmaking data: ", json);
 

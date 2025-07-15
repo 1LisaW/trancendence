@@ -3,6 +3,7 @@ import { setCountdown } from "./Contdown";
 
 export default class Environment {
     private _scene: Scene;
+    private isPvcMode: boolean; // Simona added this
     sceneParams = {
         ground: {
             name: "ground",
@@ -38,13 +39,15 @@ export default class Environment {
         scene: Scene, ws_game: WebSocket,
         gameId: string,
         addMeshToCollection: (object: Mesh) => void,
-        clearMeshToCollection: () => void
+        clearMeshToCollection: () => void,
+        isPvcMode: boolean = false // Simona added this
     ) {
         this._scene = scene;
         this.ws_game = ws_game;
         this.gameId = gameId;
         this.addMeshToCollection = addMeshToCollection;
         this.clearMeshToCollection = clearMeshToCollection;
+        this.isPvcMode = isPvcMode; // Simona added this
         this.clearMeshToCollection();
         console.log("***** CreaTe ENVIRONMENT ********");
     }
@@ -97,37 +100,36 @@ export default class Environment {
 
         const MoveBat = (bat: Mesh, key: string) => {
             console.log(bat.position.x);
-            // const boundary = (sceneParams.ground.height - sceneParams.bat.width) / 2;
+            
+            //  FIX: Send the same step values regardless of which paddle
+            // The game service will interpret them correctly based on player ID
             if (key == 'ArrowUp') {
                 this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: -1 }));
-
-                // if (box1.position.z - 10  >= -1 * boundary)
-                //     box1.position.z -= 10;
-                // else
-                //     box1.position.z = -1 * boundary;
             }
-            else if (key == 'ArrowDown')
+            else if (key == 'ArrowDown') {
                 this.ws_game.send(JSON.stringify({ gameId: this.gameId, step: 1 }));
-
-            // if (box1.position.z + 10 <= boundary)
-            //     box1.position.z += 10;
-            //  else
-            //     box1.position.z = boundary;
-
-        }
-        this._scene.onKeyboardObservable.add((kbInfo) => {
-            switch (kbInfo.type) {
-                case KeyboardEventTypes.KEYDOWN:
-                    // this.ws_game.send(JSON.stringify({gameId: this.gameId, step: -1}));
-                    console.log("KEY DOWN: ", kbInfo.event.key);
-                    MoveBat(box1, kbInfo.event.key);
-                    break;
-                case KeyboardEventTypes.KEYUP:
-                    // this.ws_game.send(JSON.stringify({gameId: this.gameId, step: 1}));
-                    console.log("KEY UP: ", kbInfo.event.code);
-                    break;
             }
-        });
+        }
+
+        // Modified by Simona - Don't attach keyboard controls immediately, wait for countdown
+        setTimeout(() => {
+            console.log("Countdown finished - keyboard controls now active");
+            this._scene.onKeyboardObservable.add((kbInfo) => {
+                // 🔧 Simona's change to Use correct paddle based on PVC mode
+                const humanControlledPaddle = this.isPvcMode ? box2 : box1;
+                switch (kbInfo.type) {
+                    case KeyboardEventTypes.KEYDOWN:
+                        console.log("KEY DOWN: ", kbInfo.event.key);
+                        //MoveBat(box1, kbInfo.event.key);
+                        MoveBat(humanControlledPaddle, kbInfo.event.key); // Simona's change to Use correct paddle based on PVC mode
+                        break;
+                    case KeyboardEventTypes.KEYUP:
+                        console.log("KEY UP: ", kbInfo.event.code);
+                        break;
+                }
+            });
+        }, 5000); // Wait 5 seconds for countdown to finish
+
         sphere.position.y++;
         this.addMeshToCollection(box1);
         this.addMeshToCollection(box2);

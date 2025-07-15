@@ -16,7 +16,7 @@ export const post_matchmaking__game_service = (socketId: number, mode: 'pvp'|'pv
 	);
 }
 
-export const post_matchmaking_with_specific_user__game_service = (socketId: number, mode: 'pvp'|'tournament', opponentId: number): Promise<Response> => {
+export const post_matchmaking_with_specific_user__game_service = (socketId: number, mode: 'pvp' | 'pvc' |'tournament', opponentId: number): Promise<Response> => {
 	return (fetch(`http://${GAME_SESSION_HOSTNAME}:${GAME_SESSION_PORT}/matchmaking/${socketId}`, {
 		method: "POST",
 		headers: {
@@ -210,4 +210,19 @@ export const delete_tournament = async (tournament_id: number) => {
 	});
 	// const data: {message: string} | SCORE_ErrorDTO = await response.json();
 	// return (data);
+}
+
+// ai-service
+
+const AI_SESSION_HOSTNAME = 'ai-service';
+const AI_SESSION_PORT = 8086;
+
+export const post_new_ai_session = (user_id: number): Promise<Response> => {
+	return (fetch(`http://${AI_SESSION_HOSTNAME}:${AI_SESSION_PORT}/session/new/${user_id}`, {
+		method: "POST",
+		// headers: {
+		//   'Content-Type': 'application/json',
+		// },
+	  })
+	);
 }

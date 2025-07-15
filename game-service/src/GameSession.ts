@@ -81,30 +81,61 @@ export class GameSession {
 	private sendDataToUser;
 
 	private terminated = false;
+	private countdownActive = true; // simona added this
+	private countdownTimer: NodeJS.Timeout | null = null; // simona added this
 
 	constructor(mode: ModeProp, playerId: number, opponentId: number, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
 		this.sendDataToUser = sendDataToUser;
 		this._mode = mode;
-		this._ids.push(playerId, opponentId);
 		this._players = {};
-		this._players[playerId] = {
-			id: playerId,
-			pos: [...sceneParams.player.startPosition] as Tuple3<number>,
-			dest: [...sceneParams.player.startPosition] as Tuple3<number>,
-			speed: 0
+
+		if (mode === 'pvc') {
+			// Simona - for PVC: AI should be first (left), Human should be second (right)
+			this._ids.push(opponentId, playerId); // AI first, Human second
+
+			// Human (playerId) gets RIGHT position, AI (opponentId) gets LEFT position
+			this._players[playerId] = {
+				id: playerId,
+				pos: [...sceneParams.opponent.startPosition] as Tuple3<number>, // RIGHT: [45, 5, 0]
+				dest: [...sceneParams.opponent.startPosition] as Tuple3<number>,
+				speed: 0
+			}
+			this._players[opponentId] = {
+				id: opponentId,
+				pos: [...sceneParams.player.startPosition] as Tuple3<number>, // LEFT: [-45, 5, 0]
+				dest: [...sceneParams.player.startPosition] as Tuple3<number>,
+				speed: 0
+			};
+		} else {
+			// Normal PVP mode
+			this._ids.push(playerId, opponentId);
+
+			this._players[playerId] = {
+				id: playerId,
+				pos: [...sceneParams.player.startPosition] as Tuple3<number>,
+				dest: [...sceneParams.player.startPosition] as Tuple3<number>,
+				speed: 0
+			}
+			this._players[opponentId] = {
+				id: opponentId,
+				pos: [...sceneParams.opponent.startPosition] as Tuple3<number>,
+				dest: [...sceneParams.opponent.startPosition] as Tuple3<number>,
+				speed: 0
+			};
 		}
-		this._players[opponentId] = {
-			id: opponentId,
-			pos: [...sceneParams.opponent.startPosition] as Tuple3<number>,
-			dest: [...sceneParams.opponent.startPosition] as Tuple3<number>,
-			speed: 0
-		};
+
 		this._ball = {
 			pos: [0, sceneParams.ball.diameter / 2, 0],
 			speed: 0,
 			normal: [0, 0, 0]
 		};
 		this.initBall();
+
+		// Simona's addition -  Start countdown timer
+		this.countdownTimer = setTimeout(() => {
+			this.countdownActive = false;
+			console.log(`Game ${this._id}: Countdown finished, game is now active`);
+		}, 6000); // 6 seconds to match AI countdown
 	}
 	getId() {
 		return this._id;
@@ -116,16 +147,36 @@ export class GameSession {
 	}
 	initBall() {
 		this._ball.pos = [0, sceneParams.ball.diameter / 2, 0];
+
 		// while (!this._ball.normal[0])
-		this._ball.normal[0] = 0.5 + 0.5 * Math.random();
-		this._ball.normal[2] = Math.sqrt(1 - Math.pow(this._ball.normal[0], 2));
+		//this._ball.normal[0] = 0.5 + 0.5 * Math.random(); // Simona commented this out
+
+		// Simona - Randomize ball direction: 50% chance to go left or right
+		const directionX = Math.random() < 0.5 ? -1 : 1;
+		this._ball.normal[0] = directionX * (0.5 + 0.5 * Math.random());
+
+		// Randomize Z direction (up/down)
+		const directionZ = Math.random() < 0.5 ? -1 : 1;
+		this._ball.normal[2] = directionZ * Math.sqrt(1 - Math.pow(this._ball.normal[0], 2));
 		this._ball.speed = 1;
 	}
 
 	setBatMove(id: number, step: number) {
+		// Simona's log
+		console.log(`🔧 setBatMove called: id=${id}, step=${step}`);
 		const bat = this._players[id];
-		// console.log("Before: Bat of user ", id, " updated it's position: ", bat.dest[2], ", speed: ", bat.speed);
+
+		// Simona added this as a safety check (might be removable tho)
+		if (!bat) {
+			console.log(`setBatMove: Player ${id} not found`);
+			return;
+		}
+
+		// Simona's log
+		console.log(`🔧 Before move: bat.pos=${JSON.stringify(bat.pos)}, bat.dest=${JSON.stringify(bat.dest)}, bat.speed=${bat.speed}`);
+
 		let z = bat.dest[2];
+
 		if (step > 0) {
 			this._players[id].dest[2] = Math.min(z + batStep, batZTopPos);
 			this._players[id].speed = Math.min(this._players[id].speed + step, 3);
@@ -133,15 +184,17 @@ export class GameSession {
 		else {
 			this._players[id].dest[2] = Math.max(z - batStep, -batZTopPos);
 			this._players[id].speed = Math.max(this._players[id].speed + step, -3);
-
 		}
-		// this._players[id].dest[1] = y;
-		// if ((this._players[id].speed > -3 && step < 0) || (this._players[id].speed < 3 || step > 0))
-		// 	this._players[id].speed += step;
-		// console.log("After: Bat of user ", id, " updated it's position: ", this._players[id].dest[2], ", speed: ", this._players[id].speed);
+
+		console.log(`🔧 After move: bat.pos=${JSON.stringify(this._players[id].pos)}, bat.dest=${JSON.stringify(this._players[id].dest)}, bat.speed=${this._players[id].speed}`);
 	}
 
 	private hasLoseRound(x: number, z: number, x_sign: number) {
+		// Simona - added - Don't score during countdown (might be removable now -- to be checked)
+		if (this.countdownActive) {
+			return false;
+		}
+
 		if (x >= ballXRightPos) {
 			this._score[0]++;
 			this._ball.speed = 1;
@@ -210,6 +263,11 @@ export class GameSession {
 			bat.pos[2] = -batZTopPos;
 	}
 	updateBallState() {
+		// Simona - Don't update ball position during countdown
+		if (this.countdownActive) {
+			return;
+		}
+
 		const step = this._ball.speed * frameStep;
 		const z_sign = this._ball.normal[2] / Math.abs(this._ball.normal[2]);
 		const x_sign = this._ball.normal[0] / Math.abs(this._ball.normal[0]);
@@ -223,7 +281,6 @@ export class GameSession {
 			this._ball.pos[0] = x;
 			this._ball.pos[2] = z;
 		}
-		// }
 		// else
 			// this.initBall();
 
@@ -278,10 +335,17 @@ export class GameSession {
 		const gameLoop = () => {
 			if (this.isFinished())
 			{
+// <<<<<<< HEAD
+// 				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose'; // Simona commented this out to avoid error
+// 				const player1Result = this._score[0] > this._score[1] ? 'win' : 'lose'; // Simona added this
+// 				const player2Result = this._score[1] > this._score[0] ? 'win' : 'lose'; // Check player2's score
+// 				this.sendDataToUser(this._id, {players: this._ids, gameResult:[player1Result, player2Result], score: this._score});
+// =======
 				const gameResult = this.getGameResult();
 				//const player1Result = this._score[0] < this._score[1] ? 'win' : 'lose';
 				//const player2Result = this._score[0] > this._score[1] ? 'win' : 'lose';
 				this.sendDataToUser(this._id, gameResult);
+// >>>>>>> origin/dev
 				return;
 			}
 			if (this.terminated)
@@ -310,8 +374,21 @@ export class GameSession {
 		}
 		gameLoop();
 	}
+// <<<<<<< HEAD
+// 	terminate() { // simona added this
+// 		if (this.countdownTimer) {
+// 			clearTimeout(this.countdownTimer);
+// 			this.countdownTimer = null;
+// 		}
+// =======
 	terminate(userId = 0) {
+// >>>>>>> origin/dev
 		console.log("GAME SERVICE GAME TERMINATED ****");
+		// simona added this
+		if (this.countdownTimer) {
+			clearTimeout(this.countdownTimer);
+			this.countdownTimer = null;
+		}
 		this.terminated = true;
 		if (this._mode === 'tournament')
 		{

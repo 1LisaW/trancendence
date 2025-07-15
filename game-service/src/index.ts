@@ -74,7 +74,19 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
                 return ;
             }
             break;
-
+        //*** Simona - Potential Way toHandle AI service connection
+        case GAME_MODE.PVC:
+            // Create game with AI opponent
+            // const aiOpponentId = -1;
+            if ('opponentId' in request.body) {
+                const aiOpponentId = Number(request.body.opponentId);
+                const pvcGame = gameSessionFactory.createSession(aiOpponentId, socket_id, mode);
+                const gameId = pvcGame.getId();
+                reply.send({ gameId: gameId, users: [aiOpponentId, socket_id] }); // AI left, human right
+                gameSessionFactory.startGameLoop(gameId);
+                console.log("Game-service: PVC matchmaking done");
+                return;
+            }
     }
 
 
@@ -93,8 +105,6 @@ Fastify.delete<{ Params: UserParams }>('/matchmaking/:socket_id', (request, repl
     reply.send({ message: "User removed from queue" });
 }
 );
-
-
 
 interface GamePostBody {
     userId: number,
@@ -117,6 +127,13 @@ Fastify.post<{ Params: GamePostParams, Body: GamePostBody }>('/game/:gameId', (r
     gameSessionFactory.updateGameSessionUserData(gameId, userId, step);
     reply.status(200).send({ message: "bat data updated" })
 })
+
+// Simona's addition -  new endpoint to expose scene parameters
+Fastify.get('/scene-params', (request, reply) => {
+    // Import the scene parameters from the same source as GameSession
+    const sceneParams = require('../configuration.json');
+    reply.status(200).send(sceneParams);
+});
 
 Fastify.listen({ port: 8081, host: '0.0.0.0' }, (err, address) => {
     if (err) {

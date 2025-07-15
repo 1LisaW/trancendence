@@ -27,7 +27,8 @@ export interface GameResult {
 }
 export interface WSocket extends WebSocket {
 	id?: number,
-	token?: string
+	token?: string,
+	timeStamp?: number
 };
 
 export enum Status { OFFLINE, ONLINE, MATCHMAKING, PLAYING }

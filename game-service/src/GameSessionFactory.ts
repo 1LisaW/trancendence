@@ -32,7 +32,9 @@ export class GameSessionFactory {
 	}
 
 	sendDataToUser = (gameId:string, state: GameState | ScoreState | GameResult) => {
-		post_game_loop_data(gameId, state)
+		post_game_loop_data(gameId, state);
+		if (this.getGameSession(gameId)?.isFinished())
+			this.sessionPool = this.sessionPool.filter((session) => session.getId()!= gameId);
 	}
 
 	startGameLoop(gameId:string) {

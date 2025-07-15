@@ -74,9 +74,6 @@ export class SPA {
 		this.chat_ws = new Chat_WS(this.syncChatFromWs);
 		this.chat = new Chat(this.syncWsFromChat);//, this.goToTournamentMatch);
 
-		this.initOutlet('game');
-		this.outlets["game"]?.removeFromDOM();
-
 		this.update().then(()=>{
 			this.initSubscriptions();
 		});
@@ -214,6 +211,17 @@ export class SPA {
 	// }
 	checkIsAuth = async () => {
 		const isAuth = (await isAuthenticated());
+
+		// init game page only when user is logged in
+		const gamePage = this.outlets['game'];
+		if (isAuth && !gamePage)
+		{
+			this.initOutlet('game');
+
+			if (location.pathname != '/game')
+				this.outlets['game']?.removeFromDOM();
+		}
+
 		if (this.isAuth === isAuth)
 		{
 			return ;

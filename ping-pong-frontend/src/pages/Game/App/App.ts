@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import { Engine, Scene, Vector3, HemisphericLight, MeshBuilder, Color4, FreeCamera, EngineFactory, Mesh, Animation } from "@babylonjs/core";
 import earcut from 'earcut';
@@ -69,15 +67,29 @@ export default class App {
 				this.gameId = data.gameId;
 				this.order = data.order;
 				this.opponent = data.opponent;
+
 				if (data.avatars[0])
-					this.avatarSrcs[0] = data.avatars[1];
+					this.avatarSrcs[0] = data.avatars[0];
 				if (data.avatars[1])
-					this.avatarSrcs[1] = data.avatars[0];
+					this.avatarSrcs[1] = data.avatars[1];
+
 				this._goToGame();
 				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent);//, this.avatarSrcs);
 			}
 			else if ('gameResult' in data)
 			{
+// <<<<<<< HEAD
+// 				const isPvcMode = this.opponent === 'AI'; // Simona
+//     			const resultIndex = isPvcMode ? 1 : this.order; // Simona - In PvC, human is always index 1
+// 				const resultText = data.gameResult[resultIndex]; // Simona - updated to use resultIndex
+// 				this.scores[2].text = resultText === 'win' ? 'You lose!' : 'You win!'; // Simona updated messages for AI
+// 				if (isPvcMode) { // Simona
+// 					this.scores[2].text = resultText === 'win' ? 'AI wins!' : 'You win!'; // Reversed for PvC
+// 				} else {
+// 					this.scores[2].text = resultText === 'win' ? 'You win!' : 'You lose!'; // Normal for PvP
+// 				}
+// 				console.log("FRONT APP gameResult: ", data.gameResult[resultIndex]); // Simona // Update log to use resultIndex
+// =======
 				switch (data.gameResult[this.order])
 				{
 					case MatchOptions.WIN:
@@ -99,37 +111,75 @@ export default class App {
 				console.log("FRONT APP gameResult: ", data.gameResult[this.order]);
 				//TODO::
 				this.setGameMode(null);
+// >>>>>>> origin/dev
 			}
 			else if ('score' in data)
 			{
 				if (this.scores.length >= 2)
 				{
-					if (this.scores[0].text != data.score[0])
+					const isPvcMode = this.opponent === 'AI'; // Simona
+					if (isPvcMode)
 					{
-						this.scores[0].text = data.score[0].toString();
-						console.log("FRONT APP score: ", data.score);
-						this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
+						// Store old scores to detect changes
+						const oldHumanScore = parseInt(this.scores[0].text) || 0;
+						const oldAiScore = parseInt(this.scores[1].text) || 0;
+						// Update scores: human on left (data.score[1]), AI on right (data.score[0])
+						this.scores[0].text = data.score[1].toString(); // Human score
+						this.scores[1].text = data.score[0].toString(); // AI score
+						console.log("FRONT APP score (PvC mode): ", data.score);
+						// Trigger animation based on who scored by comparing old and new scores
+						const newHumanScore = data.score[1];
+						const newAiScore = data.score[0];
+						if (newHumanScore > oldHumanScore)
+						{
+							// Human scored, animate human avatar (left, index 0)
+							this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
+							console.log("Human scored, animating human avatar");
+						}
+						else if (newAiScore > oldAiScore)
+						{
+							// AI scored, animate AI avatar (right, index 1)
+							this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
+							console.log("AI scored, animating AI avatar");
+						}
 					}
-					else
+					else // PvP mode (keeping the original order)
 					{
-						this.scores[1].text = data.score[1].toString();
-						console.log("FRONT APP score: ", data.score);
-						this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
+						if (this.scores[0].text != data.score[0])
+						{
+							this.scores[0].text = data.score[0].toString();
+							console.log("FRONT APP score (PvC mode): ", data.score);
+							this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
+						}
+						else
+						{
+							this.scores[1].text = data.score[1].toString();
+							console.log("FRONT APP score: ", data.score);
+							this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
+						}
 					}
 				}
 			}
-			else if ('pos' in data)
-			{
-				if (this._state !== State.GAME)
-					this._goToGame();
-				if (this.gameObjects.length === 3)
+			else if ('pos' in data) // modified by Simona - added countdown phase
 				{
-					this.gameObjects[0].position.z = data.pos[0][2];
-					this.gameObjects[1].position.z = data.pos[1][2];
-					this.gameObjects[2].position.x = data.ball[0];
-					this.gameObjects[2].position.z = data.ball[2];
+					// Modified by Simona - Don't transition to game during countdown
+					if (this._state !== State.GAME && this._state !== State.CUTSCENE)
+						this._goToGame();
+					if (this.gameObjects.length === 3 && this._state === State.GAME)
+					{
+						this.gameObjects[0].position.z = data.pos[0][2];
+						this.gameObjects[1].position.z = data.pos[1][2];
+						this.gameObjects[2].position.x = data.ball[0];
+						this.gameObjects[2].position.z = data.ball[2];
+					}
 				}
-			}
+// <<<<<<< HEAD
+
+			// console.log(this.gameId);
+			//   message.innerHTML += `<br /> ${message}`
+// =======
+			// }
+// >>>>>>> origin/dev
 			}
 			// 5
 			this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
@@ -281,7 +331,11 @@ export default class App {
 			// this._goToGame();
 			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvc"}));
+// <<<<<<< HEAD
+			//this._goToGame();
+// =======
 
+// >>>>>>> origin/dev
 			scene.detachControl(); //observables disabled
 		})
 		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
@@ -438,7 +492,20 @@ export default class App {
 	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
 		this.usersAvatars = [];
 		this.scores	= [];
-		const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${this.order? this.opponent: 'you'}`);
+
+		// Added by Simona
+   		// Detect PVC mode and use correct labels
+		const isPvcMode = this.opponent === 'AI';
+
+		//const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${isPvcMode ? 'AI' : this.order? this.opponent: 'you'}`);
+
+		// Simona added this
+		const leftPlayer = new TextBlock(
+			`player-left`,
+			isPvcMode ? 'AI' : (this.order === 0 ? 'you' : this.opponent)
+		);
+
+
 		leftPlayer.color = "white";
 		leftPlayer.fontSize = "text-xl";
 		leftPlayer.height = "50px";
@@ -461,7 +528,13 @@ export default class App {
 		leftPlayerAvatarContainer.width = "50px";
 		leftPlayerAvatarContainer.height = "50px";
 		leftPlayerAvatarContainer.thickness = 0;
-		const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[0]);
+		//const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[0]);
+		// Simona added this
+		const leftPlayerAvatar = new Image(
+			`avatar-left`, // Fixed name
+			isPvcMode ? this.avatarSrcs[1] : this.avatarSrcs[0]  // ✅ AI avatar on left in PVC
+		);
+
 		leftPlayerAvatarContainer.addControl(leftPlayerAvatar);
 		playerUI.addControl(leftPlayerAvatarContainer);
 		this.usersAvatars.push(leftPlayerAvatarContainer);
@@ -480,7 +553,14 @@ export default class App {
 		playerUI.addControl(leftPlayerScore);
 		this.scores.push(leftPlayerScore);
 
-		const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
+		//const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
+
+		// Simona added this // NEW CHANGE
+		const rightPlayer = new TextBlock(
+			`player-right`,
+			isPvcMode ? 'You' : (this.order === 1 ? 'you' : this.opponent)
+		);
+
 		rightPlayer.color = "white";
 		rightPlayer.fontSize = "text-xl";
 		rightPlayer.widthInPixels = 50;
@@ -501,7 +581,14 @@ export default class App {
 		rightPlayerAvatarContainer.width = "50px";
 		rightPlayerAvatarContainer.height = "50px";
 		rightPlayerAvatarContainer.thickness = 0;
-		const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[1]);
+		//const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[1]);
+
+		// Simona added this
+		const rightPlayerAvatar = new Image(
+			`avatar-right`, // name
+			isPvcMode ? this.avatarSrcs[0] : this.avatarSrcs[1]  // ✅ Human avatar on right in PVC
+		);
+
 		rightPlayerAvatarContainer.addControl(rightPlayerAvatar);
 		playerUI.addControl(rightPlayerAvatarContainer);
 		this.usersAvatars.push(rightPlayerAvatarContainer);
@@ -568,9 +655,12 @@ export default class App {
 		rightPlayerAvatarContainer.animations.push(animationScaleY);
 		rightPlayerAvatarContainer.animations.push(animationScaleX);
 	}
+	// modified by Simona - added countdown phase
 	private async _goToGame() {
 		//--SETUP SCENE--
-		console.log("GO_TO_GAME");
+		//console.log("GO_TO_GAME");
+		console.log("GO_TO_GAME - Starting countdown phase");
+		// Set up the game scene but don't set GAME state immediately
 		this._engine.displayLoadingUI();
 		this._scene.detachControl();
 		this._setUpGame();
@@ -611,8 +701,21 @@ export default class App {
 		this._state = State.GAME;
 		this._scene = scene;
 		this._engine.hideLoadingUI();
+
+		// Simona - added - Don't attach controls immediately, wait for countdown
+		// Modified by Simona - Don't set game as active immediately
+		// Change the state temporarily to prevent immediate gameplay
+		this._state = State.CUTSCENE; // Use CUTSCENE as countdown state
+
+		// Only attach controls after countdown finishes (5 seconds)
+		setTimeout(() => {
+			console.log("Countdown finished - game controls now active");
+			this._state = State.GAME; // Set state to GAME after countdown
+			this._scene.attachControl();
+		}, 5000); // Wait 5 seconds for countdown to finish
+
 		//the game is ready, attach control back
-		this._scene.attachControl();
+		//this._scene.attachControl(); //
 	}
 
 
@@ -622,8 +725,9 @@ export default class App {
 		this._gamescene = scene;
 
 		//--CREATE ENVIRONMENT--
+		const isPvcMode = this.opponent === 'AI';
 		if (this.game_ws) {
-			const environment = new Environment(scene, this.game_ws, this.gameId || '', this.addMeshToCollection, this.clearMeshToCollection);
+			const environment = new Environment(scene, this.game_ws, this.gameId || '', this.addMeshToCollection, this.clearMeshToCollection, isPvcMode);
 			this._environment = environment; //class variable for App
 			await this._environment.load(); //environment
 		} else {
@@ -654,3 +758,4 @@ export default class App {
 	}
 
 }
+
