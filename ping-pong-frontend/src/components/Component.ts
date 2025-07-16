@@ -56,4 +56,7 @@ export default abstract class Component {
 	update(param?: string) {
 		console.log('mock update from Component', param);
 	}
+	updateDynamicData() {
+		console.log('mock update dynamic date from Component');
+	}
 }

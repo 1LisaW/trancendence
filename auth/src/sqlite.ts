@@ -25,6 +25,14 @@ export const initDB = async () => {
 			avatar TEXT,
 			phone TEXT)`
 		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS profiles (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL UNIQUE,
+			avatar TEXT,
+			phone TEXT)`
+		);
 	} catch (error) {
 		console.log(error);
 	} finally {
@@ -65,16 +73,16 @@ export const getProfile = async (id:number) => {
 	try {
 	  const profile = await fetchFirst(db, sql, [id.toString()]) as AUTH_ProfileResponse;
 	  console.log("id:", id," getProfile: ", profile);
-	  
+
 	  // Simona: Handle case where profile doesn't exist
 	  if (!profile) {
 		console.log(`Profile not found for user ${id}, creating default profile`);
 		// Create a default profile
-		await execute(db, 
-		  "INSERT INTO profiles (user_id, avatar, phone) VALUES (?, ?, ?)", 
+		await execute(db,
+		  "INSERT INTO profiles (user_id, avatar, phone) VALUES (?, ?, ?)",
 		  [id.toString(), '', '']
 		);
-		
+
 		// Return default profile
 		const response: AUTH_ProfileDTO = {
 		  profile: {
@@ -84,14 +92,14 @@ export const getProfile = async (id:number) => {
 		};
 		return response;
 	  }
-	  
+
 	  const response: AUTH_ProfileDTO = {
 		profile: {
 			avatar: profile.avatar,
 			phone: profile.phone
 		}
 	  };
-	  return response;
+	  return (response);
 	} catch (err) {
 		console.log(err);
 		return ({error: "Profile not found"});

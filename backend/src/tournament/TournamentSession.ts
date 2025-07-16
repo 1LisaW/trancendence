@@ -83,7 +83,25 @@ class TournamentSession {
 		this.id = id;
 	}
 
+	logState = (users:Users) => {
+		console.log('🎠 TournamentSession state:');
+		console.log('id: ', this.id);
+		console.log('startDate: ', this.startDate);
+		this.usersPool.forEach((userId) => {
+			const matches = this.matches.getByUser(userId)?.played;
+			const rating = this.ratings.getRating(userId);
+			const matchmaking = this.matchmakingPool.find(userId);
+			console.log('-- userId: ', userId, ' rating: ', rating, ' matches: ', matches ? Array.from(matches) : [], ' matchmaking: ', matchmaking, 'status: ', users.getUserStatus(userId));
+		});
+	}
+
 	matchmakingIteration = (users: Users) => {
+
+		// this.usersPool.forEach((userId) => {
+		console.log('🎠 TournamentSession matchmakingIteration before iteration');
+		this.logState(users);
+		// })
+
 		const onlineUsers = users.getOnlineUsers();
 		if (onlineUsers.length === 0)
 			return;
@@ -105,10 +123,13 @@ class TournamentSession {
 					event: 'matchmaking',
 					time: time,
 					opponent_name: users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
+					// opponentId: pair?.at(id === 0 ? 1 : 0),
 				}
 				users.sendDataToChatSockets(userId, message);
 			})
 		}
+		console.log('🎠 TournamentSession matchmakingIteration before iteration');
+		this.logState(users);
 	}
 
 	handleUsersParticipationMessage = (tournament_id: number, user_id: number) => {
@@ -121,6 +142,14 @@ class TournamentSession {
 			post_new_tournament_user(tournament_id, user_id);
 	}
 
+	onGameResult = (players: number[], score:number[]) => {
+		this.matches.addMatch(players[0], players[1]);
+		this.ratings.incrementRating(players[0], score[0]);
+		this.ratings.incrementRating(players[1], score[1]);
+
+		this.matchmakingPool.delete(players[0]);
+	}
+
 	handleMatchmakingMessage = (tournament_id: number, user_id: number, reply: boolean, users: Users) => {
 		if (this.getId() !== tournament_id)
 			return;
@@ -131,17 +160,29 @@ class TournamentSession {
 
 		if (matchmakingRecord.first_user_response && matchmakingRecord.second_user_response) {
 			// TODO:: send each user response about the start of the game
-			console.log('start game');
+			console.log('start tournament!! game');
 			const data = {
 				recipient: 'tournament',
 				tournament_id: this.getId(),
 				event: 'match',
 				time: Date.now(),
 				opponent_name: users.getUserNameById(matchmakingRecord.second_user_id),
+				opponentId: matchmakingRecord.second_user_id,
+				isInitiator: true,
 			}
+
+			this.matchmakingPool.delete(matchmakingRecord.first_user_id);
+
 			users.sendDataToChatSockets(matchmakingRecord.first_user_id, data);
 			data.opponent_name = users.getUserNameById(matchmakingRecord.first_user_id);
+			data.opponentId = matchmakingRecord.first_user_id;
+			data.isInitiator = false;
 			users.sendDataToChatSockets(matchmakingRecord.second_user_id, data);
+
+			//TODO::
+			//
+			// setTimeout(() => post_matchmaking_with_specific_user__game_service(matchmakingRecord.first_user_id, 'tournament', matchmakingRecord.second_user_id), 1000);
+
 
 		}
 		// some of users disagreed to play
@@ -151,17 +192,30 @@ class TournamentSession {
 			// (true, false) gives (+3, +0)
 			// (false, true) gives (+0, +3)
 
+			let first_user_result = MatchOptions.FORFEIT;
+			let second_user_result = MatchOptions.FORFEIT;
+
+			if (matchmakingRecord.first_user_response === 1 && matchmakingRecord.second_user_response === 0) {
+				first_user_result = MatchOptions.TECHNICAL_WIN;
+				second_user_result = MatchOptions.FORFEIT;
+			} else if (matchmakingRecord.first_user_response === 0 && matchmakingRecord.second_user_response === 1) {
+				first_user_result = MatchOptions.FORFEIT;
+				second_user_result = MatchOptions.TECHNICAL_WIN;
+			}
+
 			const data: ScoreRequestBody = {
 				first_user_id: matchmakingRecord.first_user_id,
 				second_user_id: matchmakingRecord.second_user_id,
 				first_user_name: users.getUserNameById(matchmakingRecord.first_user_id) || '',
 				second_user_name: users.getUserNameById(matchmakingRecord.second_user_id) || '',
+				game_results: [first_user_result, second_user_result],
 				score: [
 					matchmakingRecord.first_user_response ? 3 : 0,
 					matchmakingRecord.second_user_response ? 3 : 0
 				],
 				game_mode: 'tournament'
 			};
+			console.log('2.0. BACKEND tournament match result: ', data);
 			post_new_tournament_score(this.getId(), data);
 
 			this.matches.addMatch(data.first_user_id, data.second_user_id);

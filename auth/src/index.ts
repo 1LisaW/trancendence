@@ -142,11 +142,11 @@ Fastify.register(async function (fastify) {
 	Fastify.post<{ Body: GoogleAuthRequestBody, Reply: GoogleAuthResponse }>('/google-auth', async (request, reply) => {
 		try {
 			const response = await handleGoogleAuth(request.body);
-			
+
 			if (response.error) {
 				return reply.status(400).send(response);
 			}
-			
+
 			return reply.send(response);
 		} catch (error) {
 			console.error('Google auth route error:', error);
@@ -157,9 +157,9 @@ Fastify.register(async function (fastify) {
 	Fastify.post<{ Body: { username: string, email: string, googleId: string }, Reply: GoogleAuthResponse }>('/google-complete', async (request, reply) => {
 		try {
 			const { username, email, googleId } = request.body;
-			
+
 			console.log('Google complete request:', { username, email, googleId });
-			
+
 			// Validate username
 			if (!username || username.length < 3) {
 				return reply.status(400).send({ error: 'Username must be at least 3 characters' });
@@ -173,17 +173,17 @@ Fastify.register(async function (fastify) {
 
 			// Create user with Google data
 			const user = await createUserWithGoogle(googleId, username, email);
-			
+
 			console.log('User created:', user);
-			
+
 			if (!user) {
 				return reply.status(500).send({ error: 'Failed to create user' });
 			}
 
 			// Generate JWT token
 			const token = jwt.sign(
-				{ userId: user.id }, 
-				process.env.TOKEN_SECRET || "", 
+				{ userId: user.id },
+				process.env.TOKEN_SECRET || "",
 				{ expiresIn: '1h' }
 			);
 
@@ -196,7 +196,7 @@ Fastify.register(async function (fastify) {
 					avatar: user.avatar
 				}
 			};
-			
+
 			console.log('Sending response:', response);
 			return reply.send(response);
 

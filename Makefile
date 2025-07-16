@@ -26,3 +26,5 @@ endif
 
 rm_all:
 	rm_images
+
+

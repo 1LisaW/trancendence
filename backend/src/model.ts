@@ -21,12 +21,14 @@ export interface ScoreState {
 
 export interface GameResult {
 	players: number[],
-	gameResult: string[],
-	score: number[]
+	gameResult: number[],
+	score: number[],
+	mode: 'pvp' | 'pvc' | 'tournament',
 }
 export interface WSocket extends WebSocket {
 	id?: number,
-	token?: string
+	token?: string,
+	timeStamp?: number
 };
 
 export enum Status { OFFLINE, ONLINE, MATCHMAKING, PLAYING }

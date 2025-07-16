@@ -21,15 +21,26 @@ let aiToken: string | null = null;
   }
 })();
 
-// Create a new session for the AI to play in
-fastify.post('/session', async (request, reply) => {
-  if (!aiToken) {
-    return reply.code(500).send({ error: 'AI not authenticated' });
+// Create a new session for the AI to play in with a specific user ID
+fastify.post('/session/new/:user_id', async (request, reply) => {
+  const { user_id } = request.params as { user_id: number };
+  if (user_id === undefined || user_id <= 0) {
+    return reply.code(400).send({ error: 'Invalid user ID' });
   }
-  
-  const gameId = manager.createSession(BACKEND_WS_URL, aiToken);
-  return { gameId };
-});
+  manager.createUserAISession(user_id);
+  return { status: 'session created', user_id: -user_id };
+
+})
+
+// Create a new session for the AI to play in
+// fastify.post('/session', async (request, reply) => {
+//   if (!aiToken) {
+//     return reply.code(500).send({ error: 'AI not authenticated' });
+//   }
+
+//   const gameId = manager.createSession(BACKEND_WS_URL, aiToken);
+//   return { gameId };
+// });
 
 // List all active sessions
 fastify.get('/sessions', async (request, reply) => {
@@ -44,15 +55,15 @@ fastify.delete('/session/:gameId', async (request, reply) => {
 });
 
 // Join a specific game (called by backend when PVC game is created)
-fastify.post('/join-game/:gameId', async (request, reply) => {
-  if (!aiToken) {
-    return reply.code(500).send({ error: 'AI not authenticated' });
-  }
-  
-  const { gameId } = request.params as { gameId: string };
-  const sessionId = manager.createSessionForGame(gameId, BACKEND_WS_URL, aiToken);
-  return { status: 'joined', gameId: sessionId };
-});
+// fastify.post('/join-game/:gameId', async (request, reply) => {
+//   if (!aiToken) {
+//     return reply.code(500).send({ error: 'AI not authenticated' });
+//   }
+
+//   const { gameId } = request.params as { gameId: string };
+//   const sessionId = manager.createSessionForGame(gameId, BACKEND_WS_URL, aiToken);
+//   return { status: 'joined', gameId: sessionId };
+// });
 
 // Start the Fastify server
 fastify.listen({ port: 8086, host: '0.0.0.0' }, (err, address) => {

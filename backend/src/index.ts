@@ -1,8 +1,8 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
-import { GAME_MODE, GameLoopParams, GameResult, GameState, ScoreState, Status, WSocket } from "./model";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
 import TournamentSessionManager from "./tournament/TournamentSessionManager";
@@ -10,6 +10,8 @@ import TournamentSessionManager from "./tournament/TournamentSessionManager";
 // Simona Addition - Track AI WebSocket connections by gameId
 const aiSockets: Map<string, WSocket> = new Map(); // stores a map of AI sockets by gameId
 
+
+const DELAY_MSG_TO_AI = 1000;
 const users = new Users();
 const tournamentSessionManager = new TournamentSessionManager(users);
 // const tournament = new Tournament(users);
@@ -23,136 +25,99 @@ Fastify.register(async function (fastify) {
   Fastify.post<{ Params: GameLoopParams, Body: GameState | ScoreState | GameResult }>('/game/:gameId', (request, reply) => {
     const { gameId } = request.params;
     const { players } = request.body;
-    
-    // Check if human players have alive sockets (skip AI)
-    const humanPlayers = players.filter(p => p !== -1);
-    if (humanPlayers.every(player => users.gameSocketIsAlive(player))) {
-      // Send to human players (only if they're alive)
-      humanPlayers.forEach(player => {
-        if (users.gameSocketIsAlive(player)) {
-          const sockets = users.getGameSocketById(player);
-          if (sockets && sockets.length)
-            sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
+    // console.log("POST /game/:gameId Backend: game loop data received: ", request.body, " gameId: ", gameId, " players: ", players);
+    if (players.every(player => users.gameSocketIsAlive(player))) {
+      players.forEach(player => {
+        const sockets = users.getGameSocketById(player);
+        // send data to AI only once in delay_min
+        if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp && (sockets[0].timeStamp + DELAY_MSG_TO_AI) > Date.now())
+          return ;
+        else if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp)// && (sockets[0].timeStamp + DELAY_MSG_TO_AI) < Date.now())
+        {
+            const date = Date.now();
+            sockets.forEach(socket => {
+              socket.timeStamp = date;
+              socket.send(JSON.stringify(request.body));
+            });
         }
+
+        if (sockets && sockets.length)
+          sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
       })
 
-      // Simona - Send to AI if it's a PVC game - use the correct socket for this game
-      if (players.includes(-1)) {
-        const aiSocketForThisGame = aiSockets.get(gameId);
-        if (aiSocketForThisGame && (aiSocketForThisGame as any).readyState === 1) { // WebSocket.OPEN
-          aiSocketForThisGame.send(JSON.stringify(request.body));
-        }
-      }
-
-      if ("gameResult" in request.body) {
-        const { score } = request.body;
-        const isPvcGame = players.includes(-1);
-        
+      if ("gameResult" in request.body)
+      {
+        console.log("Backend: game result received: ", request.body);
+        const { score, gameResult } = request.body;
+        const first_user_result =  gameResult[0];//score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const second_user_result = gameResult[1];// score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
         const data: ScoreRequestBody = {
           first_user_id: players[0],
           second_user_id: players[1],
-          first_user_name: players[0] === -1 ? 'AI' : (users.getUserNameById(players[0]) || ''),
-          second_user_name: players[1] === -1 ? 'AI' : (users.getUserNameById(players[1]) || ''),
+          first_user_name: users.getUserNameById(players[0]) || '',
+          second_user_name: users.getUserNameById(players[1]) || '',
+          game_results: [first_user_result, second_user_result],
           score: score,
-          game_mode: isPvcGame ? 'pvc' : 'pvp'
+          game_mode: request.body.mode || GAME_MODE.PVP,
         };
-        post_score_data(data);
+        if (data.game_mode === GAME_MODE.TOURNAMENT)
+          post_new_tournament_score(tournamentSessionManager.getTournamentId(), data);
+        else
+          post_score_data(data);
+        users.setOnlineStatusToUser(players[0]);
+        users.setOnlineStatusToUser(players[1]);
+        if (request.body.mode === GAME_MODE.TOURNAMENT)
+          tournamentSessionManager.onGameResult(players, score);
       }
       reply.code(200).send({ message: "Message received" });
+
       return;
     }
-    // Simona - Only send to human players
-    humanPlayers.forEach((player, id) => {
+    const disconnectedPlayers = players.filter(player => !users.gameSocketIsAlive(player));
+    post_terminate_game(gameId, disconnectedPlayers[0]);
+    players.forEach((player, id) => {
       if (users.gameSocketIsAlive(player))
       {
         const sockets = users.getGameSocketById(player);
         if (sockets && sockets.length)
           sockets.forEach(socket => socket
             .send(JSON.stringify({ message: `${users.getUserNameById(players[(1-id)])} leave the room` })));
+        users.setOnlineStatusToUser(player);
       }
     })
-    // Modified by Simona - Actually terminate the game when players disconnect
-    console.log(`Terminating game ${gameId} due to player disconnection`);
-    post_terminate_game(gameId).catch(err => console.log('Failed to terminate game:', err));
-    
-    // Simona - Notify AI service that game ended if this was a PVC game
-    if (players.includes(-1)) {
-      const aiSocketForThisGame = aiSockets.get(gameId);
-      if (aiSocketForThisGame && (aiSocketForThisGame as any).readyState === 1) {
-          aiSocketForThisGame.send(JSON.stringify({ 
-              message: "Game terminated - player disconnected",
-              gameId: gameId 
-          }));
-      }
-    }
-    
+    // TODO terminate game
     reply.code(200).send({ message: "Message received" });
   })
 
+
   //ws:
   Fastify.get('/game', { websocket: true }, async (socket: WSocket /* WebSocket */, req /* FastifyRequest */) => {
+
+    console.log("5.1.||| New game socket connection ");
     const token = req.headers['sec-websocket-protocol'] || '';
-    
-    // Simona - Addition */ Handle AI service connection (ONE PER GAME)
-    if (token === 'AI_SERVICE_TOKEN') {
-      socket.id = -1; // AI player ID
-
-      // Wait for the first message to get the gameId, then store the socket
-      socket.once('message', (message) => {
-          try {
-              const msg = JSON.parse(message.toString());
-              if ('gameId' in msg) {
-                  aiSockets.set(msg.gameId, socket);
-                  console.log(`AI service connected for game ${msg.gameId}`);
-              }
-          } catch (e) {
-              console.error('Failed to parse AI connection message:', e);
-          }
-      });
-
-      socket.on('message', async message => {
-          try {
-              const msg = JSON.parse(message.toString());
-              // Handle AI moves - forward to game-service just like human moves
-              if ('gameId' in msg && 'step' in msg) {
-                  const { gameId, step } = msg;
-                  console.log(`🔍 FORWARDING AI MOVE: gameId=${gameId}, step=${step}, playerId=-1`);
-                  const response = await post_bat_move__game_service(gameId, -1, step);
-                  console.log(`🔍 AI MOVE RESPONSE:`, response.status);
-              }
-          } catch (error) {
-              console.error('Error handling AI message:', error);
-          }
-      });
-
-      socket.on('close', () => {
-          // Simona - Remove this socket from all gameIds it was associated with
-          for (const [gameId, s] of aiSockets.entries()) {
-              if (s === socket) {
-                  aiSockets.delete(gameId);
-                  console.log(`AI service disconnected for game ${gameId}`);
-              }
-          }
-      });
-
-      return; // Skip normal user auth for AI
-    }
-    
     let userData = await users.addUser(token);
+
+    console.log("5.2.||| userData: ", userData, " token: ", token);
 
     if ('user' in userData) {
       userData = userData as Auth_UserDTO;
       const user_id = userData.user.id;
-      socket.id = user_id;
-
-      users.addGameSocket(user_id, socket);
+      users.addUsersGameSocket(user_id, socket);
     }
     else if ('error' in userData) {
-      socket.close();
+      // if token is from AI, leave a session be
+      const numberToken = parseInt(token, 10);
+      if (isNaN(numberToken) || numberToken >= 0) {
+        socket.close();
+      }
+      else {
+        users.addAIGameSocket(numberToken, socket);
+      }
     }
 
     socket.on('message', async message => {
 
+      console.log("-|-|- Backend game socket recv msg, user_id: ", socket.id, " message: ", JSON.parse(message.toString()));
       const user_id = socket.id;
       if (user_id === undefined)
         return;
@@ -167,10 +132,18 @@ Fastify.register(async function (fastify) {
       // message for matchmaking
       else if ('mode' in msg) {
         const mode = msg.mode as GAME_MODE;
-        if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
+        // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
-          const data = await users.matchmaking(user_id, socket, mode);
+        // console.log('BEFORE MATCHMAKING USER');
+          const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
+
+          if (!data)
+            return;
+          // console.log('AFTER MATCHMAKING USER', data);
+
           const json = await data.json();
+          console.log("-|-|- Backend game socket matchmaking data: ", json);
+
 
           if ('gameId' in json) {
             const gameUsers: number[] = json.users;
@@ -179,43 +152,17 @@ Fastify.register(async function (fastify) {
 
             const avatars = await Promise.all(opponentNames.map((name) => get_user_profile_avatar(name || '')));
             gameUsers.forEach((gameSocketId, id) => {
-              console.log(`🔍 DEBUG: gameSocketId=${gameSocketId}, id=${id}, gameUsers=${JSON.stringify(gameUsers)}`);
-              // Simona - Skip AI player for status and socket operations
-              if (gameSocketId !== -1) {
-                const correctOrder = mode === GAME_MODE.PVC ? 1 : id;
-                const reply = {
-                  gameId: json.gameId,
-                  order: correctOrder,  
-                  opponent: opponentNames[id],
-                  avatars: [avatars[0].avatar, avatars[1].avatar]
-                };
-                users.setPlayingStateToUser(gameSocketId);
-                users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
-              }
+              const reply = {
+                gameId: json.gameId,
+                order: id,
+                opponent: opponentNames[id],
+                avatars: [avatars[0].avatar, avatars[1].avatar]
+              };
+              users.setPlayingStateToUser(gameSocketId);
+              users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
             });
-
-            // Simona -Send game setup to AI if PVC mode
-            if (mode === GAME_MODE.PVC) {
-                const aiSocketForThisGame = aiSockets.get(json.gameId);
-                if (aiSocketForThisGame && (aiSocketForThisGame as any).readyState === 1) { // WebSocket.OPEN
-                    const aiReply = {
-                        gameId: json.gameId,
-                        order: 0,  // AI gets order 0 (left side)
-                        opponent: 'Human',
-                        avatars: [avatars[0].avatar, avatars[1].avatar]
-                    };
-                    (aiSocketForThisGame as any).send(JSON.stringify(aiReply));
-                }
-            }
-
-            // Simona - Trigger AI to join this specific game
-            if ('gameId' in json && mode === GAME_MODE.PVC) {
-              fetch('http://ai-service:8086/join-game/' + json.gameId, {
-                method: 'POST'
-              }).catch(err => console.log('AI service unavailable:', err));
-            }
-          }
-        }
+          // }
+       }
       }
       // bat movements from frontend
       else if ('gameId' in msg) {
@@ -225,11 +172,8 @@ Fastify.register(async function (fastify) {
     });
     socket.on('close', () => {
       users.removeGameSocket(socket);
-      
-      // Game termination is handled by the game service when it detects disconnection
-      // No need to notify AI here since we don't know which game the user was in
-      
-      console.log("Disconnected", socket.id);
+      console.log("Disconnected game socket", socket.id);
+      socket.send('server socket is closed');
     });
   })
 

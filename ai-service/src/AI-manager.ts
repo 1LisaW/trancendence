@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 
 export class AIManager {
   private sessions = new Map<string, AISession>();
+  private usersAISession: Map<number, AISession> = new Map(); // user_id : ai_id
   private static instance: AIManager;
 
 
@@ -12,6 +13,11 @@ export class AIManager {
     }
     AIManager.instance = this;
   }
+
+  createUserAISession(userId: number) {
+    this.usersAISession.set(userId, new AISession(userId));
+  }
+
 
   static getInstance(): AIManager {
     if (!AIManager.instance) {
@@ -37,43 +43,44 @@ export class AIManager {
   }
 
 
-  createSession(backendUrl: string, token: string): string {
-    const gameId = nanoid();
-    const session = new AISession(gameId, backendUrl, token);
-    this.sessions.set(gameId, session);
-    
-    // Auto-cleanup after session ends
-    setTimeout(() => {
-      if (this.sessions.has(gameId)) {
-        console.log(`Auto-cleaning up session ${gameId}`);
-        this.endSession(gameId);
-      }
-    }, 300000); // 5 minutes max session time
-    
-    return gameId;
-  }
+  // createSession(backendUrl: string, token: string): string {
+  //   // const gameId = nanoid();
+  //   // const user_id = this.usersAISession.values();
+  //   const session = new AISession(gameId, backendUrl, token);
+  //   this.sessions.set(gameId, session);
 
-  createSessionForGame(gameId: string, backendUrl: string, token: string): string {
-    if (this.sessions.has(gameId)) {
-      console.log(`AI session already exists for game ${gameId}`);
-      return gameId;
-    }
-    
-    const session = new AISession(gameId, backendUrl, token);
-    this.sessions.set(gameId, session);
-    
-    console.log(`Created AI session for game ${gameId}. Total sessions: ${this.sessions.size}`);
-    
-    // Auto-cleanup for specific game sessions too
-    setTimeout(() => {
-      if (this.sessions.has(gameId)) {
-        console.log(`Auto-cleaning up game session ${gameId}`);
-        this.endSession(gameId);
-      }
-    }, 300000); // 5 minutes max
-    
-    return gameId;
-  }
+  //   // Auto-cleanup after session ends
+  //   setTimeout(() => {
+  //     if (this.sessions.has(gameId)) {
+  //       console.log(`Auto-cleaning up session ${gameId}`);
+  //       this.endSession(gameId);
+  //     }
+  //   }, 300000); // 5 minutes max session time
+
+  //   return gameId;
+  // }
+
+  // createSessionForGame(gameId: string, backendUrl: string, token: string): string {
+  //   if (this.sessions.has(gameId)) {
+  //     console.log(`AI session already exists for game ${gameId}`);
+  //     return gameId;
+  //   }
+
+  //   const session = new AISession(gameId, backendUrl, token);
+  //   this.sessions.set(gameId, session);
+
+  //   console.log(`Created AI session for game ${gameId}. Total sessions: ${this.sessions.size}`);
+
+  //   // Auto-cleanup for specific game sessions too
+  //   setTimeout(() => {
+  //     if (this.sessions.has(gameId)) {
+  //       console.log(`Auto-cleaning up game session ${gameId}`);
+  //       this.endSession(gameId);
+  //     }
+  //   }, 300000); // 5 minutes max
+
+  //   return gameId;
+  // }
 
   endSession(gameId: string) {
     const session = this.sessions.get(gameId);

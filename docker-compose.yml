@@ -6,10 +6,10 @@ services:
       context: ./ping-pong-frontend
       dockerfile: ./Dockerfile
       args:
-        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID} 
+        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     environment:
       NODE_ENV: production
-      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}  
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     hostname: ping-pong-frontend
     ports:
       - 3000:3000
@@ -44,7 +44,6 @@ services:
     hostname: game-service
     ports:
       - 8081:8081
-      
   ai-service:
     container_name: ai-service
     image: ai-service
@@ -54,9 +53,9 @@ services:
     hostname: ai-service
     ports:
       - 8086:8086
-    links:
-      - backend:backend
-    
+    # links:
+    #   - backend:backend
+
   nginx:
     container_name: reverse-proxy-nginx
     image: reverse-proxy-nginx
@@ -73,10 +72,12 @@ services:
       - ping-pong-frontend:ping-pong-frontend
       - backend:backend
       - gateway:gateway
+      - ai-service:ai-service
     depends_on:
       - ping-pong-frontend
       - backend
       - gateway
+      - ai-service
 
 
   auth:
@@ -84,6 +85,11 @@ services:
     image: auth
     build:
       context: ./auth
+    environment:
+      NODE_ENV: production
+      TOKEN_SECRET: ${TOKEN_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_TOKEN_SECRET: ${GOOGLE_TOKEN_SECRET}
     volumes:
       - db:/db
     ports:
@@ -121,3 +127,8 @@ volumes:
   db:
     name: db_simple
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: C:\Projects\_mariadb_volume
+      # device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb
