@@ -349,6 +349,7 @@ export default class App {
 	}
 	private async _goToLose(): Promise<void> {
 		this._engine.displayLoadingUI();
+		this.gameId = undefined;
 		this.close_game_ws();
 
 		//--SCENE SETUP--

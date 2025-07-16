@@ -30,7 +30,7 @@ Fastify.register(async function (fastify) {
         // send data to AI only once in delay_min
         if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp && (sockets[0].timeStamp + DELAY_MSG_TO_AI) > Date.now())
           return ;
-        if (player < 0 && sockets && sockets[0].timeStamp)// && (sockets[0].timeStamp + DELAY_MSG_TO_AI) < Date.now())
+        else if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp)// && (sockets[0].timeStamp + DELAY_MSG_TO_AI) < Date.now())
         {
             const date = Date.now();
             sockets.forEach(socket => {
