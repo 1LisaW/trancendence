@@ -58,7 +58,7 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
                 reply.send({ gameId: game.getId(), users: [opponent, socket_id] });
                 gameSessionFactory.startGameLoop(game.getId());
                 console.log("Game-service: matchmaking done");
-                return
+                return ;
             }
             reply.send({ message: "User set in queue" });
             break;
@@ -66,21 +66,27 @@ Fastify.post<{ Params: UserParams, Body: MatchmakingBody }>('/matchmaking/:socke
             if ('opponentId' in request.body) {
                 const opponentId = Number(request.body.opponentId);
                 const game = gameSessionFactory.createSession(socket_id, opponentId, mode);
-                reply.send({ gameId: game.getId(), users: [opponentId, socket_id] });
-                    gameSessionFactory.startGameLoop(game.getId());
-                    console.log("Game-service: matchmaking done");
-                    return
+                console.log("Game-service (TOURNAMENT): matchmaking done ", { gameId: game.getId(), users: [opponentId, socket_id] });
+                const gameId = game.getId();
+                reply.send({ gameId: gameId, users: [opponentId, socket_id] });
+                gameSessionFactory.startGameLoop(gameId);
+                console.log("Game-service (TOURNAMENT): matchmaking done");
+                return ;
             }
             break;
         //*** Simona - Potential Way toHandle AI service connection
         case GAME_MODE.PVC:
             // Create game with AI opponent
-            const aiOpponentId = -1;
-            const pvcGame = gameSessionFactory.createSession(aiOpponentId, socket_id, mode);
-            reply.send({ gameId: pvcGame.getId(), users: [aiOpponentId, socket_id] }); // AI left, human right
-            gameSessionFactory.startGameLoop(pvcGame.getId());
-            console.log("Game-service: PVC matchmaking done");
-            return;
+            // const aiOpponentId = -1;
+            if ('opponentId' in request.body) {
+                const aiOpponentId = Number(request.body.opponentId);
+                const pvcGame = gameSessionFactory.createSession(aiOpponentId, socket_id, mode);
+                const gameId = pvcGame.getId();
+                reply.send({ gameId: gameId, users: [aiOpponentId, socket_id] }); // AI left, human right
+                gameSessionFactory.startGameLoop(gameId);
+                console.log("Game-service: PVC matchmaking done");
+                return;
+            }
     }
 
 
@@ -108,9 +114,10 @@ interface GamePostParams {
     gameId: string
 }
 
-Fastify.post<{ Params: GamePostParams }>('/terminate/:gameId', (request, reply) => {
+Fastify.post<{ Params: GamePostParams, Body: {userId: number} }>('/terminate/:gameId', (request, reply) => {
     const { gameId } = request.params;
-    gameSessionFactory.removeSession(gameId);
+    const userId = request.body.userId;
+    gameSessionFactory.removeSession(gameId, userId);
     reply.status(200).send({ message: "game was terminated" })
 })
 

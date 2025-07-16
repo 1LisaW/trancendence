@@ -7,6 +7,16 @@ import { Control } from "@babylonjs/gui/2D/controls/control";
 import Environment from "./Environment";
 import { getToken } from "../../../utils/auth";
 
+
+export enum MatchOptions {
+	START,
+	FORFEIT,
+	TECHNICAL_WIN,
+	WIN,
+	LOSE,
+	DRAW
+}
+
 enum State { START = 0, GAME = 1, LOSE = 2, CUTSCENE = 3, WAITING = 4 }
 
 const defaultAvatar = "data:image/jpeg;base64,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D7RXJDW/s16NLya/urs/dTP4avZ8J/X4rVitwAAAAAAAAAAAAAAAAAAAAABheVWrTpunzatVbX8jeijbriO2f/va18yfKLUZ1LVLt2mre1bn0dv+WO35zvLGNRmgCoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARMxO8TtMNicmtX/tXAj0tW+RZ2oue/2VfP8AXdrtkdC1OrStRt5EzPoqvUux7aZ8utKsbKHETFURVTMTE8YmHLLQAAAAAAAAAAAAAAAAAAx2v5s4Gk5F+mdq5p5lHxnh/wA/JkUvy7vzTiYuNE/9S5VXP9Mbf7iFRgDbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC/5I6hObpUWa6t7mNPo599P4fpw+TOITkVlTZ1WrHmfVyLcxt744x9N12zWoAIoAAAAAAAAAAAAAAAAxmsaDja1VaqyL12j0UTEcyY7dvbHuZMBN9BdN73k+NPkdBdN73k+NPkpBdTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTE30F03veT40+R0F03veT40+SkDTGD0/klg6dmW82zk36q7UzMRVMbTvG3s97OAigAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/Z";
@@ -30,6 +40,7 @@ export default class App {
 	private gameId: string | undefined;
 	private order = 0;
 	private opponent = '';
+	private gameMode: 'pvp' | 'pvc' | 'tournament' | null = null;
 	private avatarSrcs = [defaultAvatar, defaultAvatar];
 	private gameObjects: Mesh[] = [];
 	private usersAvatars: Rectangle[] = [];
@@ -37,6 +48,7 @@ export default class App {
 
     constructor() {
 		this._canvas = this._createCanvas();
+		console.log("gameMode: ", this.gameMode);
 		this._init();
     }
 
@@ -62,20 +74,44 @@ export default class App {
 					this.avatarSrcs[1] = data.avatars[1];
 
 				this._goToGame();
-				// console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent, this.avatarSrcs);
+				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent);//, this.avatarSrcs);
 			}
 			else if ('gameResult' in data)
 			{
-				const isPvcMode = this.opponent === 'AI'; // Simona
-    			const resultIndex = isPvcMode ? 1 : this.order; // Simona - In PvC, human is always index 1
-				const resultText = data.gameResult[resultIndex]; // Simona - updated to use resultIndex
-				this.scores[2].text = resultText === 'win' ? 'You lose!' : 'You win!'; // Simona updated messages for AI
-				if (isPvcMode) { // Simona
-					this.scores[2].text = resultText === 'win' ? 'AI wins!' : 'You win!'; // Reversed for PvC
-				} else {
-					this.scores[2].text = resultText === 'win' ? 'You win!' : 'You lose!'; // Normal for PvP
+// <<<<<<< HEAD
+// 				const isPvcMode = this.opponent === 'AI'; // Simona
+//     			const resultIndex = isPvcMode ? 1 : this.order; // Simona - In PvC, human is always index 1
+// 				const resultText = data.gameResult[resultIndex]; // Simona - updated to use resultIndex
+// 				this.scores[2].text = resultText === 'win' ? 'You lose!' : 'You win!'; // Simona updated messages for AI
+// 				if (isPvcMode) { // Simona
+// 					this.scores[2].text = resultText === 'win' ? 'AI wins!' : 'You win!'; // Reversed for PvC
+// 				} else {
+// 					this.scores[2].text = resultText === 'win' ? 'You win!' : 'You lose!'; // Normal for PvP
+// 				}
+// 				console.log("FRONT APP gameResult: ", data.gameResult[resultIndex]); // Simona // Update log to use resultIndex
+// =======
+				switch (data.gameResult[this.order])
+				{
+					case MatchOptions.WIN:
+						this.scores[2].text = 'YOU WIN';
+						break;
+					case MatchOptions.LOSE:
+						this.scores[2].text = 'YOU LOSE';
+						break;
+					case MatchOptions.TECHNICAL_WIN:
+						this.scores[2].text = 'TECHNICAL WIN';
+						break;
+					case MatchOptions.FORFEIT:
+						this.scores[2].text = 'TECHNICAL LOSE';
+						break;
+					default:
+						this.scores[2].text = 'DRAW';
 				}
-				console.log("FRONT APP gameResult: ", data.gameResult[resultIndex]); // Simona // Update log to use resultIndex
+				// this.scores[2].text = `You ${data.gameResult[this.order]}`;
+				console.log("FRONT APP gameResult: ", data.gameResult[this.order]);
+				//TODO::
+				this.setGameMode(null);
+// >>>>>>> origin/dev
 			}
 			else if ('score' in data)
 			{
@@ -137,9 +173,13 @@ export default class App {
 						this.gameObjects[2].position.z = data.ball[2];
 					}
 				}
+// <<<<<<< HEAD
 
 			// console.log(this.gameId);
 			//   message.innerHTML += `<br /> ${message}`
+// =======
+			// }
+// >>>>>>> origin/dev
 			}
 			// 5
 			this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
@@ -158,6 +198,24 @@ export default class App {
 	{
 		parent.appendChild(this._canvas);
 		// this._engine.resize();
+	}
+
+	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament' | null, opponent_name = "", opponentId = 0, isInitiator = false) => {
+		console.log("0.0. GAME APP - setGameMode, mode: ", mode, " opponent_name: ", opponent_name);
+		if (mode === null && this._state !== State.START)
+		{
+			console.log("0.0.1. GAME APP - setGameMode, mode is already set, reloading game");
+			this.reloadGame();
+			return ;
+		}
+		this.gameMode = mode;
+		if (this.gameMode === 'tournament' && !!opponent_name)
+		{
+			this.opponent = opponent_name;
+			if (isInitiator)
+				this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "tournament", "opponentId": opponentId}));
+			this._goToWaitingRoom();
+		}
 	}
 
 	addMeshToCollection = (object: Mesh) => {
@@ -204,15 +262,6 @@ export default class App {
 					this._scene.render();
 						break;
                 case State.GAME:
-                    //if 240seconds/ 4mins have have passed, go to the lose state
-                    // if (this._ui.time >= 240 && !this._player.win) {
-                    //     this._goToLose();
-                    //     this._ui.stopTimer();
-                    // }
-                    // if (this._ui.quit) {
-                    //     this._goToStart();
-                    //     this._ui.quit = false;
-                    // }
                     this._scene.render();
                     break;
                 case State.LOSE:
@@ -234,9 +283,16 @@ export default class App {
 	}
 
 	private async _goToStart() {
+		console.log("1.0. GAME APP - _goToStart, game mode: ", this.gameMode);
 		this._engine.displayLoadingUI();
 
 		await this.init_game_ws();
+		if (this.gameMode === 'tournament')
+		{
+			console.log("1.1.  GAME APP - _goToStart, game mode: tournament");
+			await this._goToWaitingRoom();
+			return ;
+		}
 		this._scene.detachControl();
 		const scene =new Scene(this._engine);
 		scene.clearColor = new Color4(0, 0, 0, 1);
@@ -270,13 +326,21 @@ export default class App {
 		multiSinglePlayerButton.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 		guiMenu.addControl(multiSinglePlayerButton);
 
-		startSinglePlayerButton.onPointerDownObservable.add(() => {
+		startSinglePlayerButton.onPointerDownObservable.add(async() => {
+			this.setGameMode('pvc');
+			// this._goToGame();
+			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvc"}));
+// <<<<<<< HEAD
 			//this._goToGame();
+// =======
+
+// >>>>>>> origin/dev
 			scene.detachControl(); //observables disabled
 		})
 		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
 			// TODO: search for the opponent
+			this.setGameMode('pvp');
 			await this._goToWaitingRoom();
 			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvp"}));
 			scene.detachControl();
@@ -285,6 +349,7 @@ export default class App {
 	}
 	private async _goToLose(): Promise<void> {
 		this._engine.displayLoadingUI();
+		this.gameId = undefined;
 		this.close_game_ws();
 
 		//--SCENE SETUP--
@@ -314,9 +379,11 @@ export default class App {
 		this._scene = scene;
 		this._state = State.LOSE;
 	}
+
 	private async _goToWaitingRoom(): Promise<void> {
 		this._engine.displayLoadingUI();
 
+		// for tournament mode, jin response from user
 		//--SCENE SETUP--
 		this._scene.detachControl();
 		const scene = new Scene(this._engine);
@@ -324,7 +391,8 @@ export default class App {
 
 		const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
 
-		MeshBuilder.CreateText('notification', "Waiting for match", fontData, {
+		const notification = `Waiting for ${this.gameMode == 'pvc' ? "AI session" :  this.gameMode == 'pvp' ? "match" : this.opponent}`;
+		MeshBuilder.CreateText('notification', notification, fontData, {
             size: 0.5,
 			depth: 0.05,
 			resolution: 32
@@ -401,7 +469,12 @@ export default class App {
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
-			this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+			if (this.gameMode === 'pvp')
+				this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+			this.gameMode = null;
+			this.gameId = undefined;
+			this.order = 0;
+			this.opponent = '';
 			this.close_game_ws();
 			this._goToStart();
 		});
@@ -414,60 +487,8 @@ export default class App {
 		this._scene = scene;
 		this._state = State.WAITING;
 	}
-	// private async _goToWaitRoom() {
-
-	// 	this._engine.displayLoadingUI();
-	// 	this._scene.detachControl();
-	// 	const scene = new Scene(this._engine);
-	// 	scene.clearColor = new Color4(0, 0, 0, 1);
 
 
-
-	// 	const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
-    //     const myText = MeshBuilder.CreateText(`pending`, `Waiting for the opponent`, fontData, {
-    //         size: 2,
-    //         resolution: 64,
-    //         depth: 10,
-
-    //     });
-	// 	 const mat = new StandardMaterial(`mat`);
-	// 	if (myText)
-	// 	myText.material = mat;
-	// 	const camera = new FreeCamera("camera1", new Vector3(0, 0, 0), scene);
-	// 	camera.setTarget(Vector3.Zero());
-
-	// 	// const textToAnimate = new TextBlock();
-	// 	// textToAnimate.text = "Text To Animate";
-	// 	// textToAnimate.color = "#FFFFFF";
-	// 	// textToAnimate.fontSize = "100px";
-
-
-
-	// 	const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-	// 	//dont detect any inputs from this ui while the game is loading
-	// 	scene.detachControl();
-	// 	//--GUI--
-	// 	const loseBtn = Button.CreateSimpleButton("leave", "LEAVE");
-	// 	loseBtn.width = 0.2
-	// 	loseBtn.height = "40px";
-	// 	loseBtn.color = "white";
-	// 	loseBtn.top = "-14px";
-	// 	loseBtn.thickness = 0;
-	// 	loseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-	// 	playerUI.addControl(loseBtn);
-
-	// 	//this handles interactions with the start button attached to the scene
-	// 	loseBtn.onPointerDownObservable.add(() => {
-	// 		this._goToLose();
-	// 		scene.detachControl(); //observables disabled
-	// 	});
-	// 	await scene.whenReadyAsync();
-	// 	this._engine.hideLoadingUI();
-	// 	this._scene.dispose();
-	// 	this._scene = scene;
-	// 	this._state = State.WAITING;
-	// 	this._scene.attachControl();
-	// }
 
 	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
 		this.usersAvatars = [];
@@ -478,14 +499,14 @@ export default class App {
 		const isPvcMode = this.opponent === 'AI';
 
 		//const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${isPvcMode ? 'AI' : this.order? this.opponent: 'you'}`);
-		
-		// Simona added this 
+
+		// Simona added this
 		const leftPlayer = new TextBlock(
-			`player-left`, 
+			`player-left`,
 			isPvcMode ? 'AI' : (this.order === 0 ? 'you' : this.opponent)
 		);
-		
-		
+
+
 		leftPlayer.color = "white";
 		leftPlayer.fontSize = "text-xl";
 		leftPlayer.height = "50px";
@@ -509,12 +530,12 @@ export default class App {
 		leftPlayerAvatarContainer.height = "50px";
 		leftPlayerAvatarContainer.thickness = 0;
 		//const leftPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[0]);
-		// Simona added this 
+		// Simona added this
 		const leftPlayerAvatar = new Image(
 			`avatar-left`, // Fixed name
 			isPvcMode ? this.avatarSrcs[1] : this.avatarSrcs[0]  // ✅ AI avatar on left in PVC
 		);
-		
+
 		leftPlayerAvatarContainer.addControl(leftPlayerAvatar);
 		playerUI.addControl(leftPlayerAvatarContainer);
 		this.usersAvatars.push(leftPlayerAvatarContainer);
@@ -534,13 +555,13 @@ export default class App {
 		this.scores.push(leftPlayerScore);
 
 		//const rightPlayer = new TextBlock(`player-${this.order?'you': this.opponent}`, `${this.order?'you': this.opponent}`);
-		
+
 		// Simona added this // NEW CHANGE
 		const rightPlayer = new TextBlock(
-			`player-right`, 
+			`player-right`,
 			isPvcMode ? 'You' : (this.order === 1 ? 'you' : this.opponent)
 		);
-		
+
 		rightPlayer.color = "white";
 		rightPlayer.fontSize = "text-xl";
 		rightPlayer.widthInPixels = 50;
@@ -562,13 +583,13 @@ export default class App {
 		rightPlayerAvatarContainer.height = "50px";
 		rightPlayerAvatarContainer.thickness = 0;
 		//const rightPlayerAvatar = new Image(`avatar-${this.order? this.opponent: 'you'}`, this.avatarSrcs[1]);
-		
-		// Simona added this 
+
+		// Simona added this
 		const rightPlayerAvatar = new Image(
 			`avatar-right`, // name
 			isPvcMode ? this.avatarSrcs[0] : this.avatarSrcs[1]  // ✅ Human avatar on right in PVC
 		);
-		
+
 		rightPlayerAvatarContainer.addControl(rightPlayerAvatar);
 		playerUI.addControl(rightPlayerAvatarContainer);
 		this.usersAvatars.push(rightPlayerAvatarContainer);
@@ -653,28 +674,7 @@ export default class App {
 		//--GUI--
 		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 		this._setGameGUI(playerUI);
-		// if (playerUI.layer)
-			// playerUI.layer?.layerMask = 0x10000000;
 
-
-
-
-
-
-
-		// const scoreLabelLeft = new TextBlock(`score-${this.order? this.opponent: 'you'}`, `Score: 0`);
-		// scoreLabelLeft.color = "white";
-		// scoreLabelLeft.fontSize = 24;
-		// scoreLabelLeft.top = "10%";
-        // scoreLabelLeft.left = "10%";
-		// playerUI.addControl(scoreLabelLeft);
-		// const scoreLabelRight = new TextBlock(`score-${this.order?'you': this.opponent}`, `Score: 0`);
-		// scoreLabelRight.color = "white";
-		// scoreLabelRight.fontSize = 24;
-		// scoreLabelRight.top = "10%";
-        // scoreLabelRight.left = "-10%";
-		// playerUI.addControl(scoreLabelRight);
-		//dont detect any inputs from this ui while the game is loading
 		scene.detachControl();
 
 		//create a simple button
@@ -694,9 +694,7 @@ export default class App {
 		});
 
 		//temporary scene objects
-		// const light1: HemisphericLight =
 		new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-		// const sphere: Mesh =
 		MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
 
 		//get rid of start scene, switch to gamescene and change states
@@ -735,6 +733,27 @@ export default class App {
 			await this._environment.load(); //environment
 		} else {
 			console.error("WebSocket is not initialized.");
+		}
+
+	}
+
+	reloadGame = () => {
+		console.log("RELOAD GAME");
+		this._state = State.START;
+		this.gameMode = null;
+		this.gameId = undefined;
+		this.order = 0;
+		this.opponent = '';
+		this.avatarSrcs = [defaultAvatar, defaultAvatar];
+		setTimeout(() =>this._goToStart(), 1000);
+	}
+
+	updateSocket = (isAuth: boolean) => {
+		if (!isAuth) {
+			this.close_game_ws();
+			// this._goToStart();
+		} else {
+			this.init_game_ws();
 		}
 
 	}
