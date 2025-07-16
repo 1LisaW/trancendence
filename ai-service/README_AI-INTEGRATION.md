@@ -38,8 +38,8 @@ const data = await users.matchmaking(user_id, socket, mode);
 case GAME_MODE.PVC:
     const aiOpponentId = -1; // ⭐ AI gets special ID
     const pvcGame = gameSessionFactory.createSession(socket_id, aiOpponentId, mode);
-    reply.send({ 
-        gameId: pvcGame.getId(), 
+    reply.send({
+        gameId: pvcGame.getId(),
         users: [socket_id, aiOpponentId] // [human_id, -1]
     });
     gameSessionFactory.startGameLoop(pvcGame.getId());
@@ -50,14 +50,14 @@ case GAME_MODE.PVC:
 // backend/src/index.ts lines 115-135
 if ('gameId' in json) {
     const gameUsers: number[] = json.users; // [human_id, -1]
-    
+
     gameUsers.forEach((gameSocketId, id) => {
         // ⭐ CRITICAL: Skip AI for socket operations
         if (gameSocketId !== -1) {
             // Only send game info to human player
             const reply = { gameId: json.gameId, order: id, opponent: 'AI' };
             users.setPlayingStateToUser(gameSocketId);
-            users.getGameSocketById(gameSocketId)?.forEach(socket => 
+            users.getGameSocketById(gameSocketId)?.forEach(socket =>
                 socket.send(JSON.stringify(reply))
             );
         }
@@ -93,7 +93,7 @@ fastify.post('/join-game/:gameId', async (request, reply) => {
 constructor(gameId: string, backendUrl: string, token: string) {
     // Connect with special AI token
     this.ws = new WebSocket(backendUrl, ['AI_SERVICE_TOKEN']);
-    
+
     this.ws.on('open', () => {
         // Tell backend we're ready to play
         this.ws.send(JSON.stringify({ mode: 'pvc', gameId }));
@@ -108,14 +108,14 @@ if (token === 'AI_SERVICE_TOKEN') {
     socket.id = -1; // ⭐ AI gets special player ID
     aiSocket = socket; // ⭐ Store global AI reference
     console.log("AI service connected");
-    
+
     socket.on('message', async message => {
         // Forward AI moves to game-service
         if ('gameId' in msg && 'step' in msg) {
             post_bat_move__game_service(gameId, -1, step);
         }
     });
-    
+
     return; // ⭐ Skip normal user authentication
 }
 ```
@@ -125,14 +125,14 @@ if (token === 'AI_SERVICE_TOKEN') {
 // backend/src/index.ts lines 23-38
 Fastify.post('/game/:gameId', (request, reply) => {
     const { players } = request.body; // [human_id, -1]
-    
+
     // Send to human players
     const humanPlayers = players.filter(p => p !== -1);
     humanPlayers.forEach(player => {
         const sockets = users.getGameSocketById(player);
         sockets?.forEach(socket => socket.send(JSON.stringify(request.body)));
     });
-    
+
     // ⭐ Send to AI via special global reference
     if (players.includes(-1) && aiSocket) {
         aiSocket.send(JSON.stringify(request.body));
@@ -145,7 +145,7 @@ Fastify.post('/game/:gameId', (request, reply) => {
 // ai-service/src/AI-session.ts
 this.ws.on('message', (data) => {
     const msg = JSON.parse(data.toString());
-    
+
     if (msg.players && (msg.pos || msg.ball)) {
         this.state = msg; // Store game state
         this.order = 1;   // AI is always right side (order 1)
@@ -158,9 +158,9 @@ setInterval(() => {
         const aiState = this.transformGameState(this.state, this.order);
         const move = getAIMove(aiState); // 🧠 AI prediction algorithm
         if (move !== 'none') {
-            this.ws.send(JSON.stringify({ 
-                gameId: this.gameId, 
-                step: move 
+            this.ws.send(JSON.stringify({
+                gameId: this.gameId,
+                step: move
             }));
         }
     }
@@ -232,7 +232,7 @@ The AI algorithm receives the following game state data to make decisions:
 
 ### Algorithm Steps
 The `getAIMove` function processes the game state and determines the AI's action through the following steps:
-1. **Input Validation**: 
+1. **Input Validation**:
    - Checks for valid input data (paddle and ball coordinates, speed). If any data is invalid (e.g., null coordinates or negative speed), it returns 'none' to avoid erroneous moves.
 2. **Ball Direction Analysis**:
    - Determines whether the ball is moving towards or away from the AI paddle by checking the AI's position (left or right side) and the ball's horizontal direction (normal[0]). This decides whether to defend or reposition strategically.
@@ -303,9 +303,9 @@ As outlined in the `ft_transcendence` subject (IV.5 AI-Algo), the AI must simula
 
 As per the `ft_transcendence` subject requirements (IV.5 AI-Algo), the AI opponent must simulate a human player with intelligent behavior, update once per second, and avoid using the A* algorithm. Here's how our implementation meets these criteria and qualifies as AI:
 
-- **Simulation of Human Behavior**: 
+- **Simulation of Human Behavior**:
   - The algorithm incorporates human-like imperfections such as prediction errors, random inaction, and reaction delays. These features prevent the AI from being overly perfect or robotic, mimicking human reaction times and decision-making flaws.
-  
+
 - **Intelligent Decision-Making**:
   - The AI uses predictive modeling to calculate ball trajectory, including bounces, which demonstrates foresight and planning. It doesn't merely react to the current ball position but anticipates future positions.
   - Strategic positioning when the ball is moving away shows tactical thinking, as the AI prepares for the ball's return rather than remaining idle.
@@ -410,7 +410,7 @@ docker-compose logs -f ai-service backend game-service
 
 **Root Cause**: Frontend showed 5-second countdown visually but didn't delay actual game control activation.
 
-**Solution**: 
+**Solution**:
 - **Frontend**: Added `CUTSCENE` state for countdown phase
 - **Modified**: `ping-pong-frontend/src/pages/Game/App/App.ts`
   - Prevent `_goToGame()` calls during countdown
@@ -448,9 +448,9 @@ post_terminate_game(gameId).catch(err => console.log('Failed to terminate game:'
 
 // Notify AI service that game ended if this was a PVC game
 if (players.includes(-1) && aiSocket) {
-    aiSocket.send(JSON.stringify({ 
+    aiSocket.send(JSON.stringify({
         message: "Game terminated - player disconnected",
-        gameId: gameId 
+        gameId: gameId
     }));
 }
 ```
@@ -466,7 +466,7 @@ if (players.includes(-1) && aiSocket) {
 // AI-session.ts - Enhanced termination handling
 private onGameEnd() {
     if (this.isFinished) return; // Prevent multiple calls
-    
+
     console.log(`[${this.gameId}] Game ended - IMMEDIATE CLEANUP`);
     this._state = AIState.FINISHED;
     this.isFinished = true;
@@ -603,7 +603,7 @@ docker-compose up --build
 # 2. Verify 5-second countdown before controls activate
 # 3. Verify game objects don't move during countdown
 
-# Test termination functionality  
+# Test termination functionality
 # 1. Start PVC game
 # 2. Click "LOSE" or close browser tab
 # 3. Verify AI stops receiving updates immediately

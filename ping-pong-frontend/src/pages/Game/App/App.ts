@@ -379,7 +379,6 @@ export default class App {
 		this._scene = scene;
 		this._state = State.LOSE;
 	}
-
 	private async _goToWaitingRoom(): Promise<void> {
 		this._engine.displayLoadingUI();
 
@@ -535,7 +534,6 @@ export default class App {
 			`avatar-left`, // Fixed name
 			isPvcMode ? this.avatarSrcs[1] : this.avatarSrcs[0]  // ✅ AI avatar on left in PVC
 		);
-
 		leftPlayerAvatarContainer.addControl(leftPlayerAvatar);
 		playerUI.addControl(leftPlayerAvatarContainer);
 		this.usersAvatars.push(leftPlayerAvatarContainer);
@@ -589,7 +587,6 @@ export default class App {
 			`avatar-right`, // name
 			isPvcMode ? this.avatarSrcs[0] : this.avatarSrcs[1]  // ✅ Human avatar on right in PVC
 		);
-
 		rightPlayerAvatarContainer.addControl(rightPlayerAvatar);
 		playerUI.addControl(rightPlayerAvatarContainer);
 		this.usersAvatars.push(rightPlayerAvatarContainer);
@@ -674,7 +671,6 @@ export default class App {
 		//--GUI--
 		const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 		this._setGameGUI(playerUI);
-
 		scene.detachControl();
 
 		//create a simple button

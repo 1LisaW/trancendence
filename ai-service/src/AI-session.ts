@@ -52,7 +52,6 @@ export class AISession {
       console.log(`[${this.gameId}] AI WebSocket closed - cleaning up`);
       this.cleanup();
     });
-
     this.ws.on('error', (err) => {
       console.error(`[${this.gameId}] WebSocket error:`, err);
     });
@@ -68,7 +67,6 @@ export class AISession {
     // Handle game end immediately
     if (msg.gameResult || (msg.message && this.isGameEndMessage(msg.message))) {
       this.onGameEnd();
-
       return;
     }
 
@@ -98,7 +96,6 @@ export class AISession {
   }
 
   private onGameStateUpdate(msg: any) {
-
     // For debugging
     //if (this.countdownActive) {
     //  console.log(`[${this.gameId}] 🚫 COUNTDOWN ACTIVE - Ignoring game state`);
@@ -120,7 +117,6 @@ export class AISession {
     // Store states for AI processing
     this.previousState = this.state;
     this.state = msg;
-
     // Auto-detect order if not set
     if (this.order === undefined && msg.players) {
       const aiIndex = msg.players.findIndex((p: number) => p === -1);
@@ -170,7 +166,6 @@ export class AISession {
 
     // AI loop with protection
     this.gameLoop = setInterval(() => {
-
       // For Debugging
       // if (this.countdownActive) {
       //  console.log(`[${this.gameId}] 🚫 Game loop blocked - countdown active`);
@@ -208,7 +203,6 @@ export class AISession {
 
   private onGameEnd() {
     if (this.isFinished) return;
-
     console.log(`[${this.gameId}] 🏁 Game ended - AI session closing`);
     this.isFinished = true;
     this._state = AIState.FINISHED;
@@ -223,7 +217,6 @@ export class AISession {
 
   private resetForNewGame() {
     console.log(`[${this.gameId}] 🔄 Reset for new game`);
-
     // Reset all state
     this.state = null;
     this.previousState = null;
@@ -232,7 +225,6 @@ export class AISession {
     this._state = AIState.WAITING;
     this.firstGameStateReceived = false;
     this.countdownActive = false; // Reset protection flag
-
     // Clear all timers
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
@@ -264,7 +256,6 @@ export class AISession {
     this.isFinished = true;
     this._state = AIState.FINISHED;
     this.countdownActive = false;
-
     // Clear all timers
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
@@ -328,7 +319,6 @@ export class AISession {
     if (gameState.ballSpeed !== undefined && gameState.ballNormal !== undefined) {
       ballSpeed = gameState.ballSpeed;
       ballNormal = gameState.ballNormal;
-
       // Ensure ballNormal is properly formatted as [x, y, z]
       if (Array.isArray(ballNormal) && ballNormal.length >= 3) {
         ballNormal = [ballNormal[0], ballNormal[1] || 0, ballNormal[2]];
@@ -341,7 +331,6 @@ export class AISession {
       ballNormal = this.calculateBallDirection(ballPos);
       ballSpeed = this.calculateBallSpeed(ballPos);
     }
-
     return {
       pos: validAIPaddlePos,
       ballPos: ballPos,

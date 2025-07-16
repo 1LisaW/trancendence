@@ -479,7 +479,11 @@ The changes maintain the same performance characteristics:
 
 The key modification I made relied on the assumption that we need to change the **collision detection** - scoring must be checked before other collisions to prevent interference. The enhanced collision response system also makes the game feel more realistic and responsive.
 
+<<<<<<< HEAD
+1. **Collision detection order** - scoring checked before other collisions
+=======
 1. **Fixed collision detection order** - scoring checked before other collisions
+>>>>>>> origin/dev
 2. **Enhanced collision response** - better ball repositioning and physics
 3. **Added ball speed and normal to game state** - AI now uses actual physics data
 4. **Improved ball initialization** - more realistic randomization

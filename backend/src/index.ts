@@ -7,6 +7,8 @@ import { Users } from "./Users";
 import { Tournament } from "./Tournament";
 import TournamentSessionManager from "./tournament/TournamentSessionManager";
 
+// Simona Addition - Track AI WebSocket connections by gameId
+const aiSockets: Map<string, WSocket> = new Map(); // stores a map of AI sockets by gameId
 
 
 const DELAY_MSG_TO_AI = 1000;

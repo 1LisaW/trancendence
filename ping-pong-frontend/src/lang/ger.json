@@ -9,7 +9,6 @@
 		"profile": "Profil",
 		"title": "Ping Pong",
 		"game": "Spiel"
-
 	},
 	"main": {
 		"welcome": "Sind Sie bereit, Ihr Tischtennisspiel auf die nächste Stufe zu bringen?  [Ihr App-Name] verbindet Sie mit Spielern aller Spielstärken, lässt Sie Ihre Siege und Niederlagen verfolgen und bietet Ihnen eine unterhaltsame und wettbewerbsorientierte Umgebung, um Ihre Fähigkeiten zu verbessern.  Werden Sie Teil der Community und erleben Sie den Nervenkitzel des Spiels!"
@@ -20,7 +19,8 @@
 		"password": "Passwort",
 		"submit": "Einreichen",
 		"signup": "Registrieren",
-		"forgot": "Passwort vergessen?"
+		"forgot": "Passwort vergessen?",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
 	},
 	"register": {
 		"title": "Registrieren",
@@ -29,7 +29,8 @@
 		"password": "Passwort",
 		"repeat-password": "Passwortbestätigung",
 		"submit": "Einreichen",
-		"login": "Anmelden"
+		"login": "Anmelden",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
 	},
 	"lang": {
 		"en": "Englisch",
@@ -42,6 +43,7 @@
 		"name-not-unique": "GThe name is not unique",
 		"already-registered": "GAlready registered",
 		"login-and-password-not-match": "GLogin and password does not match",
-		"server-error": "Gserver-error"
+		"server-error": "Gserver-error",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
 	}
 }

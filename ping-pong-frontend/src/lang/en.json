@@ -13,14 +13,14 @@
 	"main": {
 		"welcome": "Ready to take your ping pong game to the next level?  [Your App Name] connects you with players of all skill levels, allows you to track your wins and losses, and provides a fun and competitive environment to improve your skills.  Join the community and experience the thrill of the game!"
 	},
-
 	"login": {
 		"title": "Login",
 		"email": "Email",
 		"password": "Password",
 		"submit": "Submit",
 		"signup": "signup",
-		"forgot": "Forgot password?"
+		"forgot": "Forgot password?",
+		"google-auth-failed": "Google authentication failed"
 	},
 	"register": {
 		"title": "Register",
@@ -29,7 +29,8 @@
 		"password": "Password",
 		"repeat-password": "Password confirmation",
 		"submit": "Submit",
-		"login": "Login"
+		"login": "Login",
+		"google-auth-failed": "Google authentication failed"
 	},
 	"lang": {
 		"en": "English",
@@ -42,8 +43,7 @@
 		"name-not-unique": "The name is not unique",
 		"already-registered": "Already registered",
 		"login-and-password-not-match": "Login and password does not match",
-		"server-error": "server-error"
+		"server-error": "server-error",
+		"google-auth-failed": "Google authentication failed"
 	}
-
-
 }

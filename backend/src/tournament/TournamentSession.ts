@@ -1,4 +1,4 @@
-import { post_matchmaking_with_specific_user__game_service, post_new_tournament, post_new_tournament_score, post_new_tournament_user, ScoreRequestBody } from "../api";
+import { post_new_tournament, post_new_tournament_score, post_new_tournament_user, ScoreRequestBody } from "../api";
 import { MatchOptions, SCORE_TournamentDataDTO, Status } from "../model";
 import { Tournament } from "../Tournament";
 import { Users } from "../Users";

@@ -73,4 +73,18 @@ export interface AUTH_ProfileDTO {
 	error?: string;
 }
 
+export interface GoogleAuthRequestBody {
+  idToken: string;
+}
+
+export interface GoogleAuthResponse {
+  token?: string;
+  error?: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+}
 
