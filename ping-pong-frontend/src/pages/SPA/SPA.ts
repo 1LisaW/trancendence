@@ -129,7 +129,7 @@ export class SPA {
 	}
 
 	updateAvatar = async () => {
-		this.avatar = await getProfileAvatar();
+		this.avatar = await getProfileAvatar(); // why not working?
 		this.outlets["profile"]?.update(this.avatar);
 		this.outlets["header"]?.update(this.avatar);
 	}
@@ -279,15 +279,15 @@ export class SPA {
 		const currentOutlets = this.router.getRouteOutlets();
 		console.log(currentOutlets);
 		currentOutlets.forEach((value) => {
-			// Simona - Force recreation of Profile component when user changes
-			// if (value === 'profile' && this.outlets[value]) {
-			// 	this.outlets[value] = null; // Simona - Force recreation
-			// }
+			// Force recreation of Profile component when user changes to ensure fresh data
+			if (value === 'profile' && this.outlets[value]) {
+				this.outlets[value] = null; // Force recreation
+			}
 
-			// Simona added this line: Force header recreation when avatar changes
-			// if (value === 'header' && this.outlets[value]) {
-			// 	this.outlets[value] = null; // Force header recreation with new avatar
-			// }
+			// Force header recreation when avatar changes
+			if (value === 'header' && this.outlets[value]) {
+				this.outlets[value] = null; // Force header recreation with new avatar
+			}
 
 			if (!this.outlets[value])
 				this.initOutlet(value);
