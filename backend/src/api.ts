@@ -226,3 +226,26 @@ export const post_new_ai_session = (user_id: number): Promise<Response> => {
 	  })
 	);
 }
+
+// chat
+const CHAT_HOSTNAME = 'chat';
+const CHAT_PORT = 8087;
+
+export const post_user_friends = async(token: string, friends: string[]) => {
+	return (fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/friends`, {
+		method: "POST",
+		headers: {
+		  "Authorization": token,
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({friends}),
+	  })
+	);
+}
+
+export const get_help = async() => {
+	return (fetch(`http://${CHAT_HOSTNAME}:${CHAT_PORT}/chat/help`, {
+		method: "GET",
+	  })
+	);
+}

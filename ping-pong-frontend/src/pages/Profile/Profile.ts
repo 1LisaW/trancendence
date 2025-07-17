@@ -187,12 +187,14 @@ export default class Profile extends Component {
 	avatar: HTMLElement;
 	popup: HTMLElement | null = null;
 	statistics: HTMLElement;
+	friends: HTMLElement;
 	updateAvatarSrc: () => void;
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
 		this.container.className = "flex flex-col h-full items-center bg-(--color-paper-base) justify-center";
 		this.avatar = document.createElement('div');
 		this.statistics = document.createElement('div');
+		this.friends = document.createElement('div');
 		this.updateAvatarSrc = updateAvatarSrc;
 		this.update(avatarSrc);
 		this.init();
@@ -385,6 +387,7 @@ export default class Profile extends Component {
 		grid.appendChild(name);
 
 		this.container.appendChild(grid);
+		this.container.appendChild(this.friends);
 		this.container.appendChild(this.statistics);
 	}
 
@@ -454,9 +457,104 @@ export default class Profile extends Component {
 			this.avatar.innerHTML = `<img src="${avatar}"/>`;
 	}
 
+	createFriendRow = (name:string, status: number, ul : HTMLUListElement) => {
+		const li = document.createElement('li');
+		li.className = "py-3 sm:py-4";
+		ul.appendChild(li);
+
+		const wrapper = document.createElement('div');
+		wrapper.className = "flex items-center space-x-3 rtl:space-x-reverse";
+		li.appendChild(wrapper);
+
+		const nameBlock = document.createElement('div');
+		nameBlock.className = "flex-1 min-w-0 text-sm font-semibold text-gray-900 truncate dark:text-white";
+		nameBlock.innerText = name;
+		wrapper.appendChild(nameBlock);
+
+		let statusText = 'Offline';
+		let color = 'red';
+		switch (status) {
+			case 0:
+
+				break;
+			case 1:
+				statusText = 'online';
+				color = 'green';
+				break;
+			default:
+				break;
+		}
+		const statusBlock = document.createElement('span');
+		statusBlock.className = `inline-flex items-center bg-${color}-100 text-${color}-800 text-xs font-medium px-2.5 py-0.5 rounded-full dark:bg-${color}-900 dark:text-${color}-300`;
+		const statusBlockText = document.createElement('span');
+		statusBlockText.className = `w-2 h-2 me-1 bg-${color}-500 rounded-full`;
+		statusBlock.innerText = statusText;
+		statusBlock.appendChild(statusBlockText);
+		wrapper.appendChild(statusBlock);
+	}
+	showFriends = async() => {
+		// const div =  document.createElement('div');
+		// div.className = "w-48 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white";
+		const friendsRequest = await fetch(`${AUTH_HOSTNAME}/friends`, {
+			method: "GET",
+			headers: {
+				"Authorization": getToken(),
+			},
+		});
+		const friends: {friends: {
+			friend_id: number,
+			name: string}[],
+		} = await friendsRequest.json();
+
+		console.log("Friends:", friends);
+
+		const statusesRequest = await fetch(`/api/session-management/status/users-statuses`, {
+			method: "POST",
+			headers: {
+				// "Authorization": getToken(),
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(friends),
+		});
+
+		// console.log("Statuses of friends statusesRequest ", statusesRequest, await statusesRequest.text());
+		const statuses: {friends: {
+			friend_id: number,
+			name: string,
+			status: number
+		}[],
+		}  = await statusesRequest.json();
+		console.log("Statuses of friends ", statuses);
+		if (statuses.friends.length) {
+			const ul = document.createElement('ul');
+			this.friends.appendChild(ul);
+			ul.className = "max-w-sm divide-y divide-gray-200 dark:divide-gray-700";
+			statuses.friends.forEach(friend => this.createFriendRow(friend.name, friend.status, ul));
+		}
+		// then(
+		// 	(res) => res.json() as {friends: {name: string}[]}
+		// ).then(res:  => {
+		// 	console.log("Friends:", res);
+		// 	return res;
+			// if ('tournaments' in res && res.tournaments.length > 0)
+			// {
+			// 	const h4 = document.createElement('h3');
+			// 	h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+			// 	h4.innerText = "Tournaments:";
+			// 	this.statistics.appendChild(h4);
+			// 	const data:SCORE_UsersScoreDTO  = {scores: res.tournaments, user_id: res.tournaments[0].user_id};
+			// 	console.log("Tournament Score get res: ",data);
+			// 	this.createScoreTable(data);
+
+			// }
+		// });
+	}
+
 	updateDynamicData(): void {
 		console.log("Profile updateDynamicData");
 		this.statistics.innerHTML = '';
+		this.friends.innerHTML = '';
+		this.showFriends();
 		this.createStatistics();
 		// if (this.popup) {
 		// 	this.popup.classList.toggle('hidden');

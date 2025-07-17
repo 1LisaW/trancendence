@@ -28,9 +28,11 @@ services:
     links:
       - auth:auth
       - game-service:game-service
+      - chat:chat
     depends_on:
       - auth
       - game-service
+      - chat
 
 
   game-service:
@@ -106,6 +108,16 @@ services:
       - db:/db
     ports:
       - 8084:8084
+
+  chat:
+    container_name: chat
+    image: chat
+    build:
+      context: ./chat
+    volumes:
+      - db:/db
+    ports:
+      - 8087:8087
 
   gateway:
     container_name: gateway

@@ -2,8 +2,8 @@ import bcrypt from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 import fastify from "fastify";
-import { createUser, getUserByEmail, getUserByEmailAndPassword, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName } from "./sqlite";
-import { AUTH_UserDTO, AUTH_AvatarRequestParams, AUTH_LoginRequestBody, AUTH_ProfileUpdateRequestBody, AUTH_SignInRequestBody, AUTH_CreateUserDTO, AUTH_LoginDTO, AUTH_ProfileUpdateResponse, AUTH_ServerErrorDTO, AUTH_UserDeleteDTO, AUTH_AuthErrorDTO, AUTH_ProfileDTO, AUTH_AvatarDTO, AUTH_IsAuthResponse, AUTH_GetUserDTO } from "./model";
+import { createUser, getUserByEmail, getUserByEmailAndPassword, initDB, getUserById, updateProfile, getProfile, deleteUser, getUsersAvatarByName, addUsersFriends, getUsersFriends } from "./sqlite";
+import { AUTH_UserDTO, AUTH_AvatarRequestParams, AUTH_LoginRequestBody, AUTH_ProfileUpdateRequestBody, AUTH_SignInRequestBody, AUTH_CreateUserDTO, AUTH_LoginDTO, AUTH_ProfileUpdateResponse, AUTH_ServerErrorDTO, AUTH_UserDeleteDTO, AUTH_AuthErrorDTO, AUTH_ProfileDTO, AUTH_AvatarDTO, AUTH_IsAuthResponse, AUTH_GetUserDTO, AUTH_FriendsRequestBody } from "./model";
 import { handleGoogleAuth } from "./google-auth"; // Simona - Google Auth
 import { GoogleAuthRequestBody, GoogleAuthResponse } from "./google-models"; // Simona - Google Models
 import { initGoogleAuthDB, createUserWithGoogle, getUserByName } from "./google-sqlite"; // Simona - Google SQLite
@@ -76,6 +76,50 @@ Fastify.register(async function (fastify) {
 			const response = await getUserById(decoded.userId);
 			const user = {id: response.id, name: response.name, email: response.email};
 			reply.send({user});
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+	})
+
+	Fastify.get('/friends', async(request, reply) => {
+		const token = request.headers.authorization || '';
+
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			const friends = await getUsersFriends(decoded.userId);
+			reply.send(friends);
+		} catch (e) {
+			reply.status(500).send({ error: "Server error", details: e });
+		}
+
+	})
+
+	Fastify.post<{Body: AUTH_FriendsRequestBody}>('/friends', async(request, reply) => {
+		const token = request.headers.authorization || '';
+
+		try {
+			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
+
+			const friends = await getUsersFriends(decoded.userId);
+
+			let friends_ids = (await Promise.all(
+				request.body.friends.map(async (name) => {
+					const data = await getUserByName(name);
+					// if (data)
+					return data?.id;
+				})
+			)).filter(id => id != undefined);
+
+
+			if (friends?.friends)
+				friends_ids = friends_ids.filter(id => !friends?.friends.includes(id));
+
+			friends_ids.forEach(id => addUsersFriends(decoded.userId, id));
+
+			// updateProfile(user.id, request.body.avatar || '', request.body.phone || '');
+
+			reply.send({message: "Friends updated"});
 		} catch (e) {
 			reply.status(500).send({ error: "Server error", details: e });
 		}

@@ -35,6 +35,10 @@ export interface AUTH_LoginDTO {
 	error?: string,
 	token?: string
 }
+
+export interface AUTH_FriendsRequestBody {
+	friends: string[];
+}
 export interface AUTH_ProfileUpdateRequestBody {
 	avatar?: string;
 	phone?: string;

@@ -1,7 +1,7 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, ScoreRequestBody } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_help, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, post_user_friends, ScoreRequestBody } from "./api";
 import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
@@ -20,6 +20,23 @@ const Fastify = fastify();
 Fastify.register(require('@fastify/websocket'));
 Fastify.register(async function (fastify) {
 
+  Fastify.post<{ Body: { friends: { friend_id: number, name: string }[] } }>('/users-statuses', (request, reply) => {
+    const { friends } = request.body;
+    const result: {
+      status: number;
+      friend_id: number;
+      name: string;
+    }[] = [];
+    friends.forEach(record => {
+      const updated_record = {
+        ...record,
+        status: users.getUserStatus(record.friend_id) || 0
+      };
+      result.push(updated_record);
+    })
+    reply.code(200).send({friends: result});
+    return;
+  })
   // GAME:
   // http: gameLoop data from game-service
   Fastify.post<{ Params: GameLoopParams, Body: GameState | ScoreState | GameResult }>('/game/:gameId', (request, reply) => {
@@ -31,25 +48,24 @@ Fastify.register(async function (fastify) {
         const sockets = users.getGameSocketById(player);
         // send data to AI only once in delay_min
         if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp && (sockets[0].timeStamp + DELAY_MSG_TO_AI) > Date.now())
-          return ;
+          return;
         else if ("pos" in request.body && player < 0 && sockets && sockets[0].timeStamp)// && (sockets[0].timeStamp + DELAY_MSG_TO_AI) < Date.now())
         {
-            const date = Date.now();
-            sockets.forEach(socket => {
-              socket.timeStamp = date;
-              socket.send(JSON.stringify(request.body));
-            });
+          const date = Date.now();
+          sockets.forEach(socket => {
+            socket.timeStamp = date;
+            socket.send(JSON.stringify(request.body));
+          });
         }
 
         if (sockets && sockets.length)
           sockets.forEach(socket => socket.send(JSON.stringify(request.body)));
       })
 
-      if ("gameResult" in request.body)
-      {
+      if ("gameResult" in request.body) {
         console.log("Backend: game result received: ", request.body);
         const { score, gameResult } = request.body;
-        const first_user_result =  gameResult[0];//score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
+        const first_user_result = gameResult[0];//score[0] > score[1] ? MatchOptions.WIN : MatchOptions.LOSE;
         const second_user_result = gameResult[1];// score[1] > score[0] ? MatchOptions.WIN : MatchOptions.LOSE;
         const data: ScoreRequestBody = {
           first_user_id: players[0],
@@ -76,12 +92,11 @@ Fastify.register(async function (fastify) {
     const disconnectedPlayers = players.filter(player => !users.gameSocketIsAlive(player));
     post_terminate_game(gameId, disconnectedPlayers[0]);
     players.forEach((player, id) => {
-      if (users.gameSocketIsAlive(player))
-      {
+      if (users.gameSocketIsAlive(player)) {
         const sockets = users.getGameSocketById(player);
         if (sockets && sockets.length)
           sockets.forEach(socket => socket
-            .send(JSON.stringify({ message: `${users.getUserNameById(players[(1-id)])} leave the room` })));
+            .send(JSON.stringify({ message: `${users.getUserNameById(players[(1 - id)])} leave the room` })));
         users.setOnlineStatusToUser(player);
       }
     })
@@ -135,34 +150,34 @@ Fastify.register(async function (fastify) {
         // if (mode === GAME_MODE.PVP || mode === GAME_MODE.PVC) {
 
         // console.log('BEFORE MATCHMAKING USER');
-          const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
+        const data = await users.matchmaking(user_id, socket, mode, msg.opponentId);
 
-          if (!data)
-            return;
-          // console.log('AFTER MATCHMAKING USER', data);
+        if (!data)
+          return;
+        // console.log('AFTER MATCHMAKING USER', data);
 
-          const json = await data.json();
-          console.log("-|-|- Backend game socket matchmaking data: ", json);
+        const json = await data.json();
+        console.log("-|-|- Backend game socket matchmaking data: ", json);
 
 
-          if ('gameId' in json) {
-            const gameUsers: number[] = json.users;
-            const opponentNames = [users.getUserNameById(gameUsers[1]), users.getUserNameById(gameUsers[0])];
-            console.log("opponentNames: ", opponentNames);
+        if ('gameId' in json) {
+          const gameUsers: number[] = json.users;
+          const opponentNames = [users.getUserNameById(gameUsers[1]), users.getUserNameById(gameUsers[0])];
+          console.log("opponentNames: ", opponentNames);
 
-            const avatars = await Promise.all(opponentNames.map((name) => get_user_profile_avatar(name || '')));
-            gameUsers.forEach((gameSocketId, id) => {
-              const reply = {
-                gameId: json.gameId,
-                order: id,
-                opponent: opponentNames[id],
-                avatars: [avatars[0].avatar, avatars[1].avatar]
-              };
-              users.setPlayingStateToUser(gameSocketId);
-              users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
-            });
+          const avatars = await Promise.all(opponentNames.map((name) => get_user_profile_avatar(name || '')));
+          gameUsers.forEach((gameSocketId, id) => {
+            const reply = {
+              gameId: json.gameId,
+              order: id,
+              opponent: opponentNames[id],
+              avatars: [avatars[0].avatar, avatars[1].avatar]
+            };
+            users.setPlayingStateToUser(gameSocketId);
+            users.getGameSocketById(gameSocketId)?.forEach(socket => socket.send(JSON.stringify(reply)));
+          });
           // }
-       }
+        }
       }
       // bat movements from frontend
       else if ('gameId' in msg) {
@@ -204,13 +219,30 @@ Fastify.register(async function (fastify) {
       socket.close();
     }
 
-    socket.on('message', message => {
+    socket.on('message', async message => {
       console.log("From backend:", message.toString());
       const msg = JSON.parse(message.toString());
       const user_id = socket.id;
       if (user_id && 'recipient' in msg && 'event' in msg) {
         if (msg.recipient === 'tournament') {
           tournamentSessionManager.handleChatMessage(user_id, msg);
+        }
+        else if (msg.recipient === 'chat') {
+          //TODO
+          switch (msg.event) {
+            case 'help': {
+              const response = await get_help();
+              const data = await response.json();
+              socket.send(JSON.stringify(data));
+              break;
+            }
+            case 'friend': {
+              const response = await post_user_friends(token, msg.users);
+              const data = await response.json();
+              socket.send(JSON.stringify(data));
+              break;
+            }
+          }
         }
       }
     });

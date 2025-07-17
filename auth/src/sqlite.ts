@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import { execute, fetchFirst } from "./sql";
+import { execute, fetchAll, fetchFirst } from "./sql";
 import { AUTH_UserDTO, AUTH_CreateUserDTO, AUTH_ProfileDTO, AUTH_ProfileResponse } from "./model";
 
 export const DB_PATH ="/db/users.db";
@@ -33,6 +33,20 @@ export const initDB = async () => {
 			avatar TEXT,
 			phone TEXT)`
 		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS friends (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			friend_id INTEGER NOT NULL)`
+		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS blocks (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			blocked_id INTEGER NOT NULL)`
+		);
 	} catch (error) {
 		console.log(error);
 	} finally {
@@ -54,6 +68,49 @@ export const createNewUser = async (name:string, email:string, password: string)
 	  db.close();
 	}
 };
+
+export const addUsersFriends = async (user_id: number, friend_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `INSERT INTO friends(user_id, friend_id) VALUES(?, ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const getUsersFriends = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `SELECT friends.friend_id, users.name
+	FROM friends
+	LEFT JOIN users ON friends.friend_id = users.id
+	WHERE user_id = ?`;
+	try {
+	  const friends = await fetchAll(db, sql_friends, [user_id.toString()]) as number[] ;
+	  return ({friends});
+
+	//   await execute(db, sql_friends, [user_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+
+export const deleteUsersFriends = async (user_id: number, friend_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `DELETE FROM friends WHERE user_id = ? AND friend_id = ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
 
 export const updateProfile = async (id:number, avatar:string, phone: string) => {
 	const db = new sqlite3.Database(DB_PATH);

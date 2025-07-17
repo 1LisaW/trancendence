@@ -77,4 +77,34 @@ export interface ChatTournamentMatchInitMessage {
 	isInitiator: boolean;
 }
 
+export interface ChatChatHelp {
+	recipient: 'chat';
+	event: 'help';
+}
+
+export interface ChatChatAddFriend {
+	recipient: 'chat';
+	event: 'friend';
+	users: string[];
+}
+
+export interface ChatChatRemoveFriend {
+	recipient: 'chat';
+	event: 'unfriend';
+	users: string[];
+}
+
+export interface ChatChatBlock {
+	recipient: 'chat';
+	event: 'block';
+	users: string[];
+}
+
+export interface ChatChatMessage {
+	recipient: 'chat';
+	event: 'message';
+	message: string;
+}
+
 export type ChatTournamentReply = ChatTournamentInviteReply | ChatTournamentMatchmakingReply;
+export type ChatChatReply = ChatChatHelp | ChatChatAddFriend | ChatChatBlock | ChatChatRemoveFriend | ChatChatMessage
