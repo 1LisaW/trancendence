@@ -102,6 +102,7 @@ Fastify.register(async function (fastify) {
 			const decoded = jwt.verify(token, process.env.TOKEN_SECRET || "") as JwtPayload;
 
 			const friends = await getUsersFriends(decoded.userId);
+			// const friends = await friendsData.json();
 
 			let friends_ids = (await Promise.all(
 				request.body.friends.map(async (name) => {
@@ -111,9 +112,9 @@ Fastify.register(async function (fastify) {
 				})
 			)).filter(id => id != undefined);
 
-
+			console.log("friends_ids: ",friends_ids, " friends: ", friends);
 			if (friends?.friends)
-				friends_ids = friends_ids.filter(id => !friends?.friends.includes(id));
+				friends_ids = friends_ids.filter(id => !friends.friends.some((fr: any) => fr.friend_id === id));
 
 			friends_ids.forEach(id => addUsersFriends(decoded.userId, id));
 
@@ -143,7 +144,7 @@ Fastify.register(async function (fastify) {
 
 
 			if (friends?.friends)
-				friends_ids = friends_ids.filter(id => friends?.friends.includes(id));
+				friends_ids = friends_ids.filter(id => friends.friends.some((fr: any) => fr.friend_id === id));
 
 			friends_ids.forEach(id => deleteUsersFriends(decoded.userId, id));
 

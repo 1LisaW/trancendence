@@ -138,9 +138,11 @@ services:
 volumes:
   db:
     name: db_simple
-    driver: local
-#    driver_opts:
-#      type: none
-#      o: bind
+    # driver: local
+    driver_opts:
+     type: none
+     o: bind
+     device: /home/tklimova/sgoinfre/_mariadb_volume
+
 #      device: C:\Projects\_mariadb_volume
       # device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb

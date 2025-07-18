@@ -269,10 +269,10 @@ export default class Profile extends Component {
 		this.statistics = document.createElement('div');
 		this.updateAvatarSrc = updateAvatarSrc;
 		this.friendsBlock = document.createElement('div');
-		
+
 		// Clear any existing user data to ensure fresh start
 		this.userInfo = { name: '', email: '', phone: '' };
-		
+
 		this.update(avatarSrc);
 		this.init();
 	}
@@ -335,7 +335,7 @@ export default class Profile extends Component {
 		// Update all name elements
 		if (this.nameEl) this.nameEl.innerText = this.userInfo.name;
 		if (this.leftNameEl) this.leftNameEl.innerText = this.userInfo.name;
-		
+
 		// Update all email elements  
 		if (this.emailEl) this.emailEl.innerText = this.userInfo.email;
 		if (this.leftEmailEl) this.leftEmailEl.innerText = this.userInfo.email;
@@ -624,11 +624,10 @@ export default class Profile extends Component {
 			tabItem.className = 'mr-2';
 
 			const tabButton = document.createElement('button');
-			tabButton.className = `inline-block p-4 border-b-2 rounded-t-lg ${
-				tab.active
+			tabButton.className = `inline-block p-4 border-b-2 rounded-t-lg ${tab.active
 					? 'text-blue-500 border-blue-500 bg-gray-700'
 					: 'border-transparent hover:text-gray-300 hover:border-gray-300'
-			}`;
+				}`;
 			tabButton.innerText = tab.text;
 			tabButton.onclick = () => this.switchTab(tab.id);
 
@@ -726,18 +725,18 @@ export default class Profile extends Component {
 
 	updateDynamicData(): void {
 		console.log("Profile updateDynamicData");
-		
+
 		// Reset profile data to ensure fresh start
 		this.resetProfileData();
-		
+
 		// Clear and recreate the entire profile content
 		this.container.innerHTML = '';
 		this.createChildren();
-		
+
 		// Refresh statistics
 		this.statistics.innerHTML = '';
 		this.createStatistics();
-		
+
 		// Fetch fresh user data
 		this.fetchUserInfo();
 	}
@@ -757,8 +756,7 @@ export default class Profile extends Component {
 		}).then(
 			(res) => res.json()
 		).then(res => {
-			if ('user_id' in res && res.scores && res.scores.length > 0)
-			{
+			if ('user_id' in res && res.scores && res.scores.length > 0) {
 				hasData = true;
 				const h3 = document.createElement('h3');
 				h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
@@ -777,14 +775,13 @@ export default class Profile extends Component {
 		}).then(
 			(res) => res.json()
 		).then(res => {
-			if ('tournaments' in res && res.tournaments.length > 0)
-			{
+			if ('tournaments' in res && res.tournaments.length > 0) {
 				hasData = true;
 				const h4 = document.createElement('h3');
 				h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
 				h4.innerText = "Tournaments:";
 				this.statistics.appendChild(h4);
-				const data:SCORE_UsersScoreDTO  = {scores: res.tournaments, user_id: res.tournaments[0].user_id};
+				const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
 				this.createScoreTable(data);
 			}
 			this.showEmptyStatsIfNeeded(hasData);
@@ -800,7 +797,7 @@ export default class Profile extends Component {
 		}
 	}
 
-	createScoreTable(data: {scores: SCORE_ScoreDTO[], user_id:number}){
+	createScoreTable(data: { scores: SCORE_ScoreDTO[], user_id: number }) {
 		if (data.scores.length === 0 || !this.statistics)
 			return;
 		// const tableWrapper = document.createElement('div');
@@ -813,10 +810,10 @@ export default class Profile extends Component {
 		thead.className = "text-xs text-gray-700 uppercase dark:text-gray-400";
 		const tableHeadRow = document.createElement('tr');
 		const tableHeaders = ['Opponent', 'Date', 'Score', 'Result'];
-		tableHeaders.forEach( (tableHeader, id) => {
+		tableHeaders.forEach((tableHeader, id) => {
 			const th = document.createElement('th');
 			th.setAttribute('scope', "col");
-			th.className = id%2? "px-6 py-3": "px-6 py-3 bg-gray-50 dark:bg-gray-800" ;
+			th.className = id % 2 ? "px-6 py-3" : "px-6 py-3 bg-gray-50 dark:bg-gray-800";
 			th.innerText = tableHeader;
 			tableHeadRow.appendChild(th);
 		})
@@ -826,7 +823,7 @@ export default class Profile extends Component {
 		const tbody = document.createElement('tbody');
 		data.scores.forEach((scoreData, id) => {
 			const tr = document.createElement('tr');
-			tr.className = id%2? "border-b border-gray-200 dark:border-gray-700" : "border-b border-gray-200 dark:border-gray-700";
+			tr.className = id % 2 ? "border-b border-gray-200 dark:border-gray-700" : "border-b border-gray-200 dark:border-gray-700";
 
 			const th = document.createElement('th');
 			th.setAttribute("scope", "row");
@@ -842,7 +839,7 @@ export default class Profile extends Component {
 			const scoreTd = document.createElement('td');
 			scoreTd.className = "px-6 py-4 bg-gray-50 dark:bg-gray-800";
 			scoreTd.innerText = data.user_id == scoreData.first_user_id ?
-				`${scoreData.first_user_score} - ${scoreData.second_user_score}`: `${scoreData.second_user_score} - ${scoreData.first_user_score}`
+				`${scoreData.first_user_score} - ${scoreData.second_user_score}` : `${scoreData.second_user_score} - ${scoreData.first_user_score}`
 			tr.appendChild(scoreTd);
 
 			const resultTd = document.createElement('td');
@@ -850,18 +847,15 @@ export default class Profile extends Component {
 			const isDraw = scoreData.first_user_score == scoreData.second_user_score;
 			const isWin = (scoreData.first_user_score > scoreData.second_user_score && scoreData.first_user_id == data.user_id)
 				|| (scoreData.first_user_score < scoreData.second_user_score && scoreData.second_user_id == data.user_id);
-			if (isWin)
-			{
+			if (isWin) {
 				resultTd.innerText = 'W';
 				resultTd.classList.add("bg-green-500");
 			}
-			else if (isDraw)
-			{
+			else if (isDraw) {
 				resultTd.innerText = 'D';
 				resultTd.classList.add("bg-black-100");
 			}
-			else
-			{
+			else {
 				resultTd.innerText = 'L';
 				resultTd.classList.add("bg-red-500");
 			}
@@ -887,11 +881,10 @@ export default class Profile extends Component {
 		const tabButtons = tabsContainer.querySelectorAll('button');
 		tabButtons.forEach((btn: Element, index: number) => {
 			const isActive = index === this.getTabIndex(tabId);
-			(btn as HTMLElement).className = `inline-block p-4 border-b-2 rounded-t-lg ${
-				isActive
+			(btn as HTMLElement).className = `inline-block p-4 border-b-2 rounded-t-lg ${isActive
 					? 'text-blue-500 border-blue-500 bg-gray-700'
 					: 'border-transparent hover:text-gray-300 hover:border-gray-300'
-			}`;
+				}`;
 		});
 
 		this.showTabContent(tabId);
@@ -908,7 +901,7 @@ export default class Profile extends Component {
 
 		content.innerHTML = '';
 
-		switch(tabId) {
+		switch (tabId) {
 			case 'pvp-pvc':
 				this.showPVPPVCTab(content);
 				break;
@@ -1023,7 +1016,26 @@ export default class Profile extends Component {
 
 			if (response.ok) {
 				const friends = await response.json();
-				this.renderFriendsList(container, friends);
+
+				const statusesRequest = await fetch(`/api/session-management/status/users-statuses`, {
+					method: "POST",
+					headers: {
+						// "Authorization": getToken(),
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(friends),
+				});
+
+				// console.log("Statuses of friends statusesRequest ", statusesRequest, await statusesRequest.text());
+				const statuses: {
+					friends: {
+						friend_id: number,
+						name: string,
+						status: number
+					}[],
+				} = await statusesRequest.json();
+
+				this.renderFriendsList(container, statuses.friends);
 			} else {
 				this.renderFriendsList(container, []); // Show empty state
 			}
@@ -1060,14 +1072,22 @@ export default class Profile extends Component {
 			statusBadge.className = 'text-xs font-semibold px-2 py-1 rounded ml-2 flex-shrink-0';
 
 			// Default to online if no status provided
-			const status = friend.status || 'online';
+			let status = 'offline';
 
-			if (status === 'online') {
-				statusBadge.className += ' bg-green-200 text-green-800';
-			} else if (status === 'playing') {
+			if(friend.status === 0) {
+				statusBadge.className += ' bg-red-300 text-red-700';
+				status = 'offline';
+			}
+
+			else if (friend.status === 1) {
 				statusBadge.className += ' bg-blue-200 text-blue-800';
-			} else {
+				status = 'online';
+			} else if (friend.status === 2) {
 				statusBadge.className += ' bg-gray-300 text-gray-700';
+				status = 'matchmaking'
+			} else {
+				status = 'playing';
+				statusBadge.className += ' bg-green-200 text-green-800';
 			}
 
 			statusBadge.innerText = status;
