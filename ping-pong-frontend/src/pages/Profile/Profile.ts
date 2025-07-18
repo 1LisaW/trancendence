@@ -763,7 +763,7 @@ export default class Profile extends Component {
 				h3.innerText = "PVP with PVC:";
 				this.statistics.appendChild(h3);
 				const data = res as SCORE_UsersScoreDTO;
-				this.createScoreTable(data);
+				this.createScoreTable(data, this.statistics);
 			}
 			this.showEmptyStatsIfNeeded(hasData);
 		});
@@ -782,7 +782,7 @@ export default class Profile extends Component {
 				h4.innerText = "Tournaments:";
 				this.statistics.appendChild(h4);
 				const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
-				this.createScoreTable(data);
+				this.createScoreTable(data, this.statistics);
 			}
 			this.showEmptyStatsIfNeeded(hasData);
 		});
@@ -797,7 +797,7 @@ export default class Profile extends Component {
 		}
 	}
 
-	createScoreTable(data: { scores: SCORE_ScoreDTO[], user_id: number }) {
+	createScoreTable(data: { scores: SCORE_ScoreDTO[], user_id: number }, container: HTMLElement) {
 		if (data.scores.length === 0 || !this.statistics)
 			return;
 		// const tableWrapper = document.createElement('div');
@@ -865,7 +865,7 @@ export default class Profile extends Component {
 			tbody.appendChild(tr);
 		})
 		table.appendChild(tbody);
-		this.statistics.appendChild(table);
+		container.appendChild(table);
 		// parent.appendChild(this.statistics);
 
 	}
@@ -1109,7 +1109,7 @@ export default class Profile extends Component {
 			headers: { "Authorization": getToken() },
 		}).then(res => res.json()).then(data => {
 			if (data.tournaments && data.tournaments.length > 0) {
-				this.createScoreTable({ scores: data.tournaments, user_id: data.tournaments[0].user_id });
+				this.createScoreTable({ scores: data.tournaments, user_id: data.tournaments[0].user_id }, container);
 			} else {
 				const empty = document.createElement('div');
 				empty.className = 'text-gray-400 text-center py-4';
@@ -1153,10 +1153,12 @@ export default class Profile extends Component {
 		fetch(`${SCORE_HOSTNAME}/score`, {
 			method: "GET",
 			headers: { "Authorization": getToken() },
-		}).then(res => res.json()).then(res => {
+		}).then(
+			res => res.json()
+		).then(res => {
 			if ('user_id' in res && res.scores && res.scores.length > 0) {
 				const data = res as SCORE_UsersScoreDTO;
-				this.createScoreTable(data);
+				this.createScoreTable(data, container);
 			} else {
 				const empty = document.createElement('div');
 				empty.className = 'text-gray-400 text-center py-4';
