@@ -38,12 +38,13 @@
 		"title": "Sprache ändern"
 	},
 	"validation": {
-		"warning": "GWarning alert!",
+		"warning": "Warnmeldung!",
 		"password-not-match": "GPasswords not match",
-		"name-not-unique": "GThe name is not unique",
-		"already-registered": "GAlready registered",
-		"login-and-password-not-match": "GLogin and password does not match",
-		"server-error": "Gserver-error",
-		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
+		"name-not-unique": "Passwörter stimmen nicht überein",
+		"already-registered": "Bereits registriert",
+		"login-and-password-not-match": "Login und Passwort stimmen nicht überein",
+		"server-error": "Serverfehler",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen",
+		"string-too-long": "Die Zeichenfolge ist zu lang"
 	}
 }
