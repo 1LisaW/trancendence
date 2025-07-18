@@ -20,7 +20,7 @@ class Chat_WS {
 			const message = msg.data;
 			const data: ChatTournamentMessage = JSON.parse(message);
 			console.log('I got a message!', message, data)
-			if (data.recipient === 'tournament') {
+			if (data.recipient === 'tournament' || data.recipient === 'chat') {
 			// 	// console.log('message.recipient === tournament');
 				this.syncChatFromWs(data);
 				// if (data.event === 'match') {}

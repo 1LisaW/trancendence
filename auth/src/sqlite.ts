@@ -15,7 +15,7 @@ export const initDB = async () => {
 			name TEXT NOT NULL UNIQUE,
 			email TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
-			google_id TEXT UNIQUE
+			google_id TEXT UNIQUE,
 			is_deleted INTEGER NOT NULL DEFAULT 0)`
 		);
 		await execute(
@@ -75,6 +75,36 @@ export const addUsersFriends = async (user_id: number, friend_id: number) => {
 	const sql_friends = `INSERT INTO friends(user_id, friend_id) VALUES(?, ?)`;
 	try {
 	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const addUsersBlocked = async (user_id: number, blocked_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `INSERT INTO blocks(user_id, blocked_id) VALUES(?, ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), blocked_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const getUsersBlocked = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_blocks = `SELECT blocks.blocked_id, users.name
+	FROM blocks
+	LEFT JOIN users ON blocks.blocked_id = users.id
+	WHERE user_id = ?`;
+	try {
+	  const blocks = await fetchAll(db, sql_blocks, [user_id.toString()]) as number[] ;
+	  return ({blocks});
+
+	//   await execute(db, sql_friends, [user_id.toString()]);
 	} catch (err) {
 		console.log(err);
 	} finally {

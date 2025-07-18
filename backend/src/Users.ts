@@ -1,4 +1,4 @@
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, post_matchmaking__game_service, post_matchmaking_with_specific_user__game_service, post_new_ai_session } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_user__auth, get_user_blocks, post_matchmaking__game_service, post_matchmaking_with_specific_user__game_service, post_new_ai_session } from "./api";
 import { Status, WSocket } from "./model";
 
 export class Users {
@@ -219,6 +219,35 @@ export class Users {
 				return acc;
 			}, onlineUsers);
 		return (onlineUsers);
+	}
+
+	broadcastMessage(user_id: number, message: string) {
+		const sender = this.getUserNameById(user_id);
+		const date = Date.now();
+		const response = {
+			recipient: 'chat',
+			event: 'message',
+			sender,
+			date,
+			message,
+			is_self: false
+		}
+		const onlineUsers = this.getOnlineUsers();
+		onlineUsers.forEach( async(user: number)=> {
+			if (user_id == user) {
+				this.sendDataToChatSockets(user_id, {...response, is_self: true});
+				return;
+			}
+			const data = await get_user_blocks(user);
+			const user_blocks: {blocks:number[]} | undefined = await data.json();
+			console.log("USER: ", user_id, " blocks: ", user_blocks);
+			if (
+				!user_blocks ||
+				(user_blocks && 'blocks' in user_blocks && !user_blocks.blocks.some((el: any) => el.blocked_id === user_id))
+			) {
+				this.sendDataToChatSockets(user, response);
+			}
+		})
 	}
 
 	// removeUser = async (user_id: number) => {

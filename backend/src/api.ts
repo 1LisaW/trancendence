@@ -243,6 +243,43 @@ export const post_user_friends = async(token: string, friends: string[]) => {
 	);
 }
 
+export const post_user_blocks = async(token: string, blocks: string[]) => {
+	return (fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/blocks`, {
+		method: "POST",
+		headers: {
+		  "Authorization": token,
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({blocks}),
+	  })
+	);
+}
+
+export const get_user_blocks = async(user_id: number) => {
+	return (fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/blocks/${user_id}`, {
+		method: "GET",
+		// headers: {
+		//   "Authorization": token,
+		// //   'Content-Type': 'application/json',
+		// },
+		// body: JSON.stringify({blocks}),
+	  })
+	);
+}
+
+
+export const post_user_unfriends = async(token: string, friends: string[]) => {
+	return (fetch(`http://${AUTH_HOSTNAME}:${AUTH_PORT}/unfriends`, {
+		method: "POST",
+		headers: {
+		  "Authorization": token,
+		  'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({friends}),
+	  })
+	);
+}
+
 export const get_help = async() => {
 	return (fetch(`http://${CHAT_HOSTNAME}:${CHAT_PORT}/chat/help`, {
 		method: "GET",
