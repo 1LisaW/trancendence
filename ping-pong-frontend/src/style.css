@@ -115,3 +115,9 @@ body, html {
 .cropper-face {
   border-radius: 50%;
 }
+
+#google-signin-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
