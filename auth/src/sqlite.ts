@@ -133,7 +133,7 @@ export const getUsersFriends = async (user_id: number) => {
 
 export const deleteUsersFriends = async (user_id: number, friend_id: number) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql_friends = `DELETE FROM friends WHERE user_id = ? AND friend_id = ?)`;
+	const sql_friends = `DELETE FROM friends WHERE user_id = ? AND friend_id = ?`;
 	try {
 	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
 	} catch (err) {
