@@ -10,7 +10,7 @@ import { getProfileAvatar, isAuthenticated, removeToken } from "../../utils/auth
 import Profile from "../Profile/Profile";
 import Chat from "../../components/Chat/Chat";
 import Chat_WS from "./Chat_WS";
-import { ChatTournamentMessage, ChatTournamentReply } from "../../model/Chat";
+import { ChatChatReply, ChatTournamentMessage, ChatTournamentReply } from "../../model/Chat";
 
 class Router {
 	routes: Record<string, string[]> = {
@@ -171,7 +171,7 @@ export class SPA {
 		}
 	}
 
-	syncWsFromChat = (data: ChatTournamentReply) => {
+	syncWsFromChat = (data: ChatTournamentReply | ChatChatReply) => {
 			this.chat_ws.send(JSON.stringify(data));
 	}
 

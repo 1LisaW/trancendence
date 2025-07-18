@@ -77,4 +77,77 @@ export interface ChatTournamentMatchInitMessage {
 	isInitiator: boolean;
 }
 
+export interface ChatChatHelp {
+	recipient: 'chat';
+	event: 'help';
+}
+
+export interface ChatChatAddFriend {
+	recipient: 'chat';
+	event: 'friend';
+	users: string[];
+}
+
+export interface ChatChatRemoveFriend {
+	recipient: 'chat';
+	event: 'unfriend';
+	users: string[];
+}
+
+export interface ChatChatBlock {
+	recipient: 'chat';
+	event: 'block';
+	users: string[];
+}
+
+export interface ChatChatMessage {
+	recipient: 'chat';
+	event: 'message';
+	date: number;
+	message: string;
+}
+
 export type ChatTournamentReply = ChatTournamentInviteReply | ChatTournamentMatchmakingReply;
+export type ChatChatReply = ChatChatHelp | ChatChatAddFriend | ChatChatBlock | ChatChatRemoveFriend | ChatChatMessage
+
+export interface ChatChatHelpMessage {
+	recipient: 'chat';
+	event: 'help';
+	date: number;
+	message: string
+}
+
+export interface ChatChatAddFriendMessage {
+	recipient: 'chat';
+	event: 'friend';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatRemoveFriendMessage {
+	recipient: 'chat';
+	event: 'unfriend';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatBlockMessage {
+	recipient: 'chat';
+	event: 'block';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatUserMessage {
+	recipient: 'chat';
+	event: 'message';
+	date: number;
+	sender: string
+	message: string;
+	is_self: boolean;
+}
+
+export type ChatChatIncomingMessage = ChatChatHelpMessage | ChatChatAddFriendMessage | ChatChatBlockMessage | ChatChatRemoveFriendMessage | ChatChatUserMessage

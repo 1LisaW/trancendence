@@ -13,7 +13,7 @@ export default class Main extends Component {
 	}
 	createChildren(): void {
 		const ul = document.createElement('ul');
-		ul.className = "main-animation absolute w-full h-full";
+		ul.className = "main-animation absolute w-full h-full overflow-hidden";
 		const li = document.createElement('li');
 		li.className = "block absolute rounded-full bg-purple-500 w-10 h-10 z-1";
 		const li2 = document.createElement('li');

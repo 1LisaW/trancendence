@@ -1,4 +1,4 @@
-import { ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
+import { ChatChatIncomingMessage, ChatChatReply, ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
 
 function createCustomElement(tag: string, className: string) {
 	const element = document.createElement(tag);
@@ -32,10 +32,12 @@ class Chat {
 	tournamentInvites: {tournament_id: number, element?: HTMLElement, buttonBlock?: HTMLElement}[] = [];
 	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
 
-	syncWsFromChat: (data: ChatTournamentReply) => void ;
+	chatMessage = "";
+
+	syncWsFromChat: (data: ChatTournamentReply | ChatChatReply) => void ;
 	// goToTournamentMatch:(opponent:string) => void ;
 
-	constructor(syncWsFromChat: (data: ChatTournamentReply) => void
+	constructor(syncWsFromChat: (data: ChatTournamentReply | ChatChatReply) => void
 	// , goToTournamentMatch:(opponent:string) => void
 	) {
 		this.syncWsFromChat = syncWsFromChat;
@@ -134,6 +136,54 @@ class Chat {
 		// send socket data
 	}
 
+	private parseChatMessage(msg: string): ChatChatReply {
+		const msgLine = msg.split(' ');
+		msgLine.forEach(elem => elem.trim());
+		const command = msgLine[0].trim();
+		const restInstructions = msgLine.slice(1);
+		switch (command) {
+			case '\\help': {
+				return {
+					recipient: "chat",
+					event: "help"
+				}
+				break
+			}
+			case '\\friend': {
+				return {
+					recipient: "chat",
+					event: "friend",
+					users: restInstructions,
+				}
+				break
+			}
+			case '\\unfriend': {
+				return {
+					recipient: "chat",
+					event: "unfriend",
+					users: restInstructions,
+				}
+				break
+			}
+			case '\\block': {
+				return {
+					recipient: "chat",
+					event: "block",
+					users: restInstructions,
+				}
+				break
+			}
+			default: {
+				return {
+					recipient: "chat",
+					event: "message",
+					message: msg,
+					date: Date.now()
+				}
+			}
+		}
+	}
+
 	private initChat() {
 		const chatBlockWrapper = createCustomElement('div', 'fixed z-15 bottom-0 right-0 flex flex-col gap-1 items-end m-1');
 		this.container = chatBlockWrapper;
@@ -154,9 +204,19 @@ class Chat {
 		const textBlock = document.createElement('textarea');
 		textBlock.className = ' m-auto w-[80%] rounded-lg h-15 border-1 border-solid';
 		inputBlock.appendChild(textBlock);
+		textBlock.addEventListener("change", () => this.chatMessage = textBlock.value);
+		// this.chatInput = textBlock;
+
 		const sendButton = document.createElement('button');
 		sendButton.className = 'cursor ml-auto mr-2 mb-2 p-1 w-30 rounded-lg text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent)';
 		sendButton.innerText = 'Send';
+		sendButton.addEventListener("click",() => {
+			// const value = (this.chatInput as HTMLAreaElement).nodeValue;
+			console.log("VALUE ", this.chatMessage);
+			this.syncWsFromChat(this.parseChatMessage(this.chatMessage))
+			textBlock.value = '';
+			this.chatMessage = '';
+		})
 		inputBlock.appendChild(sendButton);
 		chatWrapper.appendChild(inputBlock);
 
@@ -323,7 +383,7 @@ class Chat {
 
 		return messageBlock;
 	}
-	update = (data: ChatTournamentMessage) => {
+	update = (data: ChatTournamentMessage | ChatChatIncomingMessage) => {
 		if (data.recipient === 'tournament')
 		{
 			console.log('Chat update: ', data);
@@ -337,6 +397,21 @@ class Chat {
 				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent, data.option);
 			else if (data.event === 'finish')
 				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);
+
+		}
+		else if (data.recipient === 'chat')
+		{
+			switch (data.event) {
+				case  'help':
+					this.addChatBubble('chat', data.date, data.message, MessageType.INFO);
+					break;
+				case  'message':
+					this.addChatBubble(data.sender, data.date, data.message, data.is_self? MessageType.SELF : MessageType.USER);
+					break;
+
+				default:
+					break;
+			}
 
 		}
 	}

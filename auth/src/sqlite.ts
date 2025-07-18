@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import { execute, fetchFirst } from "./sql";
+import { execute, fetchAll, fetchFirst } from "./sql";
 import { AUTH_UserDTO, AUTH_CreateUserDTO, AUTH_ProfileDTO, AUTH_ProfileResponse } from "./model";
 
 export const DB_PATH ="/db/users.db";
@@ -15,7 +15,8 @@ export const initDB = async () => {
 			name TEXT NOT NULL UNIQUE,
 			email TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
-			google_id TEXT UNIQUE)`
+			google_id TEXT UNIQUE,
+			is_deleted INTEGER NOT NULL DEFAULT 0)`
 		);
 		await execute(
 			db,
@@ -32,6 +33,20 @@ export const initDB = async () => {
 			user_id INTEGER NOT NULL UNIQUE,
 			avatar TEXT,
 			phone TEXT)`
+		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS friends (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			friend_id INTEGER NOT NULL)`
+		);
+		await execute(
+			db,
+			`CREATE TABLE IF NOT EXISTS blocks (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL,
+			blocked_id INTEGER NOT NULL)`
 		);
 	} catch (error) {
 		console.log(error);
@@ -54,6 +69,79 @@ export const createNewUser = async (name:string, email:string, password: string)
 	  db.close();
 	}
 };
+
+export const addUsersFriends = async (user_id: number, friend_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `INSERT INTO friends(user_id, friend_id) VALUES(?, ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const addUsersBlocked = async (user_id: number, blocked_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `INSERT INTO blocks(user_id, blocked_id) VALUES(?, ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), blocked_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const getUsersBlocked = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_blocks = `SELECT blocks.blocked_id, users.name
+	FROM blocks
+	LEFT JOIN users ON blocks.blocked_id = users.id
+	WHERE user_id = ?`;
+	try {
+	  const blocks = await fetchAll(db, sql_blocks, [user_id.toString()]) as number[] ;
+	  return ({blocks});
+
+	//   await execute(db, sql_friends, [user_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+export const getUsersFriends = async (user_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `SELECT friends.friend_id, users.name
+	FROM friends
+	LEFT JOIN users ON friends.friend_id = users.id
+	WHERE user_id = ?`;
+	try {
+	  const friends = await fetchAll(db, sql_friends, [user_id.toString()]) as number[] ;
+	  return ({friends});
+
+	//   await execute(db, sql_friends, [user_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
+
+
+export const deleteUsersFriends = async (user_id: number, friend_id: number) => {
+	const db = new sqlite3.Database(DB_PATH);
+	const sql_friends = `DELETE FROM friends WHERE user_id = ? AND friend_id = ?)`;
+	try {
+	  await execute(db, sql_friends, [user_id.toString(), friend_id.toString()]);
+	} catch (err) {
+		console.log(err);
+	} finally {
+	  db.close();
+	}
+}
 
 export const updateProfile = async (id:number, avatar:string, phone: string) => {
 	const db = new sqlite3.Database(DB_PATH);
@@ -189,6 +277,16 @@ export const getUserByEmail = async (email:string) => {
 
 export const createUser = async (name:string, email:string, password: string): Promise<AUTH_CreateUserDTO> => {
 	const db = new sqlite3.Database(DB_PATH);
+	if (name.length > 20) {
+		return ({
+			err: {
+				field: name,
+				err_code: "string-too-long",
+				message: `Name could not be longer than 20 symbols`
+			},
+			status: 400
+		})
+	}
 	let collision = await getUserByName(name);
 	if (collision)
 	{
@@ -279,12 +377,14 @@ export const getUserById = async (id:number) => {
 
 export const deleteUser = async (id:number) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql_users = `DELETE FROM users WHERE id = ?`;
-	const sql_profiles = `DELETE FROM profiles WHERE user_id = ?`;
+	const sql_users = `UPDATE users SET is_deleted = 1, password = ? WHERE id = ?`;
+	const sql_profiles = `UPDATE profiles SET avatar = ?, phone = ? WHERE user_id = ?`;
+	const sql_friends = `DELETE FROM friends WHERE user_id = ? OR friend_id = ?`;
 
 	try {
-	  await execute(db, sql_profiles, [id.toString()]);
-	  await execute(db, sql_users, [id.toString()]);
+	  await execute(db, sql_profiles, ["", id.toString()]);
+	  await execute(db, sql_users, ["", "", id.toString()]);
+	  await execute(db, sql_friends, [id.toString(), id.toString()]);
 	  return ({message: "User deleted successfully"});
 	} catch (err) {
 	  console.log(err);

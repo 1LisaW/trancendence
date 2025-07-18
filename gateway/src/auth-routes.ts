@@ -142,6 +142,40 @@ const registerAuthRoutes = (Fastify: FastifyInstance, AUTH_SERVICE: string) => {
 				reply.status(500).send({ error: "Server error" });
 			}
 		});
+
+	Fastify.get(
+		'/auth/friends',
+		async (request, reply) => {
+			const token = request.headers.authorization || '';
+
+			const isAuthResponse = await Fastify.isAuthenticated(token);
+			if (!isAuthResponse.isAuth)
+				return reply.status(401).send({ error: 'Access denied' });
+			try {
+				await Fastify.proxyRequest<any>(
+					`${AUTH_SERVICE}/friends`, 'GET', request, reply, true
+				);
+			} catch (e) {
+				reply.status(500).send({ error: "Server error" });
+			}
+		});
+
+	Fastify.get(
+		'/auth/blocks',
+		async (request, reply) => {
+			const token = request.headers.authorization || '';
+
+			const isAuthResponse = await Fastify.isAuthenticated(token);
+			if (!isAuthResponse.isAuth)
+				return reply.status(401).send({ error: 'Access denied' });
+			try {
+				await Fastify.proxyRequest<any>(
+					`${AUTH_SERVICE}/blocks`, 'GET', request, reply, true
+				);
+			} catch (e) {
+				reply.status(500).send({ error: "Server error" });
+			}
+		});
 }
 
 export default registerAuthRoutes;
