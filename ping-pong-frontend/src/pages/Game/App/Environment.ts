@@ -40,7 +40,7 @@ export default class Environment {
         gameId: string,
         addMeshToCollection: (object: Mesh) => void,
         clearMeshToCollection: () => void,
-        isPvcMode: boolean = false // Simona added this
+        isPvcMode = false // Simona added this
     ) {
         this._scene = scene;
         this.ws_game = ws_game;
@@ -100,7 +100,7 @@ export default class Environment {
 
         const MoveBat = (bat: Mesh, key: string) => {
             console.log(bat.position.x);
-            
+
             //  FIX: Send the same step values regardless of which paddle
             // The game service will interpret them correctly based on player ID
             if (key == 'ArrowUp') {

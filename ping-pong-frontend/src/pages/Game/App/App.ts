@@ -562,13 +562,14 @@ export default class App {
 
 		rightPlayer.color = "white";
 		rightPlayer.fontSize = "text-xl";
-		rightPlayer.widthInPixels = 50;
+		rightPlayer.widthInPixels = 250;
 		rightPlayer.height = "50px";
 		rightPlayer.textWrapping = 3;
 		rightPlayer.top = "14px";
 		rightPlayer.left = "-14px";
 		rightPlayer.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
 		rightPlayer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+		rightPlayer.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
 		playerUI.addControl(rightPlayer);
 
 		const rightPlayerAvatarContainer = new Rectangle();

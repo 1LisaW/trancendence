@@ -1,4 +1,4 @@
-import { ChatChatReply, ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
+import { ChatChatIncomingMessage, ChatChatReply, ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
 
 function createCustomElement(tag: string, className: string) {
 	const element = document.createElement(tag);
@@ -138,6 +138,7 @@ class Chat {
 
 	private parseChatMessage(msg: string): ChatChatReply {
 		const msgLine = msg.split(' ');
+		msgLine.forEach(elem => elem.trim());
 		const command = msgLine[0].trim();
 		const restInstructions = msgLine.slice(1);
 		switch (command) {
@@ -177,6 +178,7 @@ class Chat {
 					recipient: "chat",
 					event: "message",
 					message: msg,
+					date: Date.now()
 				}
 			}
 		}
@@ -381,7 +383,7 @@ class Chat {
 
 		return messageBlock;
 	}
-	update = (data: ChatTournamentMessage) => {
+	update = (data: ChatTournamentMessage | ChatChatIncomingMessage) => {
 		if (data.recipient === 'tournament')
 		{
 			console.log('Chat update: ', data);
@@ -395,6 +397,21 @@ class Chat {
 				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent, data.option);
 			else if (data.event === 'finish')
 				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);
+
+		}
+		else if (data.recipient === 'chat')
+		{
+			switch (data.event) {
+				case  'help':
+					this.addChatBubble('chat', data.date, data.message, MessageType.INFO);
+					break;
+				case  'message':
+					this.addChatBubble(data.sender, data.date, data.message, data.is_self? MessageType.SELF : MessageType.USER);
+					break;
+
+				default:
+					break;
+			}
 
 		}
 	}

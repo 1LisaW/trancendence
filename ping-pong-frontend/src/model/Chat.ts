@@ -103,8 +103,51 @@ export interface ChatChatBlock {
 export interface ChatChatMessage {
 	recipient: 'chat';
 	event: 'message';
+	date: number;
 	message: string;
 }
 
 export type ChatTournamentReply = ChatTournamentInviteReply | ChatTournamentMatchmakingReply;
 export type ChatChatReply = ChatChatHelp | ChatChatAddFriend | ChatChatBlock | ChatChatRemoveFriend | ChatChatMessage
+
+export interface ChatChatHelpMessage {
+	recipient: 'chat';
+	event: 'help';
+	date: number;
+	message: string
+}
+
+export interface ChatChatAddFriendMessage {
+	recipient: 'chat';
+	event: 'friend';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatRemoveFriendMessage {
+	recipient: 'chat';
+	event: 'unfriend';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatBlockMessage {
+	recipient: 'chat';
+	event: 'block';
+	users: string[];
+	date: number;
+	message: string
+}
+
+export interface ChatChatUserMessage {
+	recipient: 'chat';
+	event: 'message';
+	date: number;
+	sender: string
+	message: string;
+	is_self: boolean;
+}
+
+export type ChatChatIncomingMessage = ChatChatHelpMessage | ChatChatAddFriendMessage | ChatChatBlockMessage | ChatChatRemoveFriendMessage | ChatChatUserMessage

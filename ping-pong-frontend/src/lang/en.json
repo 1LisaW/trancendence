@@ -44,6 +44,8 @@
 		"already-registered": "Already registered",
 		"login-and-password-not-match": "Login and password does not match",
 		"server-error": "server-error",
-		"google-auth-failed": "Google authentication failed"
+		"google-auth-failed": "Google authentication failed",
+		"string-too-long": "String is too long"
+
 	}
 }

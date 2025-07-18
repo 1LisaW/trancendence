@@ -12,7 +12,9 @@ Fastify.register(async function (fastify) {
 
 	Fastify.get('/chat/help', async (request, reply) => {
 		const helpMessage = '\\help - show list of commands\n\\friend @username - add username as friend\n \\unfriend @username - remove username as friend\n \\block @username - block username in chat\n';
-		reply.send({message: helpMessage});
+		reply.send({
+
+			message: helpMessage});
 	})
 	// await initDB();
 	// Fastify.post<{ Body: SCORE_PostNewScoreRequestBody, Reply: SCORE_PostNewScoreReply }>('/score', async (request, reply) => {

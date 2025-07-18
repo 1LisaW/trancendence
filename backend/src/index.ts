@@ -1,7 +1,7 @@
 'use strict'
 
 import fastify from "fastify";
-import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_help, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, post_user_friends, ScoreRequestBody } from "./api";
+import { AUTH_ServerErrorDTO, Auth_UserDTO, AuthUserErrorDTO, delete_user_from_matchmaking, get_help, get_user__auth, get_user_profile_avatar, post_bat_move__game_service, post_new_tournament_score, post_score_data, post_terminate_game, post_user_blocks, post_user_friends, post_user_unfriends, ScoreRequestBody } from "./api";
 import { GAME_MODE, GameLoopParams, GameResult, GameState, MatchOptions, ScoreState, Status, WSocket } from "./model";
 import { Users } from "./Users";
 import { Tournament } from "./Tournament";
@@ -34,7 +34,7 @@ Fastify.register(async function (fastify) {
       };
       result.push(updated_record);
     })
-    reply.code(200).send({friends: result});
+    reply.code(200).send({ friends: result });
     return;
   })
   // GAME:
@@ -228,18 +228,56 @@ Fastify.register(async function (fastify) {
           tournamentSessionManager.handleChatMessage(user_id, msg);
         }
         else if (msg.recipient === 'chat') {
+          const commonProps = {
+            recipient: msg.recipient,
+            event: msg.event,
+            date: Date.now()
+          }
           //TODO
           switch (msg.event) {
             case 'help': {
               const response = await get_help();
               const data = await response.json();
-              socket.send(JSON.stringify(data));
+              socket.send(JSON.stringify({
+                ...commonProps,
+                ...data,
+                date: Date.now()
+              }));
               break;
             }
             case 'friend': {
               const response = await post_user_friends(token, msg.users);
               const data = await response.json();
-              socket.send(JSON.stringify(data));
+              socket.send(JSON.stringify({
+                ...commonProps,
+                ...data,
+                date: Date.now()
+              }));
+              break;
+            }
+            case 'unfriend': {
+              const response = await post_user_unfriends(token, msg.users);
+              const data = await response.json();
+              socket.send(JSON.stringify({
+                ...commonProps,
+                ...data,
+                date: Date.now()
+              }));
+              break;
+            }
+            case 'block': {
+              const response = await post_user_blocks(token, msg.users);
+              const data = await response.json();
+              socket.send(JSON.stringify({
+                ...commonProps,
+                ...data,
+                date: Date.now()
+              }));
+              break;
+              break;
+            }
+            case 'message': {
+              users.broadcastMessage(user_id || 0, msg.message);
               break;
             }
           }
