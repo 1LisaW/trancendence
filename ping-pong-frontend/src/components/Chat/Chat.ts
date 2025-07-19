@@ -268,11 +268,11 @@ class Chat {
 		this.addChatBubble('tournament', time, `tournament № ${tournament_id} started`, 0);
 	}
 
-	private addFinishTournamentMessage = (tournament_id: number,  time: number, canceled: boolean, rating: number) => {
+	private addFinishTournamentMessage = (tournament_id: number,  time: number, canceled: boolean, rating: number, place: number) => {
 		const currentTournament = this.tournamentInvites.find(tournament => tournament.tournament_id === tournament_id);
 		if (currentTournament && currentTournament.buttonBlock)
 			currentTournament.buttonBlock?.classList.add('hidden');
-		const message = canceled ? 'tournament was canceled' : `tournament ${tournament_id} finished, your rating is ${rating}`;
+		const message = canceled ? 'tournament was canceled' : `tournament ${tournament_id} finished, your rating is ${rating}, ${place} position`;
 		this.addChatBubble('tournament', time, message, 0);
 	}
 
@@ -408,7 +408,7 @@ class Chat {
 			else if (data.event === 'match_result')
 				this.addMatchResultMessage(data.tournament_id, data.time, data.opponent, data.option);
 			else if (data.event === 'finish')
-				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating);
+				this.addFinishTournamentMessage(data.tournament_id, data.time, data.canceled, data.rating, data.place);
 
 		}
 		else if (data.recipient === 'chat')

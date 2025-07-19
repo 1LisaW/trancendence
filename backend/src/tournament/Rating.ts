@@ -21,6 +21,21 @@ export default class Ratings {
 		return this.ratings[userId] || 0;
 	}
 
+	getPlace(userId:number): number {
+		const rating = {};
+		const usersRating = this.getRating(userId);
+		// const ratings: {rating:number, users: number[]} = [];
+		// Object.entries(this.ratings).forEach((key, val) => {
+		 for (const [key, val] of Object.entries(this.ratings)){
+			if (val in rating)
+				rating[val].push(key);
+			else
+				rating[val] = [key];
+		};
+		const place = Object.keys(rating).sort(()=> -1).findIndex((el) => Number(el) == usersRating) + 1;
+		return place;
+	}
+
 	setRating(userId: number, value: number): void {
 		this.ratings[userId] = value;
 	}
