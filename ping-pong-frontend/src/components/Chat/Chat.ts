@@ -14,14 +14,6 @@ enum MessageType {
 	SELF,
 	USER
 }
-
-// interface Message {
-// 	type: MessageType,
-// 	user: string,
-// 	message: string,
-// 	date: number,
-// }
-
 class Chat {
 	container: HTMLElement | null = null;
 	chatBlock: HTMLElement | null = null;
@@ -201,6 +193,7 @@ class Chat {
 		const chatBlock = document.createElement('div');
 		chatBlock.className = ' h-32 w-full overflow-y-scroll ';
 		this.chatBlock = chatBlock;
+		chatBlock.setAttribute('id', 'chat-message-block');
 		chatWrapper.appendChild(chatBlock);
 		const inputBlock = document.createElement('div');
 		inputBlock.className = 'flex flex-col align-center justify-center h-32 w-full';
@@ -208,13 +201,17 @@ class Chat {
 		textBlock.className = ' m-auto w-[80%] rounded-lg h-15 border-1 border-solid';
 		inputBlock.appendChild(textBlock);
 		textBlock.addEventListener("change", () => this.chatMessage = textBlock.value);
-		// this.chatInput = textBlock;
 
 		const sendButton = document.createElement('button');
 		sendButton.className = 'cursor ml-auto mr-2 mb-2 p-1 w-30 rounded-lg text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent)';
 		sendButton.innerText = 'Send';
 		sendButton.addEventListener("click",() => {
-			// const value = (this.chatInput as HTMLAreaElement).nodeValue;
+			this.chatMessage = this.chatMessage.trim();
+			if (this.chatMessage.length === 0)
+			{
+				textBlock.value = '';
+				return ;
+			}
 			console.log("VALUE ", this.chatMessage);
 			this.syncWsFromChat(this.parseChatMessage(this.chatMessage))
 			textBlock.value = '';
@@ -422,6 +419,15 @@ class Chat {
 					break;
 				case  'message':
 					this.addChatBubble(data.sender, data.date, data.message, data.is_self? MessageType.SELF : MessageType.USER);
+					if (data.is_self && this.chatBlock)
+					{
+						// const chatBlock = document.getElementById('chat-message-block');
+						// if (this.chatBlock)
+						// {
+						const lastChild = this.chatBlock.lastElementChild;
+						lastChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+						// }
+					}
 					break;
 
 				default:

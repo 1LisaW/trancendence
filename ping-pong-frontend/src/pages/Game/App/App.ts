@@ -46,8 +46,11 @@ export default class App {
 	private usersAvatars: Rectangle[] = [];
 	private scores: TextBlock[] = [];
 
-    constructor() {
+	navigate: (path:string) => void;
+
+    constructor(navigate: (path:string)=> void) {
 		this._canvas = this._createCanvas();
+		this.navigate = navigate;
 		console.log("gameMode: ", this.gameMode);
 		this._init();
     }
@@ -326,6 +329,18 @@ export default class App {
 		multiSinglePlayerButton.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 		guiMenu.addControl(multiSinglePlayerButton);
 
+		const mainPageBtn = Button.CreateSimpleButton("mainpage", "BACK TO MAIN PAGE");
+		mainPageBtn.width = 0.2;
+		mainPageBtn.height = "40px";
+		mainPageBtn.color = "white";
+		mainPageBtn.top = "68px";
+		guiMenu.addControl(mainPageBtn);
+		//this handles interactions with the start button attached to the scene
+		mainPageBtn.onPointerUpObservable.add(() => {
+			this._goToStart();
+			this.navigate('/');
+		});
+
 		startSinglePlayerButton.onPointerDownObservable.add(async() => {
 			this.setGameMode('pvc');
 			// this._goToGame();
@@ -365,10 +380,23 @@ export default class App {
 		mainBtn.width = 0.2;
 		mainBtn.height = "40px";
 		mainBtn.color = "white";
+		mainBtn.top = "-24px";
+
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
 			this._goToStart();
+		});
+		const mainPageBtn = Button.CreateSimpleButton("mainpage", "BACK TO MAIN PAGE");
+		mainPageBtn.width = 0.2;
+		mainPageBtn.height = "40px";
+		mainPageBtn.color = "white";
+		mainPageBtn.top = "24px";
+		guiMenu.addControl(mainPageBtn);
+		//this handles interactions with the start button attached to the scene
+		mainPageBtn.onPointerUpObservable.add(() => {
+			this._goToStart();
+			this.navigate('/');
 		});
 
 		//--SCENE FINISHED LOADING--
