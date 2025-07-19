@@ -1,4 +1,5 @@
 import { ChatChatIncomingMessage, ChatChatReply, ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
+import { ChatAvatar, TournamentAvatar } from "./ChatAvatars";
 
 function createCustomElement(tag: string, className: string) {
 	const element = document.createElement(tag);
@@ -13,14 +14,6 @@ enum MessageType {
 	SELF,
 	USER
 }
-
-// interface Message {
-// 	type: MessageType,
-// 	user: string,
-// 	message: string,
-// 	date: number,
-// }
-
 class Chat {
 	container: HTMLElement | null = null;
 	chatBlock: HTMLElement | null = null;
@@ -33,6 +26,8 @@ class Chat {
 	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
 
 	chatMessage = "";
+
+	usersProfileData: {avatar: string, name: string, email:string, phone: number}[] = [];
 
 	syncWsFromChat: (data: ChatTournamentReply | ChatChatReply) => void ;
 	// goToTournamentMatch:(opponent:string) => void ;
@@ -198,6 +193,7 @@ class Chat {
 		const chatBlock = document.createElement('div');
 		chatBlock.className = ' h-32 w-full overflow-y-scroll ';
 		this.chatBlock = chatBlock;
+		chatBlock.setAttribute('id', 'chat-message-block');
 		chatWrapper.appendChild(chatBlock);
 		const inputBlock = document.createElement('div');
 		inputBlock.className = 'flex flex-col align-center justify-center h-32 w-full';
@@ -205,13 +201,17 @@ class Chat {
 		textBlock.className = ' m-auto w-[80%] rounded-lg h-15 border-1 border-solid';
 		inputBlock.appendChild(textBlock);
 		textBlock.addEventListener("change", () => this.chatMessage = textBlock.value);
-		// this.chatInput = textBlock;
 
 		const sendButton = document.createElement('button');
 		sendButton.className = 'cursor ml-auto mr-2 mb-2 p-1 w-30 rounded-lg text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent)';
 		sendButton.innerText = 'Send';
 		sendButton.addEventListener("click",() => {
-			// const value = (this.chatInput as HTMLAreaElement).nodeValue;
+			this.chatMessage = this.chatMessage.trim();
+			if (this.chatMessage.length === 0)
+			{
+				textBlock.value = '';
+				return ;
+			}
 			console.log("VALUE ", this.chatMessage);
 			this.syncWsFromChat(this.parseChatMessage(this.chatMessage))
 			textBlock.value = '';
@@ -345,7 +345,19 @@ class Chat {
 		img.className = 'w-8 h-8 rounded-full';
 		if (messageType == MessageType.SELF)
 			img.classList.add('order-2');
-		img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
+		switch (user) {
+			case 'tournament':
+				img.setAttribute('src', TournamentAvatar);
+				break;
+			case 'chat':
+				img.setAttribute('src', ChatAvatar);
+				break;
+
+			default:
+				img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
+				break;
+		}
+		// img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
 		bubble.appendChild(img);
 		const messageBlock = document.createElement('div');
 		messageBlock.className = ' flex flex-col w-full max-w-[326px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-xl rounded-es-xl dark:bg-gray-700';
@@ -353,7 +365,7 @@ class Chat {
 		const messageBlockHeader = document.createElement('div');
 		messageBlockHeader.className = 'flex items-center space-x-2 rtl:space-x-reverse mb-2';
 		const userNameHeader = document.createElement('span');
-		userNameHeader.className = 'text-sm font-semibold text-gray-900 dark:text-white';
+		userNameHeader.className = 'w-[80px] overflow-hidden text-ellipsis text-sm font-semibold text-gray-900 dark:text-white';
 		userNameHeader.innerText = user;
 		const messageTime = document.createElement('span');
 		messageTime.className = 'text-sm font-normal text-gray-500 dark:text-gray-400';
@@ -407,6 +419,15 @@ class Chat {
 					break;
 				case  'message':
 					this.addChatBubble(data.sender, data.date, data.message, data.is_self? MessageType.SELF : MessageType.USER);
+					if (data.is_self && this.chatBlock)
+					{
+						// const chatBlock = document.getElementById('chat-message-block');
+						// if (this.chatBlock)
+						// {
+						const lastChild = this.chatBlock.lastElementChild;
+						lastChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+						// }
+					}
 					break;
 
 				default:

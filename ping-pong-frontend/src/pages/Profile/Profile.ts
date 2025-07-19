@@ -1,6 +1,7 @@
 import Component from "../../components/Component";
 import { DictionaryType } from "../../lang/dictionary";
 import { getToken } from "../../utils/auth";
+import { setI18nData } from "../../utils/i18n";
 
 const AUTH_HOSTNAME = "/gateway/auth";
 const SCORE_HOSTNAME = "/gateway/score";
@@ -258,8 +259,8 @@ export default class Profile extends Component {
 	private leftNameEl!: HTMLElement;
 	private leftEmailEl!: HTMLElement;
 	friendsBlock: HTMLElement;
-	loading: boolean = true;
-	error: string = '';
+	loading = true;
+	error = '';
 
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
@@ -282,7 +283,7 @@ export default class Profile extends Component {
 		this.error = '';
 
 		const token = getToken();
-		console.log('Token:', token); // Debug line
+		// console.log('Token:', token); // Debug line
 
 		if (!token) {
 			this.error = 'No authentication token found. Please log in.';
@@ -295,7 +296,7 @@ export default class Profile extends Component {
 				headers: { Authorization: token }
 			});
 
-			console.log('User response status:', userRes.status); // Debug line
+			// console.log('User response status:', userRes.status); // Debug line
 
 			if (userRes.status === 401) {
 				this.error = 'Authentication failed. Please log in again.';
@@ -336,7 +337,7 @@ export default class Profile extends Component {
 		if (this.nameEl) this.nameEl.innerText = this.userInfo.name;
 		if (this.leftNameEl) this.leftNameEl.innerText = this.userInfo.name;
 
-		// Update all email elements  
+		// Update all email elements
 		if (this.emailEl) this.emailEl.innerText = this.userInfo.email;
 		if (this.leftEmailEl) this.leftEmailEl.innerText = this.userInfo.email;
 	}
@@ -354,13 +355,16 @@ export default class Profile extends Component {
 		const box = document.createElement('div');
 		box.className = 'bg-white p-6 rounded shadow-lg flex flex-col gap-4';
 		const label = document.createElement('label');
-		label.innerText = 'Edit phone number:';
+		// label.innerText = 'Edit phone number:';
+		setI18nData(label, this.dictionary[this.dictionary.currLang], "profile", "edit-phone-number")
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.value = this.userInfo.phone;
 		input.className = 'border px-2 py-1 rounded';
 		const saveBtn = document.createElement('button');
-		saveBtn.innerText = 'Save';
+		// saveBtn.innerText = 'Save';
+		setI18nData(saveBtn, this.dictionary[this.dictionary.currLang], "profile", "save")
+
 		saveBtn.className = 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700';
 		saveBtn.onclick = async () => {
 			await this.savePhone(input.value);
@@ -368,7 +372,8 @@ export default class Profile extends Component {
 			await this.fetchUserInfo();
 		};
 		const cancelBtn = document.createElement('button');
-		cancelBtn.innerText = 'Cancel';
+		setI18nData(cancelBtn, this.dictionary[this.dictionary.currLang], "profile", "cancel")
+		// cancelBtn.innerText = 'Cancel';
 		cancelBtn.className = 'bg-gray-300 px-4 py-2 rounded hover:bg-gray-400';
 		cancelBtn.onclick = () => modal.remove();
 		box.append(label, input, saveBtn, cancelBtn);
@@ -397,16 +402,22 @@ export default class Profile extends Component {
 		const box = document.createElement('div');
 		box.className = 'bg-white p-6 rounded shadow-lg flex flex-col gap-4';
 		const text = document.createElement('div');
-		text.innerText = 'Are you sure you want to delete your account? This cannot be undone.';
+		// text.innerText = 'Are you sure you want to delete your account? This cannot be undone.';
+		setI18nData(text, this.dictionary[this.dictionary.currLang], "profile", "delete-warning")
+
 		const confirmBtn = document.createElement('button');
-		confirmBtn.innerText = 'Delete';
+		// confirmBtn.innerText = 'Delete';
+		setI18nData(confirmBtn, this.dictionary[this.dictionary.currLang], "profile", "delete-account")
+
 		confirmBtn.className = 'bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700';
 		confirmBtn.onclick = async () => {
 			await this.deleteAccount();
 			modal.remove();
 		};
 		const cancelBtn = document.createElement('button');
-		cancelBtn.innerText = 'Cancel';
+		setI18nData(cancelBtn, this.dictionary[this.dictionary.currLang], "profile", "cancel")
+
+		// cancelBtn.innerText = 'Cancel';
 		cancelBtn.className = 'bg-gray-300 px-4 py-2 rounded hover:bg-gray-400';
 		cancelBtn.onclick = () => modal.remove();
 		box.append(text, confirmBtn, cancelBtn);
@@ -428,36 +439,38 @@ export default class Profile extends Component {
 		}
 	}
 
-	renderFriends() {
-		this.friendsBlock.innerHTML = '';
-		const h2 = document.createElement('h2');
-		h2.className = 'mb-2 text-xl font-semibold text-gray-900 dark:text-white';
-		h2.innerText = 'Friends';
-		this.friendsBlock.appendChild(h2);
-		// Mocked friends list
-		const friends = [
-			{ name: 'Alice', status: 'online' },
-			{ name: 'Bob', status: 'offline' },
-		];
-		if (friends.length === 0) {
-			const empty = document.createElement('div');
-			empty.className = 'text-gray-500';
-			empty.innerText = 'No friends yet.';
-			this.friendsBlock.appendChild(empty);
-			return;
-		}
-		const ul = document.createElement('ul');
-		friends.forEach(f => {
-			const li = document.createElement('li');
-			li.className = 'flex items-center gap-2 mb-1';
-			const statusDot = document.createElement('span');
-			statusDot.className = f.status === 'online' ? 'w-2 h-2 bg-green-500 rounded-full inline-block' : 'w-2 h-2 bg-gray-400 rounded-full inline-block';
-			li.appendChild(statusDot);
-			li.appendChild(document.createTextNode(f.name));
-			ul.appendChild(li);
-		});
-		this.friendsBlock.appendChild(ul);
-	}
+	// renderFriends() {
+	// 	this.friendsBlock.innerHTML = '';
+	// 	const h2 = document.createElement('h2');
+	// 	h2.className = 'mb-2 text-xl font-semibold text-gray-900 dark:text-white';
+	// 	// h2.innerText = 'Friends';
+	// 	setI18nData(h2, this.dictionary[this.dictionary.currLang], "profile", "friends")
+
+	// 	this.friendsBlock.appendChild(h2);
+	// 	// Mocked friends list
+	// 	const friends = [
+	// 		{ name: 'Alice', status: 'online' },
+	// 		{ name: 'Bob', status: 'offline' },
+	// 	];
+	// 	if (friends.length === 0) {
+	// 		const empty = document.createElement('div');
+	// 		empty.className = 'text-gray-500';
+	// 		empty.innerText = 'No friends yet.';
+	// 		this.friendsBlock.appendChild(empty);
+	// 		return;
+	// 	}
+	// 	const ul = document.createElement('ul');
+	// 	friends.forEach(f => {
+	// 		const li = document.createElement('li');
+	// 		li.className = 'flex items-center gap-2 mb-1';
+	// 		const statusDot = document.createElement('span');
+	// 		statusDot.className = f.status === 'online' ? 'w-2 h-2 bg-green-500 rounded-full inline-block' : 'w-2 h-2 bg-gray-400 rounded-full inline-block';
+	// 		li.appendChild(statusDot);
+	// 		li.appendChild(document.createTextNode(f.name));
+	// 		ul.appendChild(li);
+	// 	});
+	// 	this.friendsBlock.appendChild(ul);
+	// }
 
 	createChildren(): void {
 		// Main profile card
@@ -469,7 +482,7 @@ export default class Profile extends Component {
 		// --- LEFT COLUMN: Avatar, name ---
 		const leftCol = document.createElement('div');
 		// Center vertically with the right column content
-		leftCol.className = 'flex flex-col items-center justify-center min-w-[120px] self-start'; // Changed from self-center to self-start
+		leftCol.className = 'flex flex-col items-center justify-center min-w-[120px] self-start max-w-[30%]'; // Changed from self-center to self-start
 
 		// Avatar (unchanged)
 		this.avatar.setAttribute('id', 'user_avatar');
@@ -490,7 +503,7 @@ export default class Profile extends Component {
 
 		// Name only
 		const name = document.createElement('div');
-		name.className = 'text-2xl font-bold text-white mt-2 w-full text-center';
+		name.className = 'text-2xl font-bold text-white mt-2 w-full text-center break-all';
 		this.leftNameEl = name;
 		name.innerText = this.userInfo.name || 'Username';
 
@@ -513,7 +526,8 @@ export default class Profile extends Component {
 
 		const infoTitle = document.createElement('div');
 		infoTitle.className = 'font-semibold text-lg text-white mb-4 text-left';
-		infoTitle.innerText = 'Personal Information';
+		// infoTitle.innerText = 'Personal Information';
+		setI18nData(infoTitle, this.dictionary[this.dictionary.currLang], "profile", "personal-information");
 
 		// Use a grid for label/value pairs, all left-aligned
 		const infoFields = document.createElement('div');
@@ -532,7 +546,7 @@ export default class Profile extends Component {
 			labelDiv.innerText = label;
 
 			const valueDiv = document.createElement('div');
-			valueDiv.className = 'text-left text-gray-100 break-words';
+			valueDiv.className = 'text-left text-gray-100 break-words break-all';
 			valueDiv.innerText = values[i];
 
 			// Store references for updating later
@@ -547,7 +561,9 @@ export default class Profile extends Component {
 		// Add Edit Phone button AFTER all the fields (not inside the loop)
 		const editPhoneBtn = document.createElement('button');
 		editPhoneBtn.className = 'mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1 rounded text-sm';
-		editPhoneBtn.innerText = 'Edit phone number';
+		// editPhoneBtn.innerText = 'Edit phone number';
+		setI18nData(editPhoneBtn, this.dictionary[this.dictionary.currLang], "profile", "edit-phone-number")
+
 		editPhoneBtn.onclick = () => this.openEditPhoneModal();
 		infoFields.appendChild(document.createElement('div')); // empty cell for alignment
 		infoFields.appendChild(editPhoneBtn);
@@ -560,7 +576,9 @@ export default class Profile extends Component {
 
 		const friendsTitle = document.createElement('div');
 		friendsTitle.className = 'font-semibold text-lg text-white mb-4 text-left';
-		friendsTitle.innerText = 'Friends';
+		// friendsTitle.innerText = 'Friends';
+		setI18nData(friendsTitle, this.dictionary[this.dictionary.currLang], "profile", "friends")
+
 
 		const friendsList = document.createElement('div');
 		friendsList.className = 'flex-1 overflow-y-auto max-h-48'; // Scrollable with max height
@@ -580,20 +598,15 @@ export default class Profile extends Component {
 
 		const deleteBtn = document.createElement('button');
 		deleteBtn.className = 'bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg';
-		deleteBtn.innerText = 'Delete Account';
+		// deleteBtn.innerText = 'Delete Account';
+		setI18nData(deleteBtn, this.dictionary[this.dictionary.currLang], "profile", "delete-account")
+
 		deleteBtn.onclick = () => this.openDeleteModal();
 
 		deleteSection.appendChild(deleteBtn);
 		rightCol.appendChild(deleteSection);
 
 		mainCard.append(leftCol, rightCol);
-
-		// Add Delete Account button to bottom right
-		// const deleteBtn = document.createElement('button');
-		// deleteBtn.className = 'absolute bottom-6 right-8 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg';
-		// deleteBtn.innerText = 'Delete Account';
-		// deleteBtn.onclick = () => this.openDeleteModal();
-		// mainCard.appendChild(deleteBtn);
 
 		this.container.appendChild(mainCard);
 
@@ -603,7 +616,9 @@ export default class Profile extends Component {
 
 		const statsTitle = document.createElement('div');
 		statsTitle.className = 'text-2xl font-bold text-white mb-6';
-		statsTitle.innerText = 'Game Statistics';
+		// statsTitle.innerText = 'Game Statistics';
+		setI18nData(statsTitle, this.dictionary[this.dictionary.currLang], "profile", "game-statistics")
+
 
 		// Create tabs container
 		const tabsContainer = document.createElement('div');
@@ -638,19 +653,21 @@ export default class Profile extends Component {
 		tabsContainer.appendChild(tabsList);
 
 		// Tab content container
-		const tabContent = document.createElement('div');
-		tabContent.className = 'max-h-96 overflow-y-auto'; // Scrollable content
-		tabContent.id = 'tab-content';
+		// const tabContent = document.createElement('div');
+		this.statistics.innerHTML = ''
+		this.statistics.className = 'max-h-96 overflow-y-auto'; // Scrollable content
+		this.statistics.id = 'tab-content';
 
-		statsCard.append(statsTitle, tabsContainer, tabContent);
+		statsCard.append(statsTitle, tabsContainer, this.statistics);
 		this.container.appendChild(statsCard);
 
 		// Initialize first tab
-		this.showTabContent('pvp-pvc');
+		// this.showTabContent('pvp-pvc');
 
 		// Fetch and render data
 		this.fetchUserInfo();
-		this.createStatistics();
+		this.switchTab('pvp-pvc');
+
 	}
 
 	avatarEditor(parent: HTMLElement) {
@@ -687,7 +704,9 @@ export default class Profile extends Component {
 		editor.appendChild(buttonWrapper);
 		const cancelButton = document.createElement('button');
 		cancelButton.className = 'ml-3 text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent) font-medium rounded-md text-sm px-5 py-2.5 mt-5 text-center';
-		cancelButton.innerText = 'Cancel';
+		// cancelButton.innerText = 'Cancel';
+		setI18nData(cancelButton, this.dictionary[this.dictionary.currLang], "profile", "cancel")
+
 		cancelButton.addEventListener('click', () => {
 			if (this.popup)
 				this.popup.classList.toggle('hidden');
@@ -697,14 +716,14 @@ export default class Profile extends Component {
 
 	}
 	addSubscriptions(): void {
-		console.log("Profile addSubscriptions");
+		// console.log("Profile addSubscriptions");
 	}
 	removeSubscriptions(): void {
-		console.log("Profile removeSubscriptions");
+		// console.log("Profile removeSubscriptions");
 
 	}
 	render(): void {
-		console.log("Profile render");
+		// console.log("Profile render");
 	}
 
 	update = (avatar: string) => {
@@ -723,76 +742,61 @@ export default class Profile extends Component {
 			this.avatar.innerHTML = `<img src="${avatar}" class="w-full h-full object-cover rounded-full"/>`;
 	}
 
-	updateDynamicData(): void {
-		console.log("Profile updateDynamicData");
-
-		// Reset profile data to ensure fresh start
-		this.resetProfileData();
-
-		// Clear and recreate the entire profile content
-		this.container.innerHTML = '';
-		this.createChildren();
-
-		// Refresh statistics
-		this.statistics.innerHTML = '';
-		this.createStatistics();
-
-		// Fetch fresh user data
-		this.fetchUserInfo();
-	}
-
-	createStatistics() {
-		this.statistics.innerHTML = '';
-		const h2 = document.createElement('h2');
-		h2.className = "mb-4 text-2xl font-semibold text-gray-900 dark:text-white";
-		h2.innerText = "Users game statistics:";
-		this.statistics.appendChild(h2);
-		let hasData = false;
-		fetch(`${SCORE_HOSTNAME}/score`, {
-			method: "GET",
-			headers: {
-				"Authorization": getToken(),
-			},
-		}).then(
-			(res) => res.json()
-		).then(res => {
-			if ('user_id' in res && res.scores && res.scores.length > 0) {
-				hasData = true;
-				const h3 = document.createElement('h3');
-				h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-				h3.innerText = "PVP with PVC:";
-				this.statistics.appendChild(h3);
-				const data = res as SCORE_UsersScoreDTO;
-				this.createScoreTable(data, this.statistics);
-			}
-			this.showEmptyStatsIfNeeded(hasData);
-		});
-		fetch(`${SCORE_HOSTNAME}/tournament/user`, {
-			method: "GET",
-			headers: {
-				"Authorization": getToken(),
-			},
-		}).then(
-			(res) => res.json()
-		).then(res => {
-			if ('tournaments' in res && res.tournaments.length > 0) {
-				hasData = true;
-				const h4 = document.createElement('h3');
-				h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-				h4.innerText = "Tournaments:";
-				this.statistics.appendChild(h4);
-				const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
-				this.createScoreTable(data, this.statistics);
-			}
-			this.showEmptyStatsIfNeeded(hasData);
-		});
-	}
+	// createStatistics() {
+	// 	this.statistics.innerHTML = '';
+	// 	const h2 = document.createElement('h2');
+	// 	h2.className = "mb-4 text-2xl font-semibold text-gray-900 dark:text-white";
+	// 	h2.innerText = "Users game statistics:";
+	// 	this.statistics.appendChild(h2);
+	// 	let hasData = false;
+	// 	fetch(`${SCORE_HOSTNAME}/score`, {
+	// 		method: "GET",
+	// 		headers: {
+	// 			"Authorization": getToken(),
+	// 		},
+	// 	}).then(
+	// 		(res) => res.json()
+	// 	).then(res => {
+	// 		if ('user_id' in res && res.scores && res.scores.length > 0) {
+	// 			hasData = true;
+	// 			const h3 = document.createElement('h3');
+	// 			h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+	// 			h3.innerText = "PVP with PVC:";
+	// 			this.statistics.appendChild(h3);
+	// 			const data = res as SCORE_UsersScoreDTO;
+	// 			this.createScoreTable(data, this.statistics);
+	// 		}
+	// 		this.showEmptyStatsIfNeeded(hasData);
+	// 	});
+	// 	fetch(`${SCORE_HOSTNAME}/tournament/user`, {
+	// 		method: "GET",
+	// 		headers: {
+	// 			"Authorization": getToken(),
+	// 		},
+	// 	}).then(
+	// 		(res) => res.json()
+	// 	).then(res => {
+	// 		if ('tournaments' in res && res.tournaments.length > 0) {
+	// 			hasData = true;
+	// 			const h4 = document.createElement('h3');
+	// 			h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+	// 			h4.innerText = "Tournaments:";
+	// 			this.statistics.appendChild(h4);
+	// 			const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
+	// 			this.createScoreTable(data, this.statistics);
+	// 		}
+	// 		this.showEmptyStatsIfNeeded(hasData);
+	// 	});
+	// }
 
 	showEmptyStatsIfNeeded(hasData: boolean) {
 		if (!hasData) {
 			const empty = document.createElement('div');
 			empty.className = 'text-gray-500 mt-4';
 			empty.innerText = 'No games played yet.';
+
+			// setI18nData(empty, this.dictionary[this.dictionary.currLang], "profile", "cancel")
+
 			this.statistics.appendChild(empty);
 		}
 	}
@@ -827,7 +831,7 @@ export default class Profile extends Component {
 
 			const th = document.createElement('th');
 			th.setAttribute("scope", "row");
-			th.className = "px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
+			th.className = "max-w-[250px] truncate px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
 			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.second_user_name : scoreData.first_user_name;
 			tr.appendChild(th);
 
@@ -871,12 +875,17 @@ export default class Profile extends Component {
 	}
 
 	switchTab(tabId: string) {
+
 		// Fix the selector and type issues
-		const tabContent = document.getElementById('tab-content');
-		if (!tabContent) return;
+		const tabContent = this.statistics;
+		 //document.getElementById('tab-content');
+		if (!tabContent){
+			return;
+		}
 
 		const tabsContainer = tabContent.parentElement;
 		if (!tabsContainer) return;
+
 
 		const tabButtons = tabsContainer.querySelectorAll('button');
 		tabButtons.forEach((btn: Element, index: number) => {
@@ -896,7 +905,8 @@ export default class Profile extends Component {
 	}
 
 	showTabContent(tabId: string) {
-		const content = document.getElementById('tab-content');
+		const content = this.statistics;
+		//document.getElementById('tab-content');
 		if (!content) return;
 
 		content.innerHTML = '';
@@ -932,7 +942,8 @@ export default class Profile extends Component {
 	showTournamentsTab(container: HTMLElement) {
 		const title = document.createElement('h3');
 		title.className = 'text-xl font-semibold text-white mb-4';
-		title.innerText = 'Tournament History';
+		// title.innerText = 'Tournament History';
+		setI18nData(title, this.dictionary[this.dictionary.currLang], "profile", "tournament-history")
 		container.appendChild(title);
 
 		// Fetch tournament data
@@ -1051,7 +1062,8 @@ export default class Profile extends Component {
 		if (friends.length === 0) {
 			const empty = document.createElement('div');
 			empty.className = 'text-gray-400 text-center py-4';
-			empty.innerText = 'No friends yet.';
+			// empty.innerText = 'No friends yet.';
+			setI18nData(empty, this.dictionary[this.dictionary.currLang], "profile", "no-friends")
 			container.appendChild(empty);
 			return;
 		}
@@ -1100,7 +1112,9 @@ export default class Profile extends Component {
 	createTournamentStatistics(container: HTMLElement) {
 		const title = document.createElement('h3');
 		title.className = 'text-xl font-semibold text-white mb-4';
-		title.innerText = 'Tournament Statistics';
+		// title.innerText = 'Tournament Statistics';
+		setI18nData(title, this.dictionary[this.dictionary.currLang], "profile", "tournament-statistics")
+
 		container.appendChild(title);
 
 		// Fetch tournament data and display
@@ -1113,7 +1127,9 @@ export default class Profile extends Component {
 			} else {
 				const empty = document.createElement('div');
 				empty.className = 'text-gray-400 text-center py-4';
-				empty.innerText = 'No tournaments played yet.';
+				// empty.innerText = 'No tournaments played yet.';
+				setI18nData(empty, this.dictionary[this.dictionary.currLang], "profile", "no-tournaments-played")
+
 				container.appendChild(empty);
 			}
 		}).catch(error => {
@@ -1162,7 +1178,9 @@ export default class Profile extends Component {
 			} else {
 				const empty = document.createElement('div');
 				empty.className = 'text-gray-400 text-center py-4';
-				empty.innerText = 'No PVP/PVC games played yet.';
+				// empty.innerText = 'No PVP/PVC games played yet.';
+				setI18nData(empty, this.dictionary[this.dictionary.currLang], "profile", "no-pvp-pvc-played")
+
 				container.appendChild(empty);
 			}
 		}).catch(error => {

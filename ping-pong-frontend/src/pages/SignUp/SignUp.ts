@@ -145,19 +145,19 @@ export default class SignUp extends Component {
 		// this.form?.addEventListener('click', () =>console.log("click"));
         // console.log("addEventListener to form on submit") // Simona - Commented out
 
-		// Simona - Initialize Google Sign-in for signup
+		// Simona - Initialize Google Sign-in
 		this.googleSignIn = new GoogleSignIn(
-			document.getElementById('google-signin-button-signup')!,
 			(_token: string) => {
 				// Success callback - same as normal signup
 				this.navigate('/');
 			},
 			(_error: string) => {
 				// Error callback
-				const container = this.form?.querySelector('#sighup-container-email') as HTMLElement;
+				const container = this.form?.querySelector('#signup-container-email') as HTMLElement;
 				if (container)
 					this.warnings.push(new Warning(container, this.dictionary[this.dictionary.currLang], 'google-auth-failed'));
-			}
+			},
+			"google-signin-button-signup" // pass the correct ID
 		);
 	}
 

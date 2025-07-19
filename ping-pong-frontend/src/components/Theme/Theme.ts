@@ -16,6 +16,7 @@ export const ThemeSelector = (parent: HTMLElement) => {
 	label.setAttribute('for', 'themes');
 	label.className = 'themed-label text-(--color-text-form) mb-2 block text-left text-sm font-medium ';
 	label.textContent = 'Choose a theme:';
+
 	container.appendChild(label);
 
 	const select = document.createElement('select');

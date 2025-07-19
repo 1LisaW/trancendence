@@ -7,14 +7,18 @@ declare global {
 }
 
 export class GoogleSignIn {
-  private container: HTMLElement;
   private onSuccess: (token: string) => void;
   private onError: (error: string) => void;
+  private containerId: string; // <-- add this
 
-  constructor(container: HTMLElement, onSuccess: (token: string) => void, onError: (error: string) => void) {
-    this.container = container;
+  constructor(
+    onSuccess: (token: string) => void,
+    onError: (error: string) => void,
+    containerId: string = 'google-signin-button' // <-- default value
+  ) {
     this.onSuccess = onSuccess;
     this.onError = onError;
+    this.containerId = containerId; // <-- save it
     this.init();
   }
 
@@ -42,14 +46,11 @@ export class GoogleSignIn {
     });
     
     window.google.accounts.id.renderButton(
-      this.container,
-      { 
-        theme: 'outline', 
-        size: 'large', 
-        width: '100%',
-        text: 'signin_with',
-        shape: 'rectangular', // Make it rectangular like your regular button
-        type: 'standard' // Use standard type for better styling control
+      document.getElementById(this.containerId), // <-- use the configurable ID
+      {
+        theme: 'outline',
+        size: 'large',
+        width: 300 // <-- Use a number, e.g. 300
       }
     );
   }

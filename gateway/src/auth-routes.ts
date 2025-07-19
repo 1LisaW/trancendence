@@ -103,6 +103,26 @@ const registerAuthRoutes = (Fastify: FastifyInstance, AUTH_SERVICE: string) => {
 			}
 		})
 
+	Fastify.delete<{
+		Body: AUTH_ProfileUpdateRequestBody,
+		Reply: AUTH_ProfileUpdateResponse | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO
+	}>('/auth/profile',
+		async (request, reply) => {
+			const token = request.headers.authorization || '';
+
+			const isAuthResponse = await Fastify.isAuthenticated(token);
+			if (!isAuthResponse.isAuth)
+				return reply.status(401).send({ error: 'Access denied' });
+			try {
+				await Fastify.proxyRequest<AUTH_ProfileUpdateResponse | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO>(
+					`${AUTH_SERVICE}/profile`, 'DELETE', request, reply, true
+				);
+
+			} catch (e) {
+				reply.status(500).send({ error: "Server error", details: e });
+			}
+		})
+
 	Fastify.get<{
 		Reply: AUTH_ProfileDTO | AUTH_AuthErrorDTO | AUTH_ServerErrorDTO
 	}>('/auth/profile',

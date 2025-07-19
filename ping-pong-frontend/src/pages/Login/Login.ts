@@ -127,7 +127,6 @@ export default class Login extends Component {
 
 		// Simona - Initialize Google Sign-in
 		this.googleSignIn = new GoogleSignIn(
-			document.getElementById('google-signin-button')!,
 			(_token: string) => {  // Simona -  Added underscore to indicate unused parameter?
 				// Success callback - same as normal login
 				this.navigate('/');

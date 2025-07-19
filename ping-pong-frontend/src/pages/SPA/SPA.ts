@@ -108,7 +108,7 @@ export class SPA {
 				this.outlets["main"] = new Main("div",this.container, this.dictionary);
 				break;
 			case "game":
-				this.outlets["game"] = new Game("div",this.container, this.dictionary);
+				this.outlets["game"] = new Game("div",this.container, this.dictionary, this.navigate);
 				break;
 			case "profile":
 				this.outlets["profile"] = new Profile("div",this.container, this.dictionary, this.avatar, this.updateAvatar);
@@ -264,7 +264,7 @@ export class SPA {
 			// removeToken();
 			// this.close_chat_ws();
 			console.log('location.pathname ',location.pathname);
-			if (location.pathname === '/game')
+			if (location.pathname === '/game' || location.pathname === '/profile')
 			{
 				this.navigate('/login');
 				location.pathname = '/login';

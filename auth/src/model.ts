@@ -8,6 +8,7 @@ export interface AUTH_UserDTO {
 	name: string,
 	email: string,
 	password: string;
+	is_deleted: boolean;
 }
 
 export interface AUTH_SignInRequestBody {

@@ -8,7 +8,9 @@
 		"logout": "Abmelden",
 		"profile": "Profil",
 		"title": "Ping Pong",
-		"game": "Spiel"
+		"game": "Spiel",
+		"choose-a-theme": "Wählen Sie ein Thema"
+
 	},
 	"main": {
 		"welcome": "Sind Sie bereit, Ihr Tischtennisspiel auf die nächste Stufe zu bringen?  [Ihr App-Name] verbindet Sie mit Spielern aller Spielstärken, lässt Sie Ihre Siege und Niederlagen verfolgen und bietet Ihnen eine unterhaltsame und wettbewerbsorientierte Umgebung, um Ihre Fähigkeiten zu verbessern.  Werden Sie Teil der Community und erleben Sie den Nervenkitzel des Spiels!"
@@ -46,5 +48,32 @@
 		"server-error": "Serverfehler",
 		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen",
 		"string-too-long": "Die Zeichenfolge ist zu lang"
+	},
+	"profile": {
+		"personal-information": "Persönliche Daten",
+		"username": "Benutzername",
+		"email": "Email",
+		"phone": "Telefon",
+		"friends": "Freunde",
+		"no-friends": "Keine Freunde bisher.",
+		"game-statistics":  "Spielstatistiken",
+		"pvp-pvc-games": "PVC & PVP Spiele",
+		"no-pvp-pvc-played": "Noch keine PVP/PVC-Spiele gespielt.",
+		"opponent": "Opponent",
+		"date": "Datum",
+		"score": "Score",
+		"result": "Ergebnis",
+		"tournaments": "Tournaments",
+		"tournament-history": "Turnier-Geschichte",
+		"tournament-statistics": "Tournament Statistics",
+		"no-tournaments-played": "Noch keine Turniere gespielt.",
+		"pvc-charts": "PVC-Tabellen",
+		"pvc-performance-charts": "PVC Performance Charts",
+		"edit-phone-number": "Rufnummer bearbeiten",
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"delete-account": "Konto löschen",
+		"delete-warning": "Sind Sie sicher, dass Sie Ihr Konto löschen wollen? Dies kann nicht rückgängig gemacht werden."
 	}
+
 }
