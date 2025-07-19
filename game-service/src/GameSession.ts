@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import { GameState, ScoreState, GameResult } from "./api";
+import { GameState, ScoreState, GameResult, GameTerminated } from "./api";
 import { SCORE_GAME_PERSONAL_RESULT } from "./model";
 type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & { length: TLength };
 
@@ -84,7 +84,7 @@ export class GameSession {
 	private countdownActive = true;
 	private countdownTimer: NodeJS.Timeout | null = null;
 
-	constructor(mode: ModeProp, playerId: number, opponentId: number, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult) => void) {
+	constructor(mode: ModeProp, playerId: number, opponentId: number, sendDataToUser: (gameId: string, state: GameState | ScoreState | GameResult | GameTerminated ) => void) {
 		this.sendDataToUser = sendDataToUser;
 		this._mode = mode;
 		this._players = {};
@@ -512,7 +512,7 @@ export class GameSession {
 // =======
 	terminate(userId = 0) {
 // >>>>>>> origin/dev
-		console.log("GAME SERVICE GAME TERMINATED ****");
+		console.log("GAME SERVICE GAME TERMINATED ****", userId);
 		// simona added this
 // >>>>>>> origin/dev
 		if (this.countdownTimer) {
@@ -525,5 +525,7 @@ export class GameSession {
 			const gameResult = this.getGameResult(userId);
 			this.sendDataToUser(this._id, gameResult);
 		}
+		else
+			this.sendDataToUser(this._id, {terminated: true, message: `${userId} left room`});
 	}
 }

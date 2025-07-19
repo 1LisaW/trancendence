@@ -60,6 +60,7 @@ export class Users {
 
 
 	addAIGameSocket(user_id: number, socket: WSocket) {
+		console.log("ADD AI SOCKET WITH ID ", user_id);
 		socket.id = user_id; // AI session id
 		this.addGameSocket(user_id, socket);
 		socket.timeStamp = Date.now();
@@ -67,12 +68,14 @@ export class Users {
 
 	removeGameSocket(socket: WSocket) {
 		const user_id = socket.id;
+		console.log("Delete socket with ID ", user_id);
 		if (user_id === undefined)
 			return;
 		const newState = this.gameUserSockets.get(user_id)?.filter((value) => value != socket) || [];
 		if (user_id < 0) {
 			this.gameUserSockets.delete(user_id);
 			this.userPool.delete(user_id.toString());
+			this.statuses.delete(user_id);
 			return;
 		}
 		this.gameUserSockets.set(user_id, newState)

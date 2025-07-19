@@ -96,6 +96,7 @@ class TournamentSession {
 	}
 
 	goToEndTournament = (canceled: boolean, users: Users) => {
+		const ratings =this.ratings;
 		this.usersPool.forEach(userId => {
 			const message = {
 				recipient: 'tournament',
@@ -103,8 +104,8 @@ class TournamentSession {
 				event: 'finish',
 				time: Date.now(),
 				canceled: canceled,
-				rating: this.ratings.getRating(userId),
-				place: this.ratings.getPlace(userId)
+				rating: ratings.getRating(userId),
+				place: ratings.getPlace(userId)
 			}
 			users.sendDataToChatSockets(userId, message);
 		})
@@ -117,7 +118,12 @@ class TournamentSession {
 		this.logState(users);
 		// })
 
+		const stuckUsers = this.matchmakingPool.getStuckUsers();
 		const onlineUsers = users.getOnlineUsers();
+		for (const stuckUser of stuckUsers) {
+			if (users.getUserStatus(stuckUser) !== Status.OFFLINE)
+				users.setOnlineStatusToUser(stuckUser);
+		}
 		if (onlineUsers.length === 0)
 			return;
 		let pair: number[] | null = null;
@@ -130,6 +136,7 @@ class TournamentSession {
 			};
 			this.matchmakingPool.add(matchmaking.first_user_id, matchmaking.second_user_id);
 			const time = Date.now();
+			console.log('Pair: ', pair);
 			pair.forEach((userId, id) => {
 				users.setMatchmakingStateToUser(userId);
 				const message = {
@@ -140,6 +147,7 @@ class TournamentSession {
 					opponent_name: users.getUserNameById(pair?.at[id === 0 ? 1 : 0])
 					// opponentId: pair?.at(id === 0 ? 1 : 0),
 				}
+
 				users.sendDataToChatSockets(userId, message);
 			})
 		}
@@ -161,6 +169,7 @@ class TournamentSession {
 		this.matches.addMatch(players[0], players[1]);
 		this.ratings.incrementRating(players[0], score[0]);
 		this.ratings.incrementRating(players[1], score[1]);
+		console.log("Updated score for players ", players, " on ", score);
 
 		this.matchmakingPool.delete(players[0]);
 	}
@@ -175,7 +184,7 @@ class TournamentSession {
 
 		if (matchmakingRecord.first_user_response && matchmakingRecord.second_user_response) {
 			// TODO:: send each user response about the start of the game
-			console.log('start tournament!! game');
+			console.log('Start tournament!! game');
 			const data = {
 				recipient: 'tournament',
 				tournament_id: this.getId(),

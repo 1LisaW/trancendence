@@ -12,6 +12,7 @@ class ImageEditor {
 	uploadForm: HTMLElement;
 	image: HTMLImageElement | null = null;
 	avatar: HTMLElement;
+	onAvatarChange: (src:string)=> void;
 	buttonWrapper: HTMLElement;
 	private popup: HTMLElement | null = null;
 	private canvas: HTMLCanvasElement | null = null;
@@ -20,7 +21,8 @@ class ImageEditor {
 	private isDragging = false;
 	private dragStart = { x: 0, y: 0 };
 
-	constructor(parent: HTMLElement, buttonWrapper: HTMLElement, avatar: HTMLElement, popup: HTMLElement) {
+	constructor(parent: HTMLElement, buttonWrapper: HTMLElement, avatar: HTMLElement, popup: HTMLElement, onAvatarChange: (src:string)=> void) {
+		this.onAvatarChange = onAvatarChange
 		this.container = document.createElement('div');
 		this.container.className = 'flex items-center justify-center w-full';
 		this.avatar = avatar;
@@ -181,7 +183,8 @@ class ImageEditor {
 				body: JSON.stringify({ avatar: base64 }),
 			});
 			if (response.ok) {
-				this.avatar.innerHTML = `<img src="${base64}" class="w-full h-full object-cover rounded-full" alt="User avatar"/>`;
+				this.onAvatarChange(base64);
+				// this.avatar.innerHTML = `<img src="${base64}" class="w-full h-full object-cover rounded-full" alt="User avatar"/>`;
 				if (this.popup) {
 					this.popup.remove();
 					this.popup = null;
@@ -716,7 +719,7 @@ export default class Profile extends Component {
 
 		const buttonWrapper = document.createElement('div');
 		buttonWrapper.className = 'bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6';
-		new ImageEditor(editor, buttonWrapper, this.avatar, this.popup);
+		new ImageEditor(editor, buttonWrapper, this.avatar, this.popup, this.updateAvatarSrc);
 		editor.appendChild(buttonWrapper);
 		const cancelButton = document.createElement('button');
 		cancelButton.className = 'ml-3 text-(--color-text-accent) hover:text-(--color-text-accent2) bg-(--color-accent) hover:bg-(--color-accent2) focus:ring-4 focus:outline-none focus:ring-(--color-form-accent) font-medium rounded-md text-sm px-5 py-2.5 mt-5 text-center';

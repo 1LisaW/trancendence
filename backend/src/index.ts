@@ -95,8 +95,10 @@ Fastify.register(async function (fastify) {
       if (users.gameSocketIsAlive(player)) {
         const sockets = users.getGameSocketById(player);
         if (sockets && sockets.length)
+        {
           sockets.forEach(socket => socket
-            .send(JSON.stringify({ message: `${users.getUserNameById(players[(1 - id)])} leave the room` })));
+            .send(JSON.stringify({ terminated:true, message: `${users.getUserNameById(players[(1 - id)])} leave the room` })));
+        }
         users.setOnlineStatusToUser(player);
       }
     })
@@ -113,6 +115,7 @@ Fastify.register(async function (fastify) {
     let userData = await users.addUser(token);
 
     console.log("5.2.||| userData: ", userData, " token: ", token);
+    // console.log()
 
     if ('user' in userData) {
       userData = userData as Auth_UserDTO;
@@ -122,6 +125,7 @@ Fastify.register(async function (fastify) {
     else if ('error' in userData) {
       // if token is from AI, leave a session be
       const numberToken = parseInt(token, 10);
+
       if (isNaN(numberToken) || numberToken >= 0) {
         socket.close();
       }
