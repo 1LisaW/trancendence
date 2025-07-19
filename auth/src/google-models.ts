@@ -35,5 +35,5 @@ export interface GoogleUserDTO {
   google_id?: string;
   avatar?: string;
   password?: string;
+  is_deleted: boolean;
 }
- 

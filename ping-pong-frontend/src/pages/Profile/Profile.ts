@@ -336,7 +336,7 @@ export default class Profile extends Component {
 		if (this.nameEl) this.nameEl.innerText = this.userInfo.name;
 		if (this.leftNameEl) this.leftNameEl.innerText = this.userInfo.name;
 
-		// Update all email elements  
+		// Update all email elements
 		if (this.emailEl) this.emailEl.innerText = this.userInfo.email;
 		if (this.leftEmailEl) this.leftEmailEl.innerText = this.userInfo.email;
 	}
@@ -469,7 +469,7 @@ export default class Profile extends Component {
 		// --- LEFT COLUMN: Avatar, name ---
 		const leftCol = document.createElement('div');
 		// Center vertically with the right column content
-		leftCol.className = 'flex flex-col items-center justify-center min-w-[120px] self-start'; // Changed from self-center to self-start
+		leftCol.className = 'flex flex-col items-center justify-center min-w-[120px] self-start max-w-[30%]'; // Changed from self-center to self-start
 
 		// Avatar (unchanged)
 		this.avatar.setAttribute('id', 'user_avatar');
@@ -490,7 +490,7 @@ export default class Profile extends Component {
 
 		// Name only
 		const name = document.createElement('div');
-		name.className = 'text-2xl font-bold text-white mt-2 w-full text-center';
+		name.className = 'text-2xl font-bold text-white mt-2 w-full text-center break-all';
 		this.leftNameEl = name;
 		name.innerText = this.userInfo.name || 'Username';
 
@@ -532,7 +532,7 @@ export default class Profile extends Component {
 			labelDiv.innerText = label;
 
 			const valueDiv = document.createElement('div');
-			valueDiv.className = 'text-left text-gray-100 break-words';
+			valueDiv.className = 'text-left text-gray-100 break-words break-all';
 			valueDiv.innerText = values[i];
 
 			// Store references for updating later
@@ -827,7 +827,7 @@ export default class Profile extends Component {
 
 			const th = document.createElement('th');
 			th.setAttribute("scope", "row");
-			th.className = "px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
+			th.className = "max-w-[250px] truncate px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
 			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.second_user_name : scoreData.first_user_name;
 			tr.appendChild(th);
 

@@ -26,14 +26,14 @@ export const initDB = async () => {
 			avatar TEXT,
 			phone TEXT)`
 		);
-		await execute(
-			db,
-			`CREATE TABLE IF NOT EXISTS profiles (
-			id INTEGER PRIMARY KEY,
-			user_id INTEGER NOT NULL UNIQUE,
-			avatar TEXT,
-			phone TEXT)`
-		);
+		// await execute(
+		// 	db,
+		// 	`CREATE TABLE IF NOT EXISTS profiles (
+		// 	id INTEGER PRIMARY KEY,
+		// 	user_id INTEGER NOT NULL UNIQUE,
+		// 	avatar TEXT,
+		// 	phone TEXT)`
+		// );
 		await execute(
 			db,
 			`CREATE TABLE IF NOT EXISTS friends (
@@ -377,13 +377,17 @@ export const getUserById = async (id:number) => {
 
 export const deleteUser = async (id:number) => {
 	const db = new sqlite3.Database(DB_PATH);
-	const sql_users = `UPDATE users SET is_deleted = 1, password = ? WHERE id = ?`;
 	const sql_profiles = `UPDATE profiles SET avatar = ?, phone = ? WHERE user_id = ?`;
+	const sql_users = `UPDATE users SET is_deleted = 1, password = ? WHERE id = ?`;
 	const sql_friends = `DELETE FROM friends WHERE user_id = ? OR friend_id = ?`;
 
 	try {
-	  await execute(db, sql_profiles, ["", id.toString()]);
-	  await execute(db, sql_users, ["", "", id.toString()]);
+		console.log('DELETE before sql_profiles');
+	  await execute(db, sql_profiles, ["", "", id.toString()]);
+		console.log('DELETE before sql_users');
+	  await execute(db, sql_users, ["", id.toString()]);
+		console.log('DELETE before sql_friends');
+
 	  await execute(db, sql_friends, [id.toString(), id.toString()]);
 	  return ({message: "User deleted successfully"});
 	} catch (err) {

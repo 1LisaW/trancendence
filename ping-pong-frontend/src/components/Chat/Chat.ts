@@ -1,4 +1,5 @@
 import { ChatChatIncomingMessage, ChatChatReply, ChatTournamentMessage, ChatTournamentReply, MatchOptions } from "../../model/Chat";
+import { ChatAvatar, TournamentAvatar } from "./ChatAvatars";
 
 function createCustomElement(tag: string, className: string) {
 	const element = document.createElement(tag);
@@ -33,6 +34,8 @@ class Chat {
 	tournamentMatches: {tournament_id: number, opponent_name: string, element?: HTMLElement,  buttonBlock?: HTMLElement, textBlock?: HTMLElement}[] = [];
 
 	chatMessage = "";
+
+	usersProfileData: {avatar: string, name: string, email:string, phone: number}[] = [];
 
 	syncWsFromChat: (data: ChatTournamentReply | ChatChatReply) => void ;
 	// goToTournamentMatch:(opponent:string) => void ;
@@ -345,7 +348,19 @@ class Chat {
 		img.className = 'w-8 h-8 rounded-full';
 		if (messageType == MessageType.SELF)
 			img.classList.add('order-2');
-		img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
+		switch (user) {
+			case 'tournament':
+				img.setAttribute('src', TournamentAvatar);
+				break;
+			case 'chat':
+				img.setAttribute('src', ChatAvatar);
+				break;
+
+			default:
+				img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
+				break;
+		}
+		// img.setAttribute('src', 'https://lumiere-a.akamaihd.net/v1/images/a_avatarpandorapedia_jakesully_16x9_1098_02_b13c4171.jpeg?region=0%2C60%2C1920%2C960');
 		bubble.appendChild(img);
 		const messageBlock = document.createElement('div');
 		messageBlock.className = ' flex flex-col w-full max-w-[326px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-xl rounded-es-xl dark:bg-gray-700';
@@ -353,7 +368,7 @@ class Chat {
 		const messageBlockHeader = document.createElement('div');
 		messageBlockHeader.className = 'flex items-center space-x-2 rtl:space-x-reverse mb-2';
 		const userNameHeader = document.createElement('span');
-		userNameHeader.className = 'text-sm font-semibold text-gray-900 dark:text-white';
+		userNameHeader.className = 'w-[80px] overflow-hidden text-ellipsis text-sm font-semibold text-gray-900 dark:text-white';
 		userNameHeader.innerText = user;
 		const messageTime = document.createElement('span');
 		messageTime.className = 'text-sm font-normal text-gray-500 dark:text-gray-400';

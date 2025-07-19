@@ -23,11 +23,11 @@ const initSPA = (parent: HTMLElement | null, dictionary: DictionaryType) => {
     SPAI.update();
     console.log('History state change:', event.state);
   });
-  window.addEventListener('beforeunload', function (event) {
-    const message = 'Are you sure you want to leave? Your changes may not be saved.';
-    event.returnValue = message; // For most browsers
-    return message; // For some older browsers
-  });
+  // window.addEventListener('beforeunload', function (event) {
+  //   const message = 'Are you sure you want to leave? Your changes may not be saved.';
+  //   event.returnValue = message; // For most browsers
+  //   return message; // For some older browsers
+  // });
 }
 
 const bodyElement: HTMLElement | null = document.querySelector('body');

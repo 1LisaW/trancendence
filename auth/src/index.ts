@@ -51,6 +51,9 @@ Fastify.register(async function (fastify) {
 		try {
 			const user = await getUserByEmail(request.body.email);
 			console.log("auth Login: user:", user)
+			if (user && user.is_deleted) {
+				return reply.status(401).send({ error: 'You cannot login into deleted account' });
+			};
 			if (user) {
 				const user_ = user as AUTH_UserDTO;
 				const match = await bcrypt.compare(request.body.password, user_.password);
@@ -107,18 +110,16 @@ Fastify.register(async function (fastify) {
 			let friends_ids = (await Promise.all(
 				request.body.friends.map(async (name) => {
 					const data = await getUserByName(name);
-					// if (data)
+					if (data && data.is_deleted)
+						return undefined;
 					return data?.id;
 				})
 			)).filter(id => id != undefined);
 
-			console.log("friends_ids: ",friends_ids, " friends: ", friends);
 			if (friends?.friends)
 				friends_ids = friends_ids.filter(id => !friends.friends.some((fr: any) => fr.friend_id === id));
 
 			friends_ids.forEach(id => addUsersFriends(decoded.userId, id));
-
-			// updateProfile(user.id, request.body.avatar || '', request.body.phone || '');
 
 			reply.send({message: "Friends updated"});
 		} catch (e) {
@@ -137,7 +138,7 @@ Fastify.register(async function (fastify) {
 			let friends_ids = (await Promise.all(
 				request.body.friends.map(async (name) => {
 					const data = await getUserByName(name);
-					// if (data)
+					console.log("DATA: ", data);
 					return data?.id;
 				})
 			)).filter(id => id != undefined);
@@ -147,8 +148,6 @@ Fastify.register(async function (fastify) {
 				friends_ids = friends_ids.filter(id => friends.friends.some((fr: any) => fr.friend_id === id));
 
 			friends_ids.forEach(id => deleteUsersFriends(decoded.userId, id));
-
-			// updateProfile(user.id, request.body.avatar || '', request.body.phone || '');
 
 			reply.send({message: "Friends updated"});
 		} catch (e) {
