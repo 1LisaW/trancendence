@@ -264,7 +264,7 @@ export class SPA {
 			// removeToken();
 			// this.close_chat_ws();
 			console.log('location.pathname ',location.pathname);
-			if (location.pathname === '/game')
+			if (location.pathname === '/game' || location.pathname === '/profile')
 			{
 				this.navigate('/login');
 				location.pathname = '/login';
