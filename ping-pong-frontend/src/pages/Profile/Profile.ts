@@ -259,8 +259,8 @@ export default class Profile extends Component {
 	private leftNameEl!: HTMLElement;
 	private leftEmailEl!: HTMLElement;
 	friendsBlock: HTMLElement;
-	loading: boolean = true;
-	error: string = '';
+	loading = true;
+	error = '';
 
 	constructor(tag: string, parent: HTMLElement, dictionary: DictionaryType, avatarSrc: string, updateAvatarSrc: () => void) {
 		super(tag, parent, dictionary);
@@ -283,7 +283,7 @@ export default class Profile extends Component {
 		this.error = '';
 
 		const token = getToken();
-		console.log('Token:', token); // Debug line
+		// console.log('Token:', token); // Debug line
 
 		if (!token) {
 			this.error = 'No authentication token found. Please log in.';
@@ -296,7 +296,7 @@ export default class Profile extends Component {
 				headers: { Authorization: token }
 			});
 
-			console.log('User response status:', userRes.status); // Debug line
+			// console.log('User response status:', userRes.status); // Debug line
 
 			if (userRes.status === 401) {
 				this.error = 'Authentication failed. Please log in again.';
@@ -608,13 +608,6 @@ export default class Profile extends Component {
 
 		mainCard.append(leftCol, rightCol);
 
-		// Add Delete Account button to bottom right
-		// const deleteBtn = document.createElement('button');
-		// deleteBtn.className = 'absolute bottom-6 right-8 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg';
-		// deleteBtn.innerText = 'Delete Account';
-		// deleteBtn.onclick = () => this.openDeleteModal();
-		// mainCard.appendChild(deleteBtn);
-
 		this.container.appendChild(mainCard);
 
 		// --- Game Statistics Card with Tabs ---
@@ -660,19 +653,21 @@ export default class Profile extends Component {
 		tabsContainer.appendChild(tabsList);
 
 		// Tab content container
-		const tabContent = document.createElement('div');
-		tabContent.className = 'max-h-96 overflow-y-auto'; // Scrollable content
-		tabContent.id = 'tab-content';
+		// const tabContent = document.createElement('div');
+		this.statistics.innerHTML = ''
+		this.statistics.className = 'max-h-96 overflow-y-auto'; // Scrollable content
+		this.statistics.id = 'tab-content';
 
-		statsCard.append(statsTitle, tabsContainer, tabContent);
+		statsCard.append(statsTitle, tabsContainer, this.statistics);
 		this.container.appendChild(statsCard);
 
 		// Initialize first tab
-		this.showTabContent('pvp-pvc');
+		// this.showTabContent('pvp-pvc');
 
 		// Fetch and render data
 		this.fetchUserInfo();
-		this.createStatistics();
+		this.switchTab('pvp-pvc');
+
 	}
 
 	avatarEditor(parent: HTMLElement) {
@@ -721,14 +716,14 @@ export default class Profile extends Component {
 
 	}
 	addSubscriptions(): void {
-		console.log("Profile addSubscriptions");
+		// console.log("Profile addSubscriptions");
 	}
 	removeSubscriptions(): void {
-		console.log("Profile removeSubscriptions");
+		// console.log("Profile removeSubscriptions");
 
 	}
 	render(): void {
-		console.log("Profile render");
+		// console.log("Profile render");
 	}
 
 	update = (avatar: string) => {
@@ -747,70 +742,52 @@ export default class Profile extends Component {
 			this.avatar.innerHTML = `<img src="${avatar}" class="w-full h-full object-cover rounded-full"/>`;
 	}
 
-	// updateDynamicData(): void {
-	// 	console.log("Profile updateDynamicData");
-
-	// 	// Reset profile data to ensure fresh start
-	// 	this.resetProfileData();
-
-	// 	// Clear and recreate the entire profile content
-	// 	this.container.innerHTML = '';
-	// 	this.createChildren();
-
-	// 	// Refresh statistics
+	// createStatistics() {
 	// 	this.statistics.innerHTML = '';
-	// 	this.createStatistics();
-
-	// 	// Fetch fresh user data
-	// 	this.fetchUserInfo();
+	// 	const h2 = document.createElement('h2');
+	// 	h2.className = "mb-4 text-2xl font-semibold text-gray-900 dark:text-white";
+	// 	h2.innerText = "Users game statistics:";
+	// 	this.statistics.appendChild(h2);
+	// 	let hasData = false;
+	// 	fetch(`${SCORE_HOSTNAME}/score`, {
+	// 		method: "GET",
+	// 		headers: {
+	// 			"Authorization": getToken(),
+	// 		},
+	// 	}).then(
+	// 		(res) => res.json()
+	// 	).then(res => {
+	// 		if ('user_id' in res && res.scores && res.scores.length > 0) {
+	// 			hasData = true;
+	// 			const h3 = document.createElement('h3');
+	// 			h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+	// 			h3.innerText = "PVP with PVC:";
+	// 			this.statistics.appendChild(h3);
+	// 			const data = res as SCORE_UsersScoreDTO;
+	// 			this.createScoreTable(data, this.statistics);
+	// 		}
+	// 		this.showEmptyStatsIfNeeded(hasData);
+	// 	});
+	// 	fetch(`${SCORE_HOSTNAME}/tournament/user`, {
+	// 		method: "GET",
+	// 		headers: {
+	// 			"Authorization": getToken(),
+	// 		},
+	// 	}).then(
+	// 		(res) => res.json()
+	// 	).then(res => {
+	// 		if ('tournaments' in res && res.tournaments.length > 0) {
+	// 			hasData = true;
+	// 			const h4 = document.createElement('h3');
+	// 			h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
+	// 			h4.innerText = "Tournaments:";
+	// 			this.statistics.appendChild(h4);
+	// 			const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
+	// 			this.createScoreTable(data, this.statistics);
+	// 		}
+	// 		this.showEmptyStatsIfNeeded(hasData);
+	// 	});
 	// }
-
-	createStatistics() {
-		this.statistics.innerHTML = '';
-		const h2 = document.createElement('h2');
-		h2.className = "mb-4 text-2xl font-semibold text-gray-900 dark:text-white";
-		h2.innerText = "Users game statistics:";
-		this.statistics.appendChild(h2);
-		let hasData = false;
-		fetch(`${SCORE_HOSTNAME}/score`, {
-			method: "GET",
-			headers: {
-				"Authorization": getToken(),
-			},
-		}).then(
-			(res) => res.json()
-		).then(res => {
-			if ('user_id' in res && res.scores && res.scores.length > 0) {
-				hasData = true;
-				const h3 = document.createElement('h3');
-				h3.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-				h3.innerText = "PVP with PVC:";
-				this.statistics.appendChild(h3);
-				const data = res as SCORE_UsersScoreDTO;
-				this.createScoreTable(data, this.statistics);
-			}
-			this.showEmptyStatsIfNeeded(hasData);
-		});
-		fetch(`${SCORE_HOSTNAME}/tournament/user`, {
-			method: "GET",
-			headers: {
-				"Authorization": getToken(),
-			},
-		}).then(
-			(res) => res.json()
-		).then(res => {
-			if ('tournaments' in res && res.tournaments.length > 0) {
-				hasData = true;
-				const h4 = document.createElement('h3');
-				h4.className = "mb-2 text-xl font-semibold text-gray-900 dark:text-white";
-				h4.innerText = "Tournaments:";
-				this.statistics.appendChild(h4);
-				const data: SCORE_UsersScoreDTO = { scores: res.tournaments, user_id: res.tournaments[0].user_id };
-				this.createScoreTable(data, this.statistics);
-			}
-			this.showEmptyStatsIfNeeded(hasData);
-		});
-	}
 
 	showEmptyStatsIfNeeded(hasData: boolean) {
 		if (!hasData) {
@@ -898,12 +875,17 @@ export default class Profile extends Component {
 	}
 
 	switchTab(tabId: string) {
+
 		// Fix the selector and type issues
-		const tabContent = document.getElementById('tab-content');
-		if (!tabContent) return;
+		const tabContent = this.statistics;
+		 //document.getElementById('tab-content');
+		if (!tabContent){
+			return;
+		}
 
 		const tabsContainer = tabContent.parentElement;
 		if (!tabsContainer) return;
+
 
 		const tabButtons = tabsContainer.querySelectorAll('button');
 		tabButtons.forEach((btn: Element, index: number) => {
@@ -923,7 +905,8 @@ export default class Profile extends Component {
 	}
 
 	showTabContent(tabId: string) {
-		const content = document.getElementById('tab-content');
+		const content = this.statistics;
+		//document.getElementById('tab-content');
 		if (!content) return;
 
 		content.innerHTML = '';
