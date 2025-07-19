@@ -77,7 +77,7 @@ export default class TournamentSessionManager {
 							this.state = TournamentState.MATCHMAKING;
 							if (!this.tournamentSession.getId()) {
 								await this.onTournamentStart();
-
+								break;
 							}
 						} else {
 							this.log("🔵 state not_started");

@@ -1,4 +1,4 @@
-import { GameState, post_game_loop_data, ScoreState, GameResult } from "./api";
+import { GameState, post_game_loop_data, ScoreState, GameResult, GameTerminated } from "./api";
 import { GameSession, ModeProp } from "./GameSession";
 
 const WS_SERVICE_HOSTNAME = "http://backend:8082";
@@ -31,7 +31,7 @@ export class GameSessionFactory {
 		}
 	}
 
-	sendDataToUser = (gameId:string, state: GameState | ScoreState | GameResult) => {
+	sendDataToUser = (gameId:string, state: GameState | ScoreState | GameResult | GameTerminated) => {
 		post_game_loop_data(gameId, state);
 		if (this.getGameSession(gameId)?.isFinished())
 			this.sessionPool = this.sessionPool.filter((session) => session.getId()!= gameId);

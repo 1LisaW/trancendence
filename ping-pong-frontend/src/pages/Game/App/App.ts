@@ -33,7 +33,7 @@ export default class App {
 	private _state = 0;
 	private _gamescene: Scene | null = null;
 	private _environment: Environment | null = null;
-    // private _cutScene: Scene;
+	// private _cutScene: Scene;
 
 	// game attributes
 	private game_ws: WebSocket | null = null;
@@ -46,27 +46,26 @@ export default class App {
 	private usersAvatars: Rectangle[] = [];
 	private scores: TextBlock[] = [];
 
-	navigate: (path:string) => void;
+	navigate: (path: string) => void;
 
-    constructor(navigate: (path:string)=> void) {
+	constructor(navigate: (path: string) => void) {
 		this._canvas = this._createCanvas();
 		this.navigate = navigate;
 		console.log("gameMode: ", this.gameMode);
 		this._init();
-    }
+	}
 
 	init_game_ws = () => {
-			if (this.game_ws)
-				return ;
-			this.game_ws = new WebSocket('/api/session-management/ws/game', getToken());
-			this.game_ws.onopen = () => console.log('Game WebSocket is connected!')
-			// 4
-			this.game_ws.onmessage = (msg) => {
+		if (this.game_ws)
+			return;
+		this.game_ws = new WebSocket('/api/session-management/ws/game', getToken());
+		this.game_ws.onopen = () => console.log('Game WebSocket is connected!')
+		// 4
+		this.game_ws.onmessage = (msg) => {
 			const message = msg.data
 			// console.log('I got a message!', message);
 			const data = JSON.parse(message);
-			if ('order' in data)
-			{
+			if ('order' in data) {
 				this.gameId = data.gameId;
 				this.order = data.order;
 				this.opponent = data.opponent;
@@ -79,22 +78,20 @@ export default class App {
 				this._goToGame();
 				console.log("FRONT APP order: ", this.order, " opponent: ", this.opponent);//, this.avatarSrcs);
 			}
-			else if ('gameResult' in data)
-			{
-// <<<<<<< HEAD
-// 				const isPvcMode = this.opponent === 'AI'; // Simona
-//     			const resultIndex = isPvcMode ? 1 : this.order; // Simona - In PvC, human is always index 1
-// 				const resultText = data.gameResult[resultIndex]; // Simona - updated to use resultIndex
-// 				this.scores[2].text = resultText === 'win' ? 'You lose!' : 'You win!'; // Simona updated messages for AI
-// 				if (isPvcMode) { // Simona
-// 					this.scores[2].text = resultText === 'win' ? 'AI wins!' : 'You win!'; // Reversed for PvC
-// 				} else {
-// 					this.scores[2].text = resultText === 'win' ? 'You win!' : 'You lose!'; // Normal for PvP
-// 				}
-// 				console.log("FRONT APP gameResult: ", data.gameResult[resultIndex]); // Simona // Update log to use resultIndex
-// =======
-				switch (data.gameResult[this.order])
-				{
+			else if ('gameResult' in data) {
+				// <<<<<<< HEAD
+				// 				const isPvcMode = this.opponent === 'AI'; // Simona
+				//     			const resultIndex = isPvcMode ? 1 : this.order; // Simona - In PvC, human is always index 1
+				// 				const resultText = data.gameResult[resultIndex]; // Simona - updated to use resultIndex
+				// 				this.scores[2].text = resultText === 'win' ? 'You lose!' : 'You win!'; // Simona updated messages for AI
+				// 				if (isPvcMode) { // Simona
+				// 					this.scores[2].text = resultText === 'win' ? 'AI wins!' : 'You win!'; // Reversed for PvC
+				// 				} else {
+				// 					this.scores[2].text = resultText === 'win' ? 'You win!' : 'You lose!'; // Normal for PvP
+				// 				}
+				// 				console.log("FRONT APP gameResult: ", data.gameResult[resultIndex]); // Simona // Update log to use resultIndex
+				// =======
+				switch (data.gameResult[this.order]) {
 					case MatchOptions.WIN:
 						this.scores[2].text = 'YOU WIN';
 						break;
@@ -114,15 +111,12 @@ export default class App {
 				console.log("FRONT APP gameResult: ", data.gameResult[this.order]);
 				//TODO::
 				this.setGameMode(null);
-// >>>>>>> origin/dev
+				// >>>>>>> origin/dev
 			}
-			else if ('score' in data)
-			{
-				if (this.scores.length >= 2)
-				{
+			else if ('score' in data) {
+				if (this.scores.length >= 2) {
 					const isPvcMode = this.opponent === 'AI'; // Simona
-					if (isPvcMode)
-					{
+					if (isPvcMode) {
 						// Store old scores to detect changes
 						const oldHumanScore = parseInt(this.scores[0].text) || 0;
 						const oldAiScore = parseInt(this.scores[1].text) || 0;
@@ -133,14 +127,12 @@ export default class App {
 						// Trigger animation based on who scored by comparing old and new scores
 						const newHumanScore = data.score[1];
 						const newAiScore = data.score[0];
-						if (newHumanScore > oldHumanScore)
-						{
+						if (newHumanScore > oldHumanScore) {
 							// Human scored, animate human avatar (left, index 0)
 							this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
 							console.log("Human scored, animating human avatar");
 						}
-						else if (newAiScore > oldAiScore)
-						{
+						else if (newAiScore > oldAiScore) {
 							// AI scored, animate AI avatar (right, index 1)
 							this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
 							console.log("AI scored, animating AI avatar");
@@ -148,14 +140,12 @@ export default class App {
 					}
 					else // PvP mode (keeping the original order)
 					{
-						if (this.scores[0].text != data.score[0])
-						{
+						if (this.scores[0].text != data.score[0]) {
 							this.scores[0].text = data.score[0].toString();
 							console.log("FRONT APP score (PvC mode): ", data.score);
 							this._scene.beginAnimation(this.usersAvatars[0], 0, 100, false);
 						}
-						else
-						{
+						else {
 							this.scores[1].text = data.score[1].toString();
 							console.log("FRONT APP score: ", data.score);
 							this._scene.beginAnimation(this.usersAvatars[1], 0, 100, false);
@@ -164,59 +154,62 @@ export default class App {
 				}
 			}
 			else if ('pos' in data) // modified by Simona - added countdown phase
-				{
-					// Modified by Simona - Don't transition to game during countdown
-					if (this._state !== State.GAME && this._state !== State.CUTSCENE)
-						this._goToGame();
-					if (this.gameObjects.length === 3 && this._state === State.GAME)
-					{
-						this.gameObjects[0].position.z = data.pos[0][2];
-						this.gameObjects[1].position.z = data.pos[1][2];
-						this.gameObjects[2].position.x = data.ball[0];
-						this.gameObjects[2].position.z = data.ball[2];
-					}
+			{
+				// Modified by Simona - Don't transition to game during countdown
+				if (this._state !== State.GAME && this._state !== State.CUTSCENE)
+					this._goToGame();
+				if (this.gameObjects.length === 3 && this._state === State.GAME) {
+					this.gameObjects[0].position.z = data.pos[0][2];
+					this.gameObjects[1].position.z = data.pos[1][2];
+					this.gameObjects[2].position.x = data.ball[0];
+					this.gameObjects[2].position.z = data.ball[2];
 				}
-// <<<<<<< HEAD
+			}
+			else if ('terminated' in data) {
+				this.scores[2].text = data.message;
+				this.setGameMode(null);
+			}
+			// <<<<<<< HEAD
 
 			// console.log(this.gameId);
 			//   message.innerHTML += `<br /> ${message}`
-// =======
+			// =======
 			// }
-// >>>>>>> origin/dev
-			}
-			// 5
-			this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
-			// 6
-			this.game_ws.onclose = () => console.log('Game: Disconnected from the WebSocket server')
+			// >>>>>>> origin/dev
 		}
+		// 5
+		this.game_ws.onerror = (error) => console.log('Game WebSocket error', error)
+		// 6
+		this.game_ws.onclose = () => console.log('Game: Disconnected from the WebSocket server')
+	}
 	close_game_ws = () => {
 		if (!this.game_ws)
-			return ;
+			return;
 		this.game_ws.close();
 		this.game_ws = null;
 	}
 
 
-	appendTo(parent: HTMLElement)
-	{
+	appendTo(parent: HTMLElement) {
 		parent.appendChild(this._canvas);
 		// this._engine.resize();
 	}
 
 	setGameMode = (mode: 'pvp' | 'pvc' | 'tournament' | null, opponent_name = "", opponentId = 0, isInitiator = false) => {
 		console.log("0.0. GAME APP - setGameMode, mode: ", mode, " opponent_name: ", opponent_name);
-		if (mode === null && this._state !== State.START)
-		{
+		if (mode === null && this._state !== State.START) {
 			console.log("0.0.1. GAME APP - setGameMode, mode is already set, reloading game");
 			this.reloadGame();
-			return ;
+			return;
 		}
 		this.gameMode = mode;
-		if (this.gameMode === 'tournament' && !!opponent_name)
-		{
+		if (this.gameMode === 'tournament' && !!opponent_name) {
 			this.opponent = opponent_name;
-			if (isInitiator)
-				this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "tournament", "opponentId": opponentId}));
+			if (isInitiator) {
+				// if (!this.game_ws)
+					// this.init_game_ws();
+				this.game_ws?.send(JSON.stringify({ "matchmaking": true, "mode": "tournament", "opponentId": opponentId }));
+			}
 			this._goToWaitingRoom();
 		}
 	}
@@ -230,59 +223,59 @@ export default class App {
 	}
 
 	private async _init(): Promise<void> {
-        this._engine = (await EngineFactory.CreateAsync(this._canvas, undefined)) as Engine;
-        this._scene = new Scene(this._engine);
+		this._engine = (await EngineFactory.CreateAsync(this._canvas, undefined)) as Engine;
+		this._scene = new Scene(this._engine);
 
-        window.addEventListener("keydown", (ev) => {
-            //Shift+Ctrl+Alt+I
-            if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
-                if (this._scene.debugLayer.isVisible()) {
-                    this._scene.debugLayer.hide();
-                } else {
-                    this._scene.debugLayer.show();
-                }
-            }
-        });
+		window.addEventListener("keydown", (ev) => {
+			//Shift+Ctrl+Alt+I
+			if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
+				if (this._scene.debugLayer.isVisible()) {
+					this._scene.debugLayer.hide();
+				} else {
+					this._scene.debugLayer.show();
+				}
+			}
+		});
 
-        //MAIN render loop & state machine
-        await this._main();
-    }
+		//MAIN render loop & state machine
+		await this._main();
+	}
 
 
-    private async _main(): Promise<void> {
-        await this._goToStart();
+	private async _main(): Promise<void> {
+		await this._goToStart();
 
-        // Register a render loop to repeatedly render the scene
-        this._engine.runRenderLoop(() => {
-            switch (this._state) {
-                case State.START:
-                    this._scene.render();
-                    break;
-                case State.CUTSCENE:
-                    this._scene.render();
-                    break;
+		// Register a render loop to repeatedly render the scene
+		this._engine.runRenderLoop(() => {
+			switch (this._state) {
+				case State.START:
+					this._scene.render();
+					break;
+				case State.CUTSCENE:
+					this._scene.render();
+					break;
 				case State.WAITING:
 					this._scene.render();
-						break;
-                case State.GAME:
-                    this._scene.render();
-                    break;
-                case State.LOSE:
-                    this._scene.render();
-                    break;
-                default: break;
-            }
+					break;
+				case State.GAME:
+					this._scene.render();
+					break;
+				case State.LOSE:
+					this._scene.render();
+					break;
+				default: break;
+			}
 			this._engine.resize();
-        });
+		});
 
-    }
-	private _createCanvas(){
-		 // create the canvas html element and attach it to the webpage
-		 this._canvas = document.createElement("canvas");
-		 this._canvas.style.width = "100%";
-		 this._canvas.id = "gameCanvas";
-		 document.body.appendChild(this._canvas);
-		 return this._canvas;
+	}
+	private _createCanvas() {
+		// create the canvas html element and attach it to the webpage
+		this._canvas = document.createElement("canvas");
+		this._canvas.style.width = "100%";
+		this._canvas.id = "gameCanvas";
+		document.body.appendChild(this._canvas);
+		return this._canvas;
 	}
 
 	private async _goToStart() {
@@ -290,14 +283,13 @@ export default class App {
 		this._engine.displayLoadingUI();
 
 		await this.init_game_ws();
-		if (this.gameMode === 'tournament')
-		{
+		if (this.gameMode === 'tournament') {
 			console.log("1.1.  GAME APP - _goToStart, game mode: tournament");
 			await this._goToWaitingRoom();
-			return ;
+			return;
 		}
 		this._scene.detachControl();
-		const scene =new Scene(this._engine);
+		const scene = new Scene(this._engine);
 		scene.clearColor = new Color4(0, 0, 0, 1);
 		const camera = new FreeCamera("camera1", new Vector3(0, 0, 0));
 		camera.setTarget(Vector3.Zero());
@@ -311,7 +303,7 @@ export default class App {
 		const guiMenu = AdvancedDynamicTexture.CreateFullscreenUI('UI');
 		guiMenu.idealHeight = 720;
 
-		const startSinglePlayerButton= Button.CreateSimpleButton("startpvc", "SINGLE PLAYER MODE");
+		const startSinglePlayerButton = Button.CreateSimpleButton("startpvc", "SINGLE PLAYER MODE");
 		startSinglePlayerButton.width = 0.2;
 		startSinglePlayerButton.height = "40px";
 		startSinglePlayerButton.color = "white";
@@ -320,7 +312,7 @@ export default class App {
 		startSinglePlayerButton.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 		guiMenu.addControl(startSinglePlayerButton);
 
-		const multiSinglePlayerButton= Button.CreateSimpleButton("startpvp", "MULTI PLAYER MODE");
+		const multiSinglePlayerButton = Button.CreateSimpleButton("startpvp", "MULTI PLAYER MODE");
 		multiSinglePlayerButton.width = 0.2;
 		multiSinglePlayerButton.height = "40px";
 		multiSinglePlayerButton.color = "white";
@@ -341,23 +333,23 @@ export default class App {
 			this.navigate('/');
 		});
 
-		startSinglePlayerButton.onPointerDownObservable.add(async() => {
+		startSinglePlayerButton.onPointerDownObservable.add(async () => {
 			this.setGameMode('pvc');
 			// this._goToGame();
 			await this._goToWaitingRoom();
-			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvc"}));
-// <<<<<<< HEAD
+			this.game_ws?.send(JSON.stringify({ "matchmaking": true, "mode": "pvc" }));
+			// <<<<<<< HEAD
 			//this._goToGame();
-// =======
+			// =======
 
-// >>>>>>> origin/dev
+			// >>>>>>> origin/dev
 			scene.detachControl(); //observables disabled
 		})
-		multiSinglePlayerButton.onPointerDownObservable.add(async() => {
+		multiSinglePlayerButton.onPointerDownObservable.add(async () => {
 			// TODO: search for the opponent
 			this.setGameMode('pvp');
 			await this._goToWaitingRoom();
-			this.game_ws?.send(JSON.stringify({"matchmaking": true, "mode": "pvp"}));
+			this.game_ws?.send(JSON.stringify({ "matchmaking": true, "mode": "pvp" }));
 			scene.detachControl();
 		})
 
@@ -365,7 +357,11 @@ export default class App {
 	private async _goToLose(): Promise<void> {
 		this._engine.displayLoadingUI();
 		this.gameId = undefined;
+		this.gameMode = null;
+		this.opponent = "";
+		// this._state = State.
 		this.close_game_ws();
+		this.init_game_ws();
 
 		//--SCENE SETUP--
 		this._scene.detachControl();
@@ -418,12 +414,12 @@ export default class App {
 
 		const fontData = await (await fetch("https://assets.babylonjs.com/fonts/Droid Sans_Regular.json")).json();
 
-		const notification = `Waiting for ${this.gameMode == 'pvc' ? "AI session" :  this.gameMode == 'pvp' ? "match" : this.opponent}`;
+		const notification = `Waiting for ${this.gameMode == 'pvc' ? "AI session" : this.gameMode == 'pvp' ? "match" : this.opponent}`;
 		MeshBuilder.CreateText('notification', notification, fontData, {
-            size: 0.5,
+			size: 0.5,
 			depth: 0.05,
 			resolution: 32
-        }, scene, earcut);
+		}, scene, earcut);
 
 		const sphere = MeshBuilder.CreateSphere("sphere", { diameter: 0.5 }, scene);
 		const sphere2 = MeshBuilder.CreateSphere("sphere", { diameter: 0.5 }, scene);
@@ -452,7 +448,7 @@ export default class App {
 			else {
 				direction3 = true;
 			}
-			setTimeout(()=>{
+			setTimeout(() => {
 				if (sphere2.position.y < -1 && direction2) {
 					sphere2.position.y += 0.01;
 				}
@@ -467,7 +463,7 @@ export default class App {
 					direction2 = true;
 				}
 			}, 200)
-			setTimeout(()=>{
+			setTimeout(() => {
 				if (sphere.position.y < -1 && direction) {
 					sphere.position.y += 0.01;
 				}
@@ -497,7 +493,7 @@ export default class App {
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
 			if (this.gameMode === 'pvp')
-				this.game_ws?.send(JSON.stringify({"matchmaking": false}));
+				this.game_ws?.send(JSON.stringify({ "matchmaking": false }));
 			this.gameMode = null;
 			this.gameId = undefined;
 			this.order = 0;
@@ -519,10 +515,10 @@ export default class App {
 
 	private _setGameGUI(playerUI: AdvancedDynamicTexture) {
 		this.usersAvatars = [];
-		this.scores	= [];
+		this.scores = [];
 
 		// Added by Simona
-   		// Detect PVC mode and use correct labels
+		// Detect PVC mode and use correct labels
 		const isPvcMode = this.opponent === 'AI';
 
 		//const leftPlayer = new TextBlock(`player-${this.order? this.opponent: 'you'}`, `${isPvcMode ? 'AI' : this.order? this.opponent: 'you'}`);
@@ -648,33 +644,33 @@ export default class App {
 		this.scores.push(gameResult);
 
 		const animationScaleY = new Animation("myAnimationY", "scaleY", 20, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONTYPE_VECTOR3);
-        const animationScaleX = new Animation("myAnimationX", "scaleX", 20, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONTYPE_VECTOR3);
+		const animationScaleX = new Animation("myAnimationX", "scaleX", 20, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONTYPE_VECTOR3);
 
-        const keys = [];
+		const keys = [];
 
-        keys.push({
-            frame: 0,
-            value: 1
-        });
+		keys.push({
+			frame: 0,
+			value: 1
+		});
 
-        keys.push({
-            frame: 5,
-            value: 1.2
-        });
-        keys.push({
-            frame: 10,
-            value: 1
-        });
-        keys.push({
-            frame: 15,
-            value: 1.2
-        });
-        keys.push({
-            frame: 20,
-            value: 1
-        });
-        animationScaleY.setKeys(keys);
-        animationScaleX.setKeys(keys);
+		keys.push({
+			frame: 5,
+			value: 1.2
+		});
+		keys.push({
+			frame: 10,
+			value: 1
+		});
+		keys.push({
+			frame: 15,
+			value: 1.2
+		});
+		keys.push({
+			frame: 20,
+			value: 1
+		});
+		animationScaleY.setKeys(keys);
+		animationScaleX.setKeys(keys);
 		leftPlayerAvatarContainer.animations = [];
 		leftPlayerAvatarContainer.animations.push(animationScaleY);
 		leftPlayerAvatarContainer.animations.push(animationScaleX);
@@ -693,7 +689,7 @@ export default class App {
 		this._setUpGame();
 		const scene = this._gamescene as Scene;
 		scene.clearColor = new Color4(0.01568627450980392, 0.01568627450980392, 0.20392156862745098); // a color that fit the overall color scheme better
-        const camera = new FreeCamera("camera1", new Vector3(0, 90, 120), scene);
+		const camera = new FreeCamera("camera1", new Vector3(0, 90, 120), scene);
 
 		camera.setTarget(Vector3.Zero());
 
@@ -770,7 +766,7 @@ export default class App {
 		this.order = 0;
 		this.opponent = '';
 		this.avatarSrcs = [defaultAvatar, defaultAvatar];
-		setTimeout(() =>this._goToStart(), 1000);
+		setTimeout(() => this._goToStart(), 1000);
 	}
 
 	updateSocket = (isAuth: boolean) => {

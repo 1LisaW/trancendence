@@ -22,8 +22,13 @@ export interface GameResult {
 	mode: 'pvp' | 'pvc' | 'tournament',
 }
 
+export interface GameTerminated {
+	terminated: boolean,
+	message: string
+}
 
-export const post_game_loop_data = async(gameId:string, state: GameState | ScoreState | GameResult)=>{
+
+export const post_game_loop_data = async(gameId:string, state: GameState | ScoreState | GameResult | GameTerminated)=>{
 	return (
 		fetch(`${WS_SERVICE_HOSTNAME}/game/${gameId}`, {
 			method: "POST",

@@ -4,6 +4,7 @@ interface TournamentMatchmaking {
 	second_user_id: number,
 	first_user_response: TournamentMatchmakingResponse,
 	second_user_response: TournamentMatchmakingResponse,
+	date: number;
 }
 
 enum TournamentMatchmakingResponse {
@@ -28,12 +29,14 @@ export default class TournamentMatchmakingPool {
 			second_user_id,
 			first_user_response: TournamentMatchmakingResponse.UNDEFINED,
 			second_user_response: TournamentMatchmakingResponse.UNDEFINED,
+			date: Date.now(),
 		};
 		this.pool.push(newMatch);
 	}
 
 	update(user_id: number, response: number) {
 		const match = this.getMatchmakingByUserId(user_id);
+		console.log("UPDATE MAtchmaking Pool for Tournament: ", match, " user_id: ", user_id, " response ", response);
 		if (match === undefined)
 			return null;
 		if (match.first_user_id === user_id)
@@ -49,6 +52,20 @@ export default class TournamentMatchmakingPool {
 			first_user_response: match.first_user_response,
 			second_user_response: match.second_user_response
 		};
+	}
+
+	getStuckUsers() {
+		const date = Date.now() - 45 * 1000;
+		const users:number[] = [];
+		for(const match of this.pool) {
+			if (match.date > date)
+			{
+				users.push(match.first_user_id);
+				users.push(match.second_user_id);
+				this.delete(match.first_user_id)
+			}
+		}
+		return users;
 	}
 
 	delete(user_id: number) {
