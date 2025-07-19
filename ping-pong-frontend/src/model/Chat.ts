@@ -28,6 +28,7 @@ export interface ChatTournamentFinishMessage {
 	time: number;
 	canceled: boolean;
 	rating: number;
+	place: number;
 }
 
 export interface ChatTournamentMatchmakingMessage {

@@ -94,6 +94,24 @@ export default class TournamentSessionManager {
 								delete_tournament(tournament_id);
 							} else {
 								post_tournament_finish(tournament_id);
+								this.tournamentSession.goToEndTournament(false, this.users);
+								this.users.getOnlineUsers().forEach(user_id => {
+									const invitation = {
+										recipient: 'tournament',
+										tournament_id: 0,
+										event: 'invite',
+										time: Date.now()
+									};
+									this.users.sendDataToChatSockets(user_id, invitation);
+								}
+								);
+								// this.tournamentSession.usersPool.forEach((user) =>
+								// {
+								// 	this.users.sendDataToChatSockets(user, {
+								// 		recepient: "tournament",
+								// 		event: "finished",
+								// 	})
+								// })
 							}
 							this.tournamentSession.clear();
 						} else {
@@ -156,7 +174,7 @@ export default class TournamentSessionManager {
 					};
 					this.users.sendDataToChatSockets(user_id, message);
 
-				this.log("🎡 New tournament session started with id: " + data.tournament_id);
+					this.log("🎡 New tournament session started with id: " + data.tournament_id);
 				} else {
 					this.log("🔴 Error creating new tournament session: " + JSON.stringify(data));
 				}
@@ -164,7 +182,7 @@ export default class TournamentSessionManager {
 		}
 	}
 
-	onGameResult = (players: number[], score:number[]) => {
+	onGameResult = (players: number[], score: number[]) => {
 		this.tournamentSession.onGameResult(players, score);
 	}
 }

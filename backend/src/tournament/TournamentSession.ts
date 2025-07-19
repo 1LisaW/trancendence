@@ -95,6 +95,21 @@ class TournamentSession {
 		});
 	}
 
+	goToEndTournament = (canceled: boolean, users: Users) => {
+		this.usersPool.forEach(userId => {
+			const message = {
+				recipient: 'tournament',
+				tournament_id: this.getId(),
+				event: 'finish',
+				time: Date.now(),
+				canceled: canceled,
+				rating: this.ratings.getRating(userId),
+				place: this.ratings.getPlace(userId)
+			}
+			users.sendDataToChatSockets(userId, message);
+		})
+		// this.onSessionEnd();
+	}
 	matchmakingIteration = (users: Users) => {
 
 		// this.usersPool.forEach((userId) => {

@@ -240,6 +240,22 @@ export interface SCORE_ScoreDTO {
 	second_user_name: string,
 	first_user_score: number,
 	second_user_score: number,
+	game_mode: string,
+	user_id: number;
+}
+
+export interface SCORE_TournamentScoreDTO {
+	date: number,
+	first_user_id: number,
+	second_user_id: number,
+	first_user_name: string,
+	second_user_name: string,
+	first_user_score: number,
+	second_user_score: number,
+	tournament_id: number;
+	user_id: number;
+	rating: number;
+	is_finished: boolean;
 	game_mode: string
 }
 
@@ -612,7 +628,7 @@ export default class Profile extends Component {
 
 		// --- Game Statistics Card with Tabs ---
 		const statsCard = document.createElement('div');
-		statsCard.className = 'w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-lg p-8 mt-8';
+		statsCard.className = 'overflow-y-scroll w-full max-w-5xl mx-auto bg-gray-800 rounded-2xl shadow-lg p-8 mt-8';
 
 		const statsTitle = document.createElement('div');
 		statsTitle.className = 'text-2xl font-bold text-white mb-6';
@@ -640,8 +656,8 @@ export default class Profile extends Component {
 
 			const tabButton = document.createElement('button');
 			tabButton.className = `inline-block p-4 border-b-2 rounded-t-lg ${tab.active
-					? 'text-blue-500 border-blue-500 bg-gray-700'
-					: 'border-transparent hover:text-gray-300 hover:border-gray-300'
+				? 'text-blue-500 border-blue-500 bg-gray-700'
+				: 'border-transparent hover:text-gray-300 hover:border-gray-300'
 				}`;
 			tabButton.innerText = tab.text;
 			tabButton.onclick = () => this.switchTab(tab.id);
@@ -655,7 +671,7 @@ export default class Profile extends Component {
 		// Tab content container
 		// const tabContent = document.createElement('div');
 		this.statistics.innerHTML = ''
-		this.statistics.className = 'max-h-96 overflow-y-auto'; // Scrollable content
+		this.statistics.className = 'overflow-y-auto'; // Scrollable content
 		this.statistics.id = 'tab-content';
 
 		statsCard.append(statsTitle, tabsContainer, this.statistics);
@@ -801,76 +817,100 @@ export default class Profile extends Component {
 		}
 	}
 
-	createScoreTable(data: { scores: SCORE_ScoreDTO[], user_id: number }, container: HTMLElement) {
+	createScoreTable(data: { scores: SCORE_ScoreDTO[] | SCORE_TournamentScoreDTO[], user_id: number }, container: HTMLElement) {
 		if (data.scores.length === 0 || !this.statistics)
 			return;
 		// const tableWrapper = document.createElement('div');
 		// tableWrapper.className = "relative overflow-x-auto shadow-md sm:rounded-lg";
 
-		const table = document.createElement('table');
-		table.className = "w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400";
+		const separatedScores: { user_id: number, tournament_id: number | null, scores: SCORE_TournamentScoreDTO[] | SCORE_ScoreDTO[] }[] = [];
+		// const lastScores: SCORE_TournamentScoreDTO[] = [];
+		if (data.scores[0].game_mode === 'tournament' && 'tournament_id' in data.scores[0]) {
+			// let tournament_id = (data.scores[0] as SCORE_TournamentScoreDTO).tournament_id;
+			for (const score of data.scores as SCORE_TournamentScoreDTO[]) {
+				if (separatedScores.length === 0 || separatedScores[separatedScores.length - 1].tournament_id !== score.tournament_id)
+					separatedScores.push({ user_id: data.user_id, tournament_id: score.tournament_id, scores: [] });
+				// else if (separatedScores[separatedScores.length - 1].tournament_id !== score.tournament_id)
+				separatedScores[separatedScores.length - 1].scores.push(score);
+			}
+		}
+		else
+			separatedScores.push({ tournament_id: null, user_id: data.user_id, scores: data.scores });
 
-		const thead = document.createElement('thead');
-		thead.className = "text-xs text-gray-700 uppercase dark:text-gray-400";
-		const tableHeadRow = document.createElement('tr');
-		const tableHeaders = ['Opponent', 'Date', 'Score', 'Result'];
-		tableHeaders.forEach((tableHeader, id) => {
-			const th = document.createElement('th');
-			th.setAttribute('scope', "col");
-			th.className = id % 2 ? "px-6 py-3" : "px-6 py-3 bg-gray-50 dark:bg-gray-800";
-			th.innerText = tableHeader;
-			tableHeadRow.appendChild(th);
+
+		separatedScores.forEach(data => {
+			if (data.tournament_id) {
+				const h4 = document.createElement('h4');
+				h4.className = "text-l font-semibold text-white mb-2 mt-2";
+				h4.innerText = `Tournament № ${data.tournament_id}`
+				container.appendChild(h4);
+
+			}
+			const table = document.createElement('table');
+			table.className = "w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400";
+
+			const thead = document.createElement('thead');
+			thead.className = "text-xs text-gray-700 uppercase dark:text-gray-400";
+			const tableHeadRow = document.createElement('tr');
+			const tableHeaders = ['Opponent', 'Date', 'Score', 'Result'];
+			tableHeaders.forEach((tableHeader, id) => {
+				const th = document.createElement('th');
+				th.setAttribute('scope', "col");
+				th.className = id % 2 ? "px-6 py-3" : "px-6 py-3 bg-gray-50 dark:bg-gray-800";
+				th.innerText = tableHeader;
+				tableHeadRow.appendChild(th);
+			})
+			thead.appendChild(tableHeadRow);
+			table.appendChild(thead);
+
+			const tbody = document.createElement('tbody');
+			data.scores.forEach((scoreData, id) => {
+				const tr = document.createElement('tr');
+				tr.className = id % 2 ? "border-b border-gray-200 dark:border-gray-700" : "border-b border-gray-200 dark:border-gray-700";
+
+				const th = document.createElement('th');
+				th.setAttribute("scope", "row");
+				th.className = "max-w-[250px] truncate px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
+				th.innerText = scoreData.first_user_id == data.user_id ? scoreData.second_user_name : scoreData.first_user_name;
+				tr.appendChild(th);
+
+				const dateTd = document.createElement('td');
+				dateTd.className = "px-6 py-4";
+				dateTd.innerText = new Date(scoreData.date).toDateString();
+				tr.appendChild(dateTd);
+
+				const scoreTd = document.createElement('td');
+				scoreTd.className = "px-6 py-4 bg-gray-50 dark:bg-gray-800";
+				scoreTd.innerText = data.user_id == scoreData.first_user_id ?
+					`${scoreData.first_user_score} - ${scoreData.second_user_score}` : `${scoreData.second_user_score} - ${scoreData.first_user_score}`
+				tr.appendChild(scoreTd);
+
+				const resultTd = document.createElement('td');
+				resultTd.className = "px-6 py-4";
+				const isDraw = scoreData.first_user_score == scoreData.second_user_score;
+				const isWin = (scoreData.first_user_score > scoreData.second_user_score && scoreData.first_user_id == data.user_id)
+					|| (scoreData.first_user_score < scoreData.second_user_score && scoreData.second_user_id == data.user_id);
+				if (isWin) {
+					resultTd.innerText = 'W';
+					resultTd.classList.add("bg-green-500");
+				}
+				else if (isDraw) {
+					resultTd.innerText = 'D';
+					resultTd.classList.add("bg-black-100");
+				}
+				else {
+					resultTd.innerText = 'L';
+					resultTd.classList.add("bg-red-500");
+				}
+
+				tr.appendChild(resultTd);
+
+				tbody.appendChild(tr);
+			})
+			table.appendChild(tbody);
+			container.appendChild(table);
 		})
-		thead.appendChild(tableHeadRow);
-		table.appendChild(thead);
 
-		const tbody = document.createElement('tbody');
-		data.scores.forEach((scoreData, id) => {
-			const tr = document.createElement('tr');
-			tr.className = id % 2 ? "border-b border-gray-200 dark:border-gray-700" : "border-b border-gray-200 dark:border-gray-700";
-
-			const th = document.createElement('th');
-			th.setAttribute("scope", "row");
-			th.className = "max-w-[250px] truncate px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-gray-50 dark:text-white dark:bg-gray-800";
-			th.innerText = scoreData.first_user_id == data.user_id ? scoreData.second_user_name : scoreData.first_user_name;
-			tr.appendChild(th);
-
-			const dateTd = document.createElement('td');
-			dateTd.className = "px-6 py-4";
-			dateTd.innerText = new Date(scoreData.date).toDateString();
-			tr.appendChild(dateTd);
-
-			const scoreTd = document.createElement('td');
-			scoreTd.className = "px-6 py-4 bg-gray-50 dark:bg-gray-800";
-			scoreTd.innerText = data.user_id == scoreData.first_user_id ?
-				`${scoreData.first_user_score} - ${scoreData.second_user_score}` : `${scoreData.second_user_score} - ${scoreData.first_user_score}`
-			tr.appendChild(scoreTd);
-
-			const resultTd = document.createElement('td');
-			resultTd.className = "px-6 py-4";
-			const isDraw = scoreData.first_user_score == scoreData.second_user_score;
-			const isWin = (scoreData.first_user_score > scoreData.second_user_score && scoreData.first_user_id == data.user_id)
-				|| (scoreData.first_user_score < scoreData.second_user_score && scoreData.second_user_id == data.user_id);
-			if (isWin) {
-				resultTd.innerText = 'W';
-				resultTd.classList.add("bg-green-500");
-			}
-			else if (isDraw) {
-				resultTd.innerText = 'D';
-				resultTd.classList.add("bg-black-100");
-			}
-			else {
-				resultTd.innerText = 'L';
-				resultTd.classList.add("bg-red-500");
-			}
-
-			tr.appendChild(resultTd);
-
-			tbody.appendChild(tr);
-		})
-		table.appendChild(tbody);
-		container.appendChild(table);
-		// parent.appendChild(this.statistics);
 
 	}
 
@@ -878,8 +918,8 @@ export default class Profile extends Component {
 
 		// Fix the selector and type issues
 		const tabContent = this.statistics;
-		 //document.getElementById('tab-content');
-		if (!tabContent){
+		//document.getElementById('tab-content');
+		if (!tabContent) {
 			return;
 		}
 
@@ -891,8 +931,8 @@ export default class Profile extends Component {
 		tabButtons.forEach((btn: Element, index: number) => {
 			const isActive = index === this.getTabIndex(tabId);
 			(btn as HTMLElement).className = `inline-block p-4 border-b-2 rounded-t-lg ${isActive
-					? 'text-blue-500 border-blue-500 bg-gray-700'
-					: 'border-transparent hover:text-gray-300 hover:border-gray-300'
+				? 'text-blue-500 border-blue-500 bg-gray-700'
+				: 'border-transparent hover:text-gray-300 hover:border-gray-300'
 				}`;
 		});
 
@@ -1086,7 +1126,7 @@ export default class Profile extends Component {
 			// Default to online if no status provided
 			let status = 'offline';
 
-			if(friend.status === 0) {
+			if (friend.status === 0) {
 				statusBadge.className += ' bg-red-300 text-red-700';
 				status = 'offline';
 			}
@@ -1122,8 +1162,10 @@ export default class Profile extends Component {
 			method: "GET",
 			headers: { "Authorization": getToken() },
 		}).then(res => res.json()).then(data => {
-			if (data.tournaments && data.tournaments.length > 0) {
-				this.createScoreTable({ scores: data.tournaments, user_id: data.tournaments[0].user_id }, container);
+			// if (data.tournaments)
+			const tournaments = data?.tournaments.filter((tournament: SCORE_TournamentScoreDTO) => tournament.first_user_id !== null);
+			if (tournaments && tournaments.length > 0) {
+				this.createScoreTable({ scores: tournaments, user_id: tournaments[0].user_id }, container);
 			} else {
 				const empty = document.createElement('div');
 				empty.className = 'text-gray-400 text-center py-4';
