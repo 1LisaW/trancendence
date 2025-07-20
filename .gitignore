@@ -1,6 +1,9 @@
+/_db
 /sqlite
 .env
 .env
 
 node_modules
 .DS_Store
+.idea
+
