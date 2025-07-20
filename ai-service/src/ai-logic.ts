@@ -1,152 +1,234 @@
-// This file contains an AI logic for Pong 3D 
-// For the team: the player can be tweaked to more or less strong as we wish -- feel free to ask me to change the parameters (feedback is welcome!)
+// AI Logic for ft_transcendence Pong 3D 
 
-export function getAIMove(state: {
-  pos: [number, number, number],
-  ballPos: [number, number, number],
-  ballSpeed: number,
-  ballNormal: [number, number, number]
-}, sceneParams?: {
-  ground: { width: number, height: number },
-  bat: { width: number, height: number, depth: number },
-  ball: { diameter: number }
-}): 'up' | 'down' | 'none' {
-  // Use provided scene params or fallback to defaults
-  const FIELD_WIDTH = sceneParams?.ground.width || 100;
-  const FIELD_HEIGHT = sceneParams?.ground.height || 70;
-  const BAT_WIDTH = sceneParams?.bat.width || 15;
-  const BALL_DIAMETER = sceneParams?.ball.diameter || 2;
+
+interface GameState {
+  pos: [number, number, number];
+  ballPos: [number, number, number];
+  ballSpeed: number;
+  ballNormal: [number, number, number];
+}
+
+interface SceneParameters {
+  ground: { width: number, height: number };
+  bat: { width: number, height: number, depth: number };
+  ball: { diameter: number };
+}
+
+export function getAIMove(state: GameState, sceneParams?: SceneParameters): 'up' | 'down' | 'none' {
+  const scene = initializeSceneParams(sceneParams);
   
-  const BAT_STEP = BAT_WIDTH / 2;
-  const FRAME_STEP = 1.5;
-  const FIELD_Z = FIELD_HEIGHT / 2;
-
-  const paddleX = state.pos[0];
-  const paddleZ = state.pos[2];
-  const ballX = state.ballPos[0];
-  const ballZ = state.ballPos[2];
-  const speed = state.ballSpeed;
-  const normal = state.ballNormal;
-
-  console.log(`AI DEBUG: paddle=[${paddleX.toFixed(1)},${paddleZ.toFixed(1)}], ball=[${ballX.toFixed(1)},${ballZ.toFixed(1)}], speed=${speed.toFixed(2)}, normal=[${normal[0].toFixed(3)},${normal[2].toFixed(3)}]`);
-
-  // Validate inputs
-  if (paddleX === null || paddleX === undefined || ballX === null || ballX === undefined) {
-    console.log(`AI: Null coordinates detected, returning 'none'`);
+  if (!validateGameState(state)) {
     return 'none';
   }
 
-  if (speed <= 0) {
-    console.log(`AI: Invalid speed (${speed}), returning 'none'`);
-    return 'none';
+  const { pos, ballPos, ballSpeed, ballNormal } = state;
+  const paddleX = pos[0];
+  const paddleZ = pos[2]; // This is 1-second-old data!
+  const ballX = ballPos[0];
+  const ballZ = ballPos[2];
+  
+  console.log(`AI DEBUG: Paddle=[${paddleX.toFixed(1)}, ${paddleZ.toFixed(1)}] (1s old), Ball=[${ballX.toFixed(1)}, ${ballZ.toFixed(1)}], Speed=${ballSpeed.toFixed(2)}`);
+  
+  // Calculate dynamic boundaries from scene parameters
+  const batZTopPos = (scene.ground.height - scene.bat.width) / 2;
+  const maxPaddleZ = batZTopPos - 2; // Safety margin
+  const minPaddleZ = -batZTopPos + 2; // Safety margin
+  
+  // CRITICAL: Handle boundary situations more intelligently
+  // If paddle is near boundaries, be more conservative
+  if (paddleZ >= maxPaddleZ) {
+    console.log(`AI: Near top boundary (${paddleZ}) - only allow DOWN moves`);
+    if (ballZ < paddleZ - 5) {
+      return 'up'; // Move toward ball if it's significantly below
+    }
+    return 'none'; // Stay put if ball is not far enough
   }
-
-  // Check if ball is moving toward the AI
+  
+  if (paddleZ <= minPaddleZ) {
+    console.log(`AI: Near bottom boundary (${paddleZ}) - only allow UP moves`);
+    if (ballZ > paddleZ + 5) {
+      return 'down'; // Move toward ball if it's significantly above
+    }
+    return 'none'; // Stay put if ball is not far enough
+  }
+  
+  // Normal AI logic for non-boundary cases
   const aiIsRight = paddleX > 0;
-  const ballMovingTowardAI = (aiIsRight && normal[0] > 0) || (!aiIsRight && normal[0] < 0);
+  const ballMovingTowardAI = (aiIsRight && ballNormal[0] > 0) || (!aiIsRight && ballNormal[0] < 0);
+  
+  console.log(`AI: Ball direction analysis - AI at X=${paddleX.toFixed(1)} (isRight=${aiIsRight}), Ball normal X=${ballNormal[0].toFixed(3)}, Moving toward AI=${ballMovingTowardAI}`);
+  
+  let targetZ = ballZ; // ALWAYS target the ball, never center
+
+  if (ballMovingTowardAI) {
+    console.log(`AI: Ball approaching - AGGRESSIVE DEFENSE`);
+    // Use prediction if available, otherwise current ball position
+    const prediction = predictBallPosition(ballPos, ballNormal, ballSpeed, paddleX, scene);
+    if (prediction.success && prediction.timeToReach < 12) { // Increased from 8 to 12
+      targetZ = prediction.predictedZ;
+      console.log(`AI: SMART PREDICTION - targeting Z=${targetZ.toFixed(2)} (${prediction.bounces} bounces)`);
+    } else {
+      // Better fallback - predict 1-2 seconds ahead instead of using current position
+      const futureTime = Math.min(2.0, Math.abs((paddleX - ballX) / (ballNormal[0] * ballSpeed)) || 1.0);
+      targetZ = ballZ + ballNormal[2] * ballSpeed * futureTime;
+      
+      // Clamp to field boundaries
+      const fieldMaxZ = (scene.ground.height - scene.ball.diameter) / 2;
+      const fieldMinZ = -(scene.ground.height - scene.ball.diameter) / 2;
+      targetZ = Math.max(fieldMinZ, Math.min(fieldMaxZ, targetZ));
+      
+      console.log(`AI: SIMPLE PREDICTION - targeting Z=${targetZ.toFixed(2)} (${futureTime.toFixed(1)}s ahead)`);
+    }
+  } else {
+    console.log(`AI: Ball moving away - STRATEGIC FOLLOW`);
+    // Better strategic positioning when ball is moving away
+    if (Math.abs(ballZ) < 10) {
+      // Ball near center - move toward center for better coverage
+      targetZ = ballZ * 0.5;
+    } else {
+      // Ball far from center - follow more aggressively
+      targetZ = ballZ * 0.8;
+    }
+    console.log(`AI: Strategic follow - targeting Z=${targetZ.toFixed(2)}`);
+  }
+
+  const difference = targetZ - paddleZ;
+  console.log(`AI: Current=${paddleZ.toFixed(2)}, Target=${targetZ.toFixed(2)}, Diff=${difference.toFixed(2)}`);
+
+  // Difficulty adjustment settings (make AI more beatable)
+  const DIFFICULTY_SETTINGS = {
+    MOVEMENT_THRESHOLD: 2.0,      // Increase to 3.0 for easier gameplay
+    DEADBAND_SIZE: 1.5,           // Increase to 2.5 for more hesitation  
+    PREDICTION_TIME_LIMIT: 12,    // Reduce to 8 for worse predictions
+    STRATEGIC_FOLLOW_RATIO: 0.8,  // Reduce to 0.6 for worse positioning
+    UPDATE_INTERVAL: 300          // Increase to 400-500ms for slower reactions
+  };
+
+  // ✅ FIXED: More aggressive movement thresholds for better scoring
+  if (difference > DIFFICULTY_SETTINGS.MOVEMENT_THRESHOLD && paddleZ < maxPaddleZ - 1) {
+    console.log(`AI: Moving DOWN (aggressive pursuit)`);
+    return 'down';
+  }
+
+  if (difference < -DIFFICULTY_SETTINGS.MOVEMENT_THRESHOLD && paddleZ > minPaddleZ + 1) {
+    console.log(`AI: Moving UP (aggressive pursuit)`);
+    return 'up';
+  }
+
+  // Smaller deadband for more responsive movement  
+  if (Math.abs(difference) <= DIFFICULTY_SETTINGS.DEADBAND_SIZE) {
+    console.log(`AI: Close enough to target`);
+    return 'none';
+  }
+
+  console.log(`AI: Staying put (optimal position)`);
+  return 'none';
+}
+
+function predictBallPosition(
+  ballPos: [number, number, number], 
+  ballNormal: [number, number, number], 
+  ballSpeed: number, 
+  targetX: number, 
+  scene: SceneParameters
+): { success: boolean; predictedZ: number; timeToReach: number; bounces: number } {
+  const ballX = ballPos[0];
+  const ballZ = ballPos[2];
+  const ballVelocityX = ballNormal[0] * ballSpeed;
+  const ballVelocityZ = ballNormal[2] * ballSpeed;
+  
+  console.log(`AI: PREDICTION INPUT - Ball=[${ballX.toFixed(1)}, ${ballZ.toFixed(1)}], Normal=[${ballNormal[0].toFixed(3)}, ${ballNormal[2].toFixed(3)}], Speed=${ballSpeed.toFixed(2)}`);
+  
+  // Velocity check - if X velocity is too small, ball isn't heading toward AI
+  if (Math.abs(ballVelocityX) < 0.05) { // Increased from 0.01 to 0.05 for more realistic threshold
+    console.log(`AI: Ball moving too slowly in X direction (vX=${ballVelocityX.toFixed(3)}) - use strategic follow`);
+    return { success: false, predictedZ: ballZ, timeToReach: 999, bounces: 0 };
+  }
+  
+  // Check if ball is moving toward AI's side
+  const aiIsRight = targetX > 0;
+  const ballMovingTowardAI = (aiIsRight && ballVelocityX > 0) || (!aiIsRight && ballVelocityX < 0);
   
   if (!ballMovingTowardAI) {
-    console.log(`AI: Ball moving away (aiIsRight=${aiIsRight}, normalX=${normal[0].toFixed(3)}), calculating strategic position`);
-    // Move toward a predicted return point instead of just center
-    const opponentSide = aiIsRight ? -FIELD_Z : FIELD_Z;
-    const timeToOpponent = Math.abs(opponentSide - ballX) / Math.abs(normal[0] * speed * FRAME_STEP);
-    let returnZ = ballZ + normal[2] * speed * FRAME_STEP * timeToOpponent;
-    let returnBounces = 0;
-    while ((returnZ > FIELD_Z || returnZ < -FIELD_Z) && returnBounces < 10) {
-      if (returnZ > FIELD_Z) returnZ = 2 * FIELD_Z - returnZ;
-      if (returnZ < -FIELD_Z) returnZ = -2 * FIELD_Z - returnZ;
-      returnBounces++;
-    }
-    console.log(`AI: Strategic return point Z: ${returnZ.toFixed(2)} (bounces: ${returnBounces})`);
-    if (paddleZ > returnZ + BAT_STEP / 2) return 'up';
-    if (paddleZ < returnZ - BAT_STEP / 2) return 'down';
-    return 'none';
-  }
-
-  // Calculate time for ball to reach AI paddle's X
-  const dx = Math.abs(paddleX - ballX);
-  const vx = Math.abs(normal[0] * speed * FRAME_STEP);
-  
-  if (vx < 0.001) { // Very small for floating point comparison
-    console.log(`AI: Ball horizontal velocity too small (${vx.toFixed(4)})`);
-    return 'none';
+    console.log(`AI: Ball moving away from AI side (aiRight=${aiIsRight}, ballVelX=${ballVelocityX.toFixed(3)}) - use follow mode`);
+    return { success: false, predictedZ: ballZ, timeToReach: 999, bounces: 0 };
   }
   
-  const timeToReach = dx / vx;
-  console.log(`AI: Time to reach paddle: ${timeToReach.toFixed(2)} steps (dx=${dx.toFixed(2)}, vx=${vx.toFixed(3)})`);
-
-  // Predict Z position at that time
-  const vz = normal[2] * speed * FRAME_STEP;
-  let predictedZ = ballZ + vz * timeToReach;
-
-  // Simulate wall bounces
+  const distanceX = Math.abs(ballX - targetX);
+  const timeToReach = distanceX / Math.abs(ballVelocityX);
+  
+  console.log(`AI: PREDICTION CALC - Distance=${distanceX.toFixed(1)}, VelX=${ballVelocityX.toFixed(3)}, Time=${timeToReach.toFixed(1)}s`);
+  
+  // Realistic time limits for competitive play
+  if (timeToReach > 15) { // Increased from 5 to 15 seconds
+    console.log(`AI: Prediction too far in future (${timeToReach.toFixed(1)}s) - use fallback`);
+    return { success: false, predictedZ: ballZ, timeToReach, bounces: 0 };
+  }
+  
+  // Physics prediction with proper wall bouncing
+  let currentZ = ballZ;
+  let currentVelZ = ballVelocityZ;
+  let remainingTime = timeToReach;
   let bounces = 0;
-  while ((predictedZ > FIELD_Z || predictedZ < -FIELD_Z) && bounces < 10) { // Prevent infinite loop
-    if (predictedZ > FIELD_Z) predictedZ = 2 * FIELD_Z - predictedZ;
-    if (predictedZ < -FIELD_Z) predictedZ = -2 * FIELD_Z - predictedZ;
-    bounces++;
-  }
-
-  // Add small error for realism (increased range for more human-like imperfection)
-  const error = (Math.random() - 0.5) * 5;
-  predictedZ += error;
-
-  console.log(`AI: Predicted ball Z: ${predictedZ.toFixed(2)}, paddle Z: ${paddleZ.toFixed(2)} (bounces: ${bounces})`);
-
-  // Set a fixed inaction chance regardless of score
-  let inactionChance = dx > 30 ? 0.15 : 0.05;
-  console.log(`AI: Fixed inaction chance set to ${inactionChance}`);
   
-  if (Math.random() < inactionChance) {
-    console.log(`AI: Random inaction for balance (chance: ${inactionChance})`);
-    return 'none';
-  }
-
-  // Add reaction delay when ball is very close (simulate human reaction time, increased frequency)
-  if (Math.abs(ballX - paddleX) < 5 && Math.random() < (0.2 + speed * 0.05)) { 
-    console.log(`AI: Delayed reaction due to ball proximity and speed (dx=${Math.abs(ballX - paddleX).toFixed(2)}, speed=${speed.toFixed(2)})`);
-    return 'none';
-  }
-
-  // Move paddle toward predicted position with dynamic threshold based on ball speed
-  const threshold = BAT_STEP / 8 + (speed * 0.02); // Adjustable for smoother reactions
-  console.log(`AI: Distance to predicted Z: ${Math.abs(predictedZ - paddleZ).toFixed(2)}, Threshold: ${threshold.toFixed(2)}`);
-  console.log(`AI: Dynamic threshold set to ${threshold.toFixed(2)} based on speed ${speed.toFixed(2)}`);
-
-  // If paddle Z is exactly 0 and ball is approaching, be more aggressive
-  if (paddleZ === 0 && Math.abs(ballX - paddleX) < 20) {
-    console.log(`AI: Paddle at suspicious position Z=0, using ball position for guidance`);
-    if (Math.abs(ballZ) > 1) {
-      return ballZ > 0 ? 'down' : 'up';
+  // Field boundaries from scene parameters
+  const fieldMaxZ = (scene.ground.height - scene.ball.diameter) / 2;
+  const fieldMinZ = -(scene.ground.height - scene.ball.diameter) / 2;
+  
+  // Simulate wall bounces for more accurate prediction
+  while (remainingTime > 0 && bounces < 2) { // Max 2 bounces for realism
+    if (Math.abs(currentVelZ) < 0.001) {
+      // Ball not moving in Z, just use current position
+      break;
     }
-  }
-
-  // Force movement check 
-  if (Math.abs(ballX - paddleX) < 10 && paddleZ === 0 && Math.abs(ballZ) > 2) {
-    console.log(`AI: Forcing movement - ball at Z=${ballZ.toFixed(1)}, paddle stuck at Z=0`);
-    return ballZ > 0 ? 'down' : 'up';
-  }
-
-  // Calculate proportional movement for smoothness
-  const zDifference = predictedZ - paddleZ;
-  const proportionalStep = zDifference * 0.95; // Move 95% of the distance to predicted Z
-  console.log(`AI: Proportional step calculated: ${proportionalStep.toFixed(2)} (95% of difference ${zDifference.toFixed(2)})`);
-
-  // Adjust threshold based on distance as well to avoid over-correction
-  const adjustedThreshold = Math.min(threshold, Math.abs(zDifference) * 0.4);
-  console.log(`AI: Adjusted threshold for over-correction: ${adjustedThreshold.toFixed(2)} based on distance`);
-
-  // Decide movement based on proportional step if outside adjusted threshold
-  if (Math.abs(proportionalStep) > adjustedThreshold) {
-    if (proportionalStep < 0) {
-      console.log(`AI: Moving UP with proportional step (step: ${proportionalStep.toFixed(2)} < threshold: ${adjustedThreshold.toFixed(2)})`);
-      return 'up';
+    
+    const timeToWall = currentVelZ > 0 
+      ? (fieldMaxZ - currentZ) / currentVelZ 
+      : (fieldMinZ - currentZ) / currentVelZ;
+    
+    if (timeToWall > 0 && timeToWall <= remainingTime) {
+      // Ball hits wall during prediction time
+      currentZ = currentVelZ > 0 ? fieldMaxZ : fieldMinZ;
+      currentVelZ *= -0.95; // Slight energy loss on bounce
+      remainingTime -= timeToWall;
+      bounces++;
+      console.log(`AI: Bounce ${bounces} at Z=${currentZ.toFixed(1)}, remaining time=${remainingTime.toFixed(1)}s`);
     } else {
-      console.log(`AI: Moving DOWN with proportional step (step: ${proportionalStep.toFixed(2)} > threshold: ${adjustedThreshold.toFixed(2)})`);
-      return 'down';
+      // Ball reaches AI before hitting wall
+      currentZ += currentVelZ * remainingTime;
+      remainingTime = 0;
     }
   }
+  
+  // Final position at AI's X coordinate
+  let predictedZ = currentZ;
+  
+  // Clamp to reachable paddle area
+  const batZTopPos = (scene.ground.height - scene.bat.width) / 2;
+  const maxReach = batZTopPos - 2;
+  const minReach = -batZTopPos + 2;
+  
+  predictedZ = Math.max(minReach, Math.min(maxReach, predictedZ));
+  
+  console.log(`AI: PREDICTION SUCCESS - time=${timeToReach.toFixed(1)}s, Z=${predictedZ.toFixed(2)}, bounces=${bounces}`);
+  
+  return { 
+    success: true, 
+    predictedZ, 
+    timeToReach, 
+    bounces 
+  };
+}
 
-  console.log(`AI: Staying in position (proportional step: ${Math.abs(proportionalStep).toFixed(2)} within threshold: ${adjustedThreshold.toFixed(2)})`);
-  return 'none';
+function initializeSceneParams(sceneParams?: SceneParameters): SceneParameters {
+  // Fallback that matches GameSession defaults
+  return sceneParams || {
+    ground: { width: 100, height: 70 },
+    bat: { width: 15, height: 10, depth: 4 },
+    ball: { diameter: 2 }
+  };
+}
+
+function validateGameState(state: GameState): boolean {
+  return state && state.pos && state.ballPos && state.ballSpeed > 0;
 }

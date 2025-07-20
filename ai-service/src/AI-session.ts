@@ -3,7 +3,7 @@
 import WebSocket from 'ws';
 import { getAIMove } from './ai-logic';
 import { AIEnvironment } from './AI-environment';
-import { AIManager } from './AI-manager'; // Added import for AIManager
+import { AIManager } from './AI-manager'; 
 
 enum AIState {
   WAITING = 'waiting',           // Waiting for first game state
@@ -24,6 +24,14 @@ export class AISession {
   private isFinished: boolean = false;
   private _state = AIState.WAITING;
   private opponent = '';
+
+  // Track AI's actual position independently
+  private aiTrackedPosition: [number, number, number] = [-45, 5, 0]; // LEFT side default
+  private lastMoveTime = 0;
+  private lastMoveDirection: 'up' | 'down' | 'none' = 'none';
+
+  // Move history tracking
+  private moveHistory: Array<{direction: 'up' | 'down' | 'none', timestamp: number}> = [];
 
   // Countdown logic
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
@@ -55,12 +63,6 @@ export class AISession {
     this.ws.on('error', (err) => {
       console.error(`[${this.gameId}] WebSocket error:`, err);
     });
-
-    // this.ws.on('open', () => {
-    //   console.log(`[${this.gameId}] AI connected - sending gameId to backend`);
-    //   // Send gameId immediately after connection
-    //   this.ws.send(JSON.stringify({ gameId: this.gameId }));
-    // });
   }
 
   public handleMessage(msg: any) {
@@ -96,11 +98,6 @@ export class AISession {
   }
 
   private onGameStateUpdate(msg: any) {
-    // For debugging
-    //if (this.countdownActive) {
-    //  console.log(`[${this.gameId}] 🚫 COUNTDOWN ACTIVE - Ignoring game state`);
-    //  return;
-    //}
 
     // Start countdown on first game state
     if (!this.firstGameStateReceived && this._state === AIState.WAITING) {
@@ -119,7 +116,7 @@ export class AISession {
     this.state = msg;
     // Auto-detect order if not set
     if (this.order === undefined && msg.players) {
-      const aiIndex = msg.players.findIndex((p: number) => p === -1);
+      const aiIndex = msg.players.findIndex((p: number) => p < 0); // Look for any negative ID
       this.order = aiIndex;
       console.log(`[${this.gameId}] Auto-detected AI order: ${this.order}`);
     }
@@ -162,16 +159,10 @@ export class AISession {
       clearInterval(this.gameLoop);
     }
 
-    console.log(`[${this.gameId}] 🎮 Starting AI game loop`);
+    console.log(`[${this.gameId}] 🎮 Starting AI game loop - EXACTLY 1 second intervals (ft_transcendence compliant)`);
 
-    // AI loop with protection
+    // AI loop with EXACTLY 1-second intervals as required by ft_transcendence subject
     this.gameLoop = setInterval(() => {
-      // For Debugging
-      // if (this.countdownActive) {
-      //  console.log(`[${this.gameId}] 🚫 Game loop blocked - countdown active`);
-      //  return;
-      //}
-
       if (this._state !== AIState.PLAYING) {
         return;
       }
@@ -180,10 +171,10 @@ export class AISession {
         return;
       }
 
-      // For Debugging
-      //console.log(`[${this.gameId}] AI update triggered (1-second interval as per subject requirement)`);
-
       try {
+        // UPDATE AI'S TRACKED POSITION FIRST
+        this.updateAITrackedPosition();
+        
         const aiState = this.transformGameState(this.state, this.order);
 
         // Get scene parameters from environment
@@ -192,13 +183,61 @@ export class AISession {
         const move = getAIMove(aiState, sceneParams);
 
         if (move !== 'none') {
-          console.log(`[${this.gameId}] 🤖 AI move: ${move}`);
+          console.log(`[${this.gameId}] 🤖 AI move: ${move} (AGGRESSIVE MODE)`);
           this.aiEnvironment.sendAIMove(move);
+          
+          // Track the move with timestamp
+          this.moveHistory.push({
+            direction: move,
+            timestamp: Date.now()
+          });
+          
+          // Clean old moves (older than 2 seconds)
+          this.moveHistory = this.moveHistory.filter(m => Date.now() - m.timestamp < 2000);
+        } else {
+          console.log(`[${this.gameId}] 🎯 AI holding position (optimal)`);
         }
       } catch (error) {
         console.error(`[${this.gameId}] AI game loop error:`, error);
       }
-    }, 1000);
+    }, 300); // ✅ OPTIMIZED: Better interval for aggressive AI
+  }
+
+  // Update AI's tracked position based on moves sent
+  private updateAITrackedPosition() {
+    // Get baseline position from game state (1 second old)
+    if (this.state && this.state.pos) {
+      const aiPlayerId = this.state.players.find((id: number) => id < 0);
+      const aiPlayerIndex = this.state.players.indexOf(aiPlayerId);
+      const gameStatePos = this.state.pos[aiPlayerIndex];
+      
+      // Start with game state position if we don't have a better estimate
+      if (!this.lastValidPosition) {
+        this.aiTrackedPosition = [gameStatePos[0], gameStatePos[1], gameStatePos[2]];
+        this.lastValidPosition = [...this.aiTrackedPosition];
+        console.log(`[${this.gameId}] 📍 AI baseline position: [${this.aiTrackedPosition.join(', ')}]`);
+        return;
+      }
+    }
+
+    // Predict current position based on moves sent in the last second
+    const now = Date.now();
+    const movesSent = this.getMovesInLastSecond(now);
+    
+    // Simulate paddle movement for each move sent
+    let predictedZ = this.lastValidPosition[2];
+    
+    movesSent.forEach(move => {
+      const batStep = 7.5; // From GameSession
+      if (move.direction === 'up') {
+        predictedZ = Math.max(predictedZ - batStep, -27.5);
+      } else if (move.direction === 'down') {
+        predictedZ = Math.min(predictedZ + batStep, 27.5);
+      }
+    });
+    
+    this.aiTrackedPosition[2] = predictedZ;
+    console.log(`[${this.gameId}] 🎯 AI predicted position: Z=${predictedZ.toFixed(1)} (${movesSent.length} moves applied)`);
   }
 
   private onGameEnd() {
@@ -224,7 +263,13 @@ export class AISession {
     this.isFinished = false;
     this._state = AIState.WAITING;
     this.firstGameStateReceived = false;
-    this.countdownActive = false; // Reset protection flag
+    this.countdownActive = false;
+    
+    // RESET POSITION TRACKING
+    this.aiTrackedPosition = [-45, 5, 0]; // Reset to LEFT side default
+    this.lastMoveTime = 0;
+    this.lastMoveDirection = 'none';
+    
     // Clear all timers
     if (this.countdownTimer) {
       clearTimeout(this.countdownTimer);
@@ -278,82 +323,30 @@ export class AISession {
     ballSpeed: number,
     ballNormal: [number, number, number]
   } {
-    // Log the full game state for debugging to see if score is included
-    console.log(`[${this.gameId}] Full game state:`, JSON.stringify(gameState, null, 2));
-
-    // Validate game state structure
-    if (!gameState || !gameState.pos || !Array.isArray(gameState.pos) || gameState.pos.length < 2) {
-      return this.getDefaultState();
-    }
-
-    if (this.order === undefined) {
-      return this.getDefaultState();
-    }
-
-    const aiPaddlePos = gameState.pos[this.order];
-    const ballPos = gameState.ball || [0, 1, 0];
-
-    // Handle null positions
-    let validAIPaddlePos: [number, number, number];
-    if (!aiPaddlePos || aiPaddlePos.length < 3 || aiPaddlePos[2] === null) {
-      if (this.lastValidPosition) {
-        validAIPaddlePos = [...this.lastValidPosition];
-      } else {
-        validAIPaddlePos = this.order === 0 ? [-45, 5, 0] : [45, 5, 0];
-      }
-    } else {
-      validAIPaddlePos = [
-        aiPaddlePos[0] !== null ? aiPaddlePos[0] : (this.order === 0 ? -45 : 45),
-        aiPaddlePos[1] !== null ? aiPaddlePos[1] : 5,
-        aiPaddlePos[2] !== null ? aiPaddlePos[2] : 0
-      ];
-      this.lastValidPosition = [...validAIPaddlePos];
-    }
-// <<<<<<< HEAD
-
-    // ✅ USE ACTUAL BALL SPEED AND NORMAL FROM GAME STATE
-    let ballSpeed = 1;
-    let ballNormal: [number, number, number] = [1, 0, 0];
-
-    // Check if game state includes ballSpeed and ballNormal
-    if (gameState.ballSpeed !== undefined && gameState.ballNormal !== undefined) {
-      ballSpeed = gameState.ballSpeed;
-      ballNormal = gameState.ballNormal;
-      // Ensure ballNormal is properly formatted as [x, y, z]
-      if (Array.isArray(ballNormal) && ballNormal.length >= 3) {
-        ballNormal = [ballNormal[0], ballNormal[1] || 0, ballNormal[2]];
-      } else {
-        // Fallback to calculated direction if normal is invalid
-        ballNormal = this.calculateBallDirection(ballPos);
-      }
-    } else {
-      // Fallback to old calculation method if new fields are not available
-      ballNormal = this.calculateBallDirection(ballPos);
-      ballSpeed = this.calculateBallSpeed(ballPos);
-    }
+    // CRITICAL FIX: Find AI position by matching the AI player ID
+    const aiPlayerId = gameState.players.find((id: number) => id < 0); // Find AI player ID
+    const aiPlayerIndex = gameState.players.indexOf(aiPlayerId); // Get AI's index in arrays
+    
+    const aiPaddlePos = gameState.pos[aiPlayerIndex]; // Use AI's actual index
+    
+    console.log(`[${this.gameId}] 🎯 AI ID: ${aiPlayerId}, Index: ${aiPlayerIndex}, Position: [${aiPaddlePos.join(', ')}]`);
+    
     return {
-      pos: validAIPaddlePos,
-      ballPos: ballPos,
-      ballSpeed: ballSpeed,
-      ballNormal: ballNormal
+      pos: aiPaddlePos, // Use AI's actual position
+      ballPos: gameState.ball || [0, 1, 0],
+      ballSpeed: gameState.ballSpeed || 1,
+      ballNormal: gameState.ballNormal || [1, 0, 0]
     };
   }
 
-  // ✅ ADD HELPER METHODS FOR FALLBACK CALCULATIONS
+  // HELPER METHODS FOR FALLBACK CALCULATIONS
   private calculateBallDirection(ballPos: [number, number, number]): [number, number, number] {
-// =======
 
-//     // Calculate ball direction and speed
-//     let ballDirection: [number, number, number] = [1, 0, 0];
-//     let ballSpeed = 1;
-
-// >>>>>>> origin/dev
     if (this.previousState && this.previousState.ball && ballPos) {
       const prevBall = this.previousState.ball;
       const dx = ballPos[0] - prevBall[0];
       const dy = ballPos[1] - prevBall[1];
       const dz = ballPos[2] - prevBall[2];
-// <<<<<<< HEAD
 
       const speed = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
@@ -374,26 +367,6 @@ export class AISession {
       return Math.sqrt(dx*dx + dy*dy + dz*dz);
     }
     return 1; // Default speed
-// =======
-
-//       ballSpeed = Math.sqrt(dx*dx + dy*dy + dz*dz);
-
-//       if (ballSpeed > 0.01) {
-//         ballDirection = [dx/ballSpeed, dy/ballSpeed, dz/ballSpeed];
-//       } else {
-//         ballSpeed = 1;
-//       }
-//     }
-
-//     // Score data is no longer used by AI logic
-
-//     return {
-//       pos: validAIPaddlePos,
-//       ballPos: ballPos,
-//       ballSpeed: ballSpeed,
-//       ballNormal: ballDirection
-//     };
-// >>>>>>> origin/dev
   }
 
   private getDefaultState(): {
@@ -423,5 +396,15 @@ export class AISession {
       return true;
     }
     return false;
+  }
+
+  // Get moves in last second
+  private getMovesInLastSecond(now: number): Array<{direction: 'up' | 'down', timestamp: number}> {
+    return this.moveHistory
+      .filter(move => now - move.timestamp <= 1000 && move.direction !== 'none')
+      .map(move => ({
+        direction: move.direction as 'up' | 'down',
+        timestamp: move.timestamp
+      }));
   }
 }
