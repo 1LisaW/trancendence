@@ -119,7 +119,7 @@ class TournamentSession {
 		// })
 
 		const stuckUsers = this.matchmakingPool.getStuckUsers();
-		const onlineUsers = users.getOnlineUsers();
+		const onlineUsers = users.getOnlineUsers().filter(user => this.usersPool.has(user));
 		for (const stuckUser of stuckUsers) {
 			if (users.getUserStatus(stuckUser) !== Status.OFFLINE)
 				users.setOnlineStatusToUser(stuckUser);
@@ -127,7 +127,10 @@ class TournamentSession {
 		if (onlineUsers.length === 0)
 			return;
 		let pair: number[] | null = null;
-		while (pair = this.matches.getUnplayedPairFromCollection(users.getOnlineUsers())) {
+		while (pair = this.matches.getUnplayedPairFromCollection(
+			// users.getOnlineUsers()
+			users.getOnlineUsers().filter(user => this.usersPool.has(user))
+		)) {
 			const matchmaking: TournamentMatchmaking = {
 				first_user_id: pair[0],
 				second_user_id: pair[1],
