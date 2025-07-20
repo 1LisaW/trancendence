@@ -2,6 +2,8 @@ import Component from "../../components/Component";
 import { DictionaryType } from "../../lang/dictionary";
 import { getToken } from "../../utils/auth";
 import { setI18nData } from "../../utils/i18n";
+import Chart from "./Chart/Chart";
+// import createDonutChart from './Chart/chart'
 
 const AUTH_HOSTNAME = "/gateway/auth";
 const SCORE_HOSTNAME = "/gateway/score";
@@ -980,6 +982,15 @@ export default class Profile extends Component {
 
 		// Fetch and display PVP/PVC data
 		this.createStatisticsForTab(statsWrapper);
+		
+        // const data = [
+        //     { value: 30, color: '#D7FF00', label: 'Label 1' },
+        //     { value: 20, color: '#C3E600', label: 'Label 2' },
+        //     { value: 50, color: '#A3BF00', label: 'Label 3' }
+        // ];
+
+        // createDonutChart(statsWrapper, data);
+		new Chart(statsWrapper);
 	}
 
 	showTournamentsTab(container: HTMLElement) {
