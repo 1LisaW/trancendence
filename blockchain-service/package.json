@@ -1,0 +1,31 @@
+{
+  "name": "blockchain-service",
+  "version": "1.0.0",
+  "description": "Blockchain service for Pong tournament scores",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "watch": "ts-node --watch src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^4.24.3",
+    "ethers": "^6.8.1",
+    "dotenv": "^16.3.1",
+	"typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.6",
+    "ts-node": "^10.9.1"
+  },
+  "keywords": [
+    "blockchain",
+    "avalanche",
+    "solidity",
+    "pong",
+    "tournament"
+  ],
+  "author": "42 School Student",
+  "license": "MIT"
+}

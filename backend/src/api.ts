@@ -2,6 +2,38 @@
 
 import { MatchOptions, SCORE_ErrorDTO, SCORE_TournamentDataDTO, SCORE_TournamentDTO, SCORE_TournamentScoreDTO } from "./model";
 
+// blockchain-service
+const BLOCKCHAIN_SERVICE_HOSTNAME = 'blockchain-service';
+const BLOCKCHAIN_SERVICE_PORT = 8088;
+
+// post score to blockchain-service
+export const post_score_to_blockchain = async (score: {
+	tournamentId: string;
+	first_user_id: number;
+	second_user_id: number;
+	first_user_name: string;
+	second_user_name: string;
+	score: string;
+	game_mode: string;
+}): Promise<{ success: boolean; transactionHash?: string; error?: string }> => {
+	try {
+		const response = await fetch(`http://${BLOCKCHAIN_SERVICE_HOSTNAME}:${BLOCKCHAIN_SERVICE_PORT}/store-score`, {
+			method: "POST",
+			headers: {
+			  'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(score),
+		});
+		const data = await response.json();
+		if (data.error) {
+			return { success: false, error: data.error };
+		}
+		return { success: true, transactionHash: data.transactionHash };
+	} catch (error: any) {
+		return { success: false, error: error.message };
+	}
+};
+
 const GAME_SESSION_HOSTNAME = 'game-service';
 const GAME_SESSION_PORT = 8081;
 
@@ -193,6 +225,34 @@ export const post_tournament_finish = async (tournament_id: number) => {
 		body: JSON.stringify({tournament_id}),
 	});
 	const data: {tournament_id: number, date: number} | {error: string} = await response.json();
+
+	// fetch all tournament game scores and post to blockchain
+	if ('tournament_id' in data) {
+		const tournamentData = await get_tournaments_data(tournament_id);
+		console.log('Tournament data for blockchain:', JSON.stringify(tournamentData, null, 2));
+		if ('tournaments' in tournamentData) {
+			for (const game of tournamentData.tournaments) {
+				const blockchainScore = {
+					tournamentId: `tournament_${tournament_id}_game_${game.id}`,
+					first_user_id: game.first_user_id,
+					second_user_id: game.second_user_id,
+					first_user_name: game.first_user_name,
+					second_user_name: game.second_user_name,
+					score: `${game.first_user_score}-${game.second_user_score}`,
+					game_mode: 'tournament',
+				};
+				const blockchainResult = await post_score_to_blockchain(blockchainScore);
+				if (!blockchainResult.success) {
+					console.error(`Failed to store tournament ${tournament_id} game ${game.id} score on blockchain: ${blockchainResult.error}`);
+				} else {
+					console.log(`Tournament ${tournament_id} game ${game.id} score stored on blockchain with tx hash: ${blockchainResult.transactionHash}`);
+				}
+			}
+		} else {
+			console.error(`Failed to fetch tournament ${tournament_id} data for blockchain: ${tournamentData.error}`);
+		}
+	}
+
 	return (data);
 }
 
