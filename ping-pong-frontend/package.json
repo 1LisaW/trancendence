@@ -1,0 +1,35 @@
+{
+  "name": "ping-pong-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@babylonjs/core": "^7.48.3",
+    "@babylonjs/gui": "^7.48.3",
+    "@babylonjs/gui-editor": "^7.48.3",
+    "@babylonjs/inspector": "^7.48.3",
+    "@babylonjs/loaders": "^7.48.3",
+    "@babylonjs/materials": "^7.48.3",
+    "@babylonjs/serializers": "^7.48.3",
+    "@eslint/js": "^9.20.0",
+    "@tailwindcss/vite": "^4.0.6",
+    "@types/earcut": "^2.1.4",
+    "@types/node": "^22.13.10",
+    "earcut": "^2.2.4",
+    "eslint": "^9.20.0",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.0",
+    "vite": "^6.1.0"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "cropper": "^4.1.0",
+    "cropperjs": "^1.6.2"
+  }
+}

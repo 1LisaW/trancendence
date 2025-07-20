@@ -1,0 +1,147 @@
+services:
+  ping-pong-frontend:
+    container_name: ping-pong-frontend
+    image: ping-pong-frontend
+    build:
+      context: ./ping-pong-frontend
+      dockerfile: ./Dockerfile
+      args:
+        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    environment:
+      NODE_ENV: production
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+    hostname: ping-pong-frontend
+    ports:
+      - 3000:3000
+
+  backend:
+    container_name: backend
+    image: backend
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: backend
+    ports:
+      - 8082:8082
+    links:
+      - auth:auth
+      - game-service:game-service
+      - chat:chat
+    depends_on:
+      - auth
+      - game-service
+      - chat
+
+
+  game-service:
+    container_name: game-service
+    image: game-service
+    build:
+      context: ./game-service
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: game-service
+    ports:
+      - 8081:8081
+  ai-service:
+    container_name: ai-service
+    image: ai-service
+    build:
+      context: ./ai-service
+      dockerfile: ./Dockerfile
+    hostname: ai-service
+    ports:
+      - 8086:8086
+    # links:
+    #   - backend:backend
+
+  nginx:
+    container_name: reverse-proxy-nginx
+    image: reverse-proxy-nginx
+    build:
+      context: ./nginx
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    hostname: nginx
+    ports:
+      # - 80:80
+      - 8443:443
+    links:
+      - ping-pong-frontend:ping-pong-frontend
+      - backend:backend
+      - gateway:gateway
+      - ai-service:ai-service
+    depends_on:
+      - ping-pong-frontend
+      - backend
+      - gateway
+      - ai-service
+
+
+  auth:
+    container_name: auth
+    image: auth
+    build:
+      context: ./auth
+    environment:
+      NODE_ENV: production
+      TOKEN_SECRET: ${TOKEN_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_TOKEN_SECRET: ${GOOGLE_TOKEN_SECRET}
+    volumes:
+      - db:/db
+    ports:
+      - 8083:8083
+    env_file:  # Simona - Load auth's .env file (we can also make .env fully move to root instead of auth/.env)
+      - ./auth/.env
+
+  score:
+    container_name: score
+    image: score
+    build:
+      context: ./score
+    volumes:
+      - db:/db
+    ports:
+      - 8084:8084
+
+  chat:
+    container_name: chat
+    image: chat
+    build:
+      context: ./chat
+    volumes:
+      - db:/db
+    ports:
+      - 8087:8087
+
+  gateway:
+    container_name: gateway
+    image: gateway
+    build:
+      context: ./gateway
+    volumes:
+      - db:/db
+    ports:
+      - 8085:8085
+    links:
+      - auth:auth
+      - score:score
+    depends_on:
+      - auth
+      - score
+
+volumes:
+  db:
+    name: db_simple
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: C:\Projects\_mariadb_volume
+     #device: /home/tklimova/sgoinfre/_mariadb_volume
+     #device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb

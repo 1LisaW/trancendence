@@ -1,0 +1,79 @@
+{
+	"header": {
+		"home": "Startseite",
+		"about": "Über uns",
+		"contact": "Kontakt",
+		"login": "Anmelden",
+		"signup": "Registrieren",
+		"logout": "Abmelden",
+		"profile": "Profil",
+		"title": "Ping Pong",
+		"game": "Spiel",
+		"choose-a-theme": "Wählen Sie ein Thema"
+
+	},
+	"main": {
+		"welcome": "Sind Sie bereit, Ihr Tischtennisspiel auf die nächste Stufe zu bringen?  [Ihr App-Name] verbindet Sie mit Spielern aller Spielstärken, lässt Sie Ihre Siege und Niederlagen verfolgen und bietet Ihnen eine unterhaltsame und wettbewerbsorientierte Umgebung, um Ihre Fähigkeiten zu verbessern.  Werden Sie Teil der Community und erleben Sie den Nervenkitzel des Spiels!"
+	},
+	"login": {
+		"title": "Anmelden",
+		"email": "Email",
+		"password": "Passwort",
+		"submit": "Einreichen",
+		"signup": "Registrieren",
+		"forgot": "Passwort vergessen?",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
+	},
+	"register": {
+		"title": "Registrieren",
+		"name": "Nutzername",
+		"email": "Email",
+		"password": "Passwort",
+		"repeat-password": "Passwortbestätigung",
+		"submit": "Einreichen",
+		"login": "Anmelden",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen"
+	},
+	"lang": {
+		"en": "Englisch",
+		"ger": "Deutsch",
+		"title": "Sprache ändern"
+	},
+	"validation": {
+		"warning": "Warnmeldung!",
+		"password-not-match": "GPasswords not match",
+		"name-not-unique": "Passwörter stimmen nicht überein",
+		"already-registered": "Bereits registriert",
+		"login-and-password-not-match": "Login und Passwort stimmen nicht überein",
+		"server-error": "Serverfehler",
+		"google-auth-failed": "Google-Authentifizierung fehlgeschlagen",
+		"string-too-long": "Die Zeichenfolge ist zu lang"
+	},
+	"profile": {
+		"personal-information": "Persönliche Daten",
+		"username": "Benutzername",
+		"email": "Email",
+		"phone": "Telefon",
+		"friends": "Freunde",
+		"no-friends": "Keine Freunde bisher.",
+		"game-statistics":  "Spielstatistiken",
+		"pvp-pvc-games": "PVC & PVP Spiele",
+		"no-pvp-pvc-played": "Noch keine PVP/PVC-Spiele gespielt.",
+		"opponent": "Opponent",
+		"date": "Datum",
+		"score": "Score",
+		"result": "Ergebnis",
+		"tournaments": "Tournaments",
+		"tournament-history": "Turnier-Geschichte",
+		"tournament-statistics": "Tournament Statistics",
+		"no-tournaments-played": "Noch keine Turniere gespielt.",
+		"pvc-charts": "PVC-Tabellen",
+		"pvc-performance-charts": "PVC Performance Charts",
+		"edit-phone-number": "Rufnummer bearbeiten",
+		"save": "Speichern",
+		"cancel": "Abbrechen",
+		"delete-account": "Konto löschen",
+		"delete-warning": "Sind Sie sicher, dass Sie Ihr Konto löschen wollen? Dies kann nicht rückgängig gemacht werden."
+	}
+
+}

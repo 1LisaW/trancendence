@@ -1,0 +1,78 @@
+{
+	"header": {
+		"home": "Home",
+		"about": "About",
+		"contact": "Contact",
+		"login": "Login",
+		"signup": "Register",
+		"logout": "Logout",
+		"profile": "Profile",
+		"title": "Ping Pong",
+		"game": "Game",
+		"choose-a-theme": "Choose a theme"
+	},
+	"main": {
+		"welcome": "Ready to take your ping pong game to the next level?  [Your App Name] connects you with players of all skill levels, allows you to track your wins and losses, and provides a fun and competitive environment to improve your skills.  Join the community and experience the thrill of the game!"
+	},
+	"login": {
+		"title": "Login",
+		"email": "Email",
+		"password": "Password",
+		"submit": "Submit",
+		"signup": "signup",
+		"forgot": "Forgot password?",
+		"google-auth-failed": "Google authentication failed"
+	},
+	"register": {
+		"title": "Register",
+		"name": "Username",
+		"email": "Email",
+		"password": "Password",
+		"repeat-password": "Password confirmation",
+		"submit": "Submit",
+		"login": "Login",
+		"google-auth-failed": "Google authentication failed"
+	},
+	"lang": {
+		"en": "English",
+		"ger": "German",
+		"title": "Change language"
+	},
+	"validation": {
+		"warning": "Warning alert!",
+		"password-not-match": "Passwords not match",
+		"name-not-unique": "The name is not unique",
+		"already-registered": "Already registered",
+		"login-and-password-not-match": "Login and password does not match",
+		"server-error": "server-error",
+		"google-auth-failed": "Google authentication failed",
+		"string-too-long": "String is too long"
+
+	},
+	"profile": {
+		"personal-information": "Personal Information",
+		"username": "Username",
+		"email": "Email",
+		"phone": "Phone",
+		"friends": "Friends",
+		"no-friends": "No friends yet.",
+		"game-statistics":  "Game Statistics",
+		"pvp-pvc-games": "PVC & PVP Games",
+		"no-pvp-pvc-played": "No PVP/PVC games played yet.",
+		"opponent": "Opponent",
+		"date": "Date",
+		"score": "Score",
+		"result": "Result",
+		"tournaments": "Tournaments",
+		"tournament-history": "Tournament History",
+		"tournament-statistics": "Tournament Statistics",
+		"no-tournaments-played": "No tournaments played yet.",
+		"pvc-charts": "PVC Charts",
+		"pvc-performance-charts": "PVC Performance Charts",
+		"edit-phone-number": "Edit phone number",
+		"save": "Save",
+		"cancel": "Cancel",
+		"delete-account": "Delete account",
+		"delete-warning": "Are you sure you want to delete your account? This cannot be undone."
+	}
+}
