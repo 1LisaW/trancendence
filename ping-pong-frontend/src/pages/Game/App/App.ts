@@ -361,7 +361,8 @@ export default class App {
 		this.opponent = "";
 		// this._state = State.
 		this.close_game_ws();
-		this.init_game_ws();
+		// Simona - ❌ COMMENTED OUT: Don't auto-reconnect WebSocket on lose screen - this was causing automatic game restart in both PVP and PVC modes
+		// this.init_game_ws();
 
 		//--SCENE SETUP--
 		this._scene.detachControl();
@@ -381,6 +382,8 @@ export default class App {
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
+			// Simona - ✅ NEW CODE: Reset game mode and go to game selection screen
+			this.gameMode = null;
 			this._goToStart();
 		});
 		const mainPageBtn = Button.CreateSimpleButton("mainpage", "BACK TO MAIN PAGE");
@@ -389,9 +392,12 @@ export default class App {
 		mainPageBtn.color = "white";
 		mainPageBtn.top = "24px";
 		guiMenu.addControl(mainPageBtn);
-		//this handles interactions with the start button attached to the scene
+		 //OLD COMMENT  this handles interactions with the start button attached to the scene
+		//this handles interactions with the main page button
 		mainPageBtn.onPointerUpObservable.add(() => {
-			this._goToStart();
+			// ❌ COMMENTED OUT: Don't reconnect WebSocket and then navigate - this was causing automatic game restart in both PVP and PVC modes
+			// this._goToStart();
+			// Simona - ✅ NEW CODE: Navigate to main page without reconnecting WebSocket
 			this.navigate('/');
 		});
 

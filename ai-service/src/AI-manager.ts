@@ -28,6 +28,27 @@ export class AIManager {
 
   // Route incoming messages to the correct session
   routeMessage(msg: any): boolean {
+    // ✅ FIXED: Handle game setup messages and cleanup old sessions
+    if (msg.gameId && msg.order !== undefined) {
+      // This is a new game setup - clean up any old sessions for this user
+      const userId = this.getUserIdFromMessage(msg);
+      if (userId) {
+        this.cleanupUserSessions(userId);
+      }
+      
+      // Create new session and add to both maps
+      const newSession = new AISession(userId || -1);
+      this.sessions.set(msg.gameId, newSession);
+      if (userId) {
+        this.usersAISession.set(Math.abs(userId), newSession);
+      }
+      
+      console.log(`✅ AI Manager: Created new session ${msg.gameId} for user ${userId}`);
+      newSession.handleMessage(msg);
+      return true;
+    }
+    
+    // Route regular messages to existing sessions
     if (msg.gameId && this.sessions.has(msg.gameId)) {
       const session = this.sessions.get(msg.gameId);
       if (session) {
@@ -36,6 +57,36 @@ export class AIManager {
       }
     }
     return false;
+  }
+
+  // ✅ NEW: Extract user ID from message
+  private getUserIdFromMessage(msg: any): number | null {
+    // Look for negative user IDs in the message (AI players)
+    if (msg.players && Array.isArray(msg.players)) {
+      const aiId = msg.players.find((id: number) => id < 0);
+      return aiId || null;
+    }
+    return null;
+  }
+
+  // ✅ NEW: Clean up old sessions for a specific user
+  private cleanupUserSessions(userId: number) {
+    const absUserId = Math.abs(userId);
+    
+    // Find and clean up old session for this user
+    const oldSession = this.usersAISession.get(absUserId);
+    if (oldSession) {
+      // Find the gameId for this old session
+      for (const [gameId, session] of this.sessions.entries()) {
+        if (session === oldSession) {
+          console.log(`🧹 AI Manager: Cleaning up old session ${gameId} for user ${userId}`);
+          session.close();
+          this.sessions.delete(gameId);
+          break;
+        }
+      }
+      this.usersAISession.delete(absUserId);
+    }
   }
 
   getSession(gameId: string): AISession | undefined {
@@ -87,6 +138,16 @@ export class AIManager {
     if (session) {
       session.close();
       this.sessions.delete(gameId);
+      
+      // ✅ FIXED: Also clean up user session mapping
+      for (const [userId, userSession] of this.usersAISession.entries()) {
+        if (userSession === session) {
+          this.usersAISession.delete(userId);
+          console.log(`🧹 AI Manager: Removed user ${userId} session mapping`);
+          break;
+        }
+      }
+      
       console.log(`Session ${gameId} ended and removed. Remaining sessions: ${this.sessions.size}`);
     }
   }
