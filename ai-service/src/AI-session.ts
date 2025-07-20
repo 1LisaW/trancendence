@@ -66,9 +66,18 @@ export class AISession {
   }
 
   public handleMessage(msg: any) {
-    // Handle game end immediately
-    if (msg.gameResult || (msg.message && this.isGameEndMessage(msg.message))) {
+    // ✅ FIXED: Better game end detection - handle all termination scenarios
+    if (msg.gameResult || 
+        msg.terminated === true || 
+        (msg.message && this.isGameEndMessage(msg.message))) {
+      console.log(`[${this.gameId}] 🛑 Game end detected:`, msg);
       this.onGameEnd();
+      return;
+    }
+
+    // ✅ FIXED: Prevent new game setup if already finished or currently finishing
+    if (this.isFinished || this._state === AIState.FINISHED) {
+      console.log(`[${this.gameId}] 🚫 Ignoring message - AI session already finished`);
       return;
     }
 
@@ -241,16 +250,22 @@ export class AISession {
   }
 
   private onGameEnd() {
-    if (this.isFinished) return;
+    if (this.isFinished) {
+      console.log(`[${this.gameId}] ⚠️ Game end called but already finished - ignoring`);
+      return;
+    }
+    
     console.log(`[${this.gameId}] 🏁 Game ended - AI session closing`);
     this.isFinished = true;
     this._state = AIState.FINISHED;
     this.countdownActive = false;
+    
     if (this.gameLoop) {
       clearInterval(this.gameLoop);
       this.gameLoop = null;
       console.log(`[${this.gameId}] Game loop explicitly stopped on game end`);
     }
+    
     this.cleanup();
   }
 
@@ -283,10 +298,14 @@ export class AISession {
 
   private isGameEndMessage(message: string): boolean {
     return message.includes('leave the room') ||
-           message.includes('LOSE') ||
            message.includes('left the room') ||
+           message.includes('left room') ||
+           message.includes('LOSE') ||
            message.includes('terminated') ||
            message.includes('disconnected') ||
+           message.includes('forfeit') ||
+           message.includes('quit') ||
+           message.includes('abandon') ||
            (message.includes('Player') && message.includes('left'));
   }
 

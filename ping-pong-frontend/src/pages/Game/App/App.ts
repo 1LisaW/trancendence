@@ -121,8 +121,8 @@ export default class App {
 						const oldHumanScore = parseInt(this.scores[0].text) || 0;
 						const oldAiScore = parseInt(this.scores[1].text) || 0;
 						// Update scores: human on left (data.score[1]), AI on right (data.score[0])
-						this.scores[0].text = data.score[1].toString(); // Human score
-						this.scores[1].text = data.score[0].toString(); // AI score
+						this.scores[0].text = data.score[0].toString(); // Human score
+						this.scores[1].text = data.score[1].toString(); // AI score
 						console.log("FRONT APP score (PvC mode): ", data.score);
 						// Trigger animation based on who scored by comparing old and new scores
 						const newHumanScore = data.score[1];
@@ -357,11 +357,14 @@ export default class App {
 	private async _goToLose(): Promise<void> {
 		this._engine.displayLoadingUI();
 		this.gameId = undefined;
-		this.gameMode = null;
 		this.opponent = "";
 		// this._state = State.
 		this.close_game_ws();
-		this.init_game_ws();
+		// Simona - ❌ COMMENTED OUT: Don't auto-reconnect WebSocket on lose screen - this was causing automatic game restart in both PVP and PVC modes
+		if (this.gameMode && this.gameMode !== 'pvc')
+			this.init_game_ws();
+		this.gameMode = null;
+
 
 		//--SCENE SETUP--
 		this._scene.detachControl();
@@ -381,6 +384,8 @@ export default class App {
 		guiMenu.addControl(mainBtn);
 		//this handles interactions with the start button attached to the scene
 		mainBtn.onPointerUpObservable.add(() => {
+			// Simona - ✅ NEW CODE: Reset game mode and go to game selection screen
+			this.gameMode = null;
 			this._goToStart();
 		});
 		const mainPageBtn = Button.CreateSimpleButton("mainpage", "BACK TO MAIN PAGE");
@@ -389,9 +394,13 @@ export default class App {
 		mainPageBtn.color = "white";
 		mainPageBtn.top = "24px";
 		guiMenu.addControl(mainPageBtn);
-		//this handles interactions with the start button attached to the scene
+		 //OLD COMMENT  this handles interactions with the start button attached to the scene
+		//this handles interactions with the main page button
 		mainPageBtn.onPointerUpObservable.add(() => {
-			this._goToStart();
+			// ❌ COMMENTED OUT: Don't reconnect WebSocket and then navigate - this was causing automatic game restart in both PVP and PVC modes
+			if (this.gameMode !== 'pvc')
+				this._goToStart();
+			// Simona - ✅ NEW CODE: Navigate to main page without reconnecting WebSocket
 			this.navigate('/');
 		});
 
