@@ -990,7 +990,6 @@ export default class Profile extends Component {
         // ];
 
         // createDonutChart(statsWrapper, data);
-		new Chart(statsWrapper);
 	}
 
 	showTournamentsTab(container: HTMLElement) {
@@ -1012,13 +1011,15 @@ export default class Profile extends Component {
 
 		// Create a simple chart container
 		const chartWrapper = document.createElement('div');
+		chartWrapper.setAttribute('id', 'chart-pvc-wrapper');
 		chartWrapper.className = 'bg-gray-700 rounded-lg p-4 mb-4';
 
 		// Legend
 		const legend = document.createElement('div');
 		legend.className = 'text-xs text-gray-400 mb-4';
-		legend.innerText = 'PVC = Player vs Computer. Bars show games played per day.';
+		legend.innerText = 'PVC = Player vs Computer. Bars show users wins and loses.';
 		chartWrapper.appendChild(legend);
+		container.appendChild(chartWrapper);
 
 		// Fetch data and create simple HTML chart
 		fetch(`${SCORE_HOSTNAME}/score`, {
@@ -1026,7 +1027,7 @@ export default class Profile extends Component {
 			headers: { "Authorization": getToken() },
 		}).then(res => res.json()).then(res => {
 			if ('scores' in res) {
-				const pvcGames = res.scores.filter((g: any) => g.game_mode === 'pvc');
+				const pvcGames = res.scores.filter((g: any) => g.game_mode === 'pvc') as SCORE_ScoreDTO[];
 				if (pvcGames.length === 0) {
 					const noData = document.createElement('div');
 					noData.className = 'text-gray-400 text-center py-8';
@@ -1035,27 +1036,37 @@ export default class Profile extends Component {
 					container.appendChild(chartWrapper);
 					return;
 				}
-				const dateCounts: Record<string, number> = {};
-				pvcGames.forEach((g: any) => {
-					const date = new Date(g.date).toLocaleDateString();
-					dateCounts[date] = (dateCounts[date] || 0) + 1;
-				});
-				const maxGames = Math.max(...Object.values(dateCounts));
-				Object.entries(dateCounts).forEach(([date, count]) => {
-					const row = document.createElement('div');
-					row.className = 'flex items-center mb-2';
-					const label = document.createElement('span');
-					label.className = 'w-24 text-gray-300 text-sm';
-					label.innerText = date;
-					const bar = document.createElement('div');
-					bar.className = 'bg-blue-500 h-6 rounded ml-2';
-					bar.style.width = `${(count / maxGames) * 100}%`;
-					const countLabel = document.createElement('span');
-					countLabel.className = 'ml-2 text-white text-xs';
-					countLabel.innerText = count.toString();
-					row.append(label, bar, countLabel);
-					chartWrapper.appendChild(row);
-				});
+				const wins = pvcGames.filter(score => {
+					if (score.first_user_id > 0 && score.first_user_score > score.second_user_score)
+						return true;
+					if (score.second_user_id > 0 && score.first_user_score < score.second_user_score)
+						return true;
+					return false;
+				}).length;
+				const loses = pvcGames.length - wins;
+				new Chart(chartWrapper, wins, loses);
+
+				// const dateCounts: Record<string, number> = {};
+				// pvcGames.forEach((g: any) => {
+				// 	const date = new Date(g.date).toLocaleDateString();
+				// 	dateCounts[date] = (dateCounts[date] || 0) + 1;
+				// });
+				// const maxGames = Math.max(...Object.values(dateCounts));
+				// Object.entries(dateCounts).forEach(([date, count]) => {
+				// 	const row = document.createElement('div');
+				// 	row.className = 'flex items-center mb-2';
+				// 	const label = document.createElement('span');
+				// 	label.className = 'w-24 text-gray-300 text-sm';
+				// 	label.innerText = date;
+				// 	const bar = document.createElement('div');
+				// 	bar.className = 'bg-blue-500 h-6 rounded ml-2';
+				// 	bar.style.width = `${(count / maxGames) * 100}%`;
+				// 	const countLabel = document.createElement('span');
+				// 	countLabel.className = 'ml-2 text-white text-xs';
+				// 	countLabel.innerText = count.toString();
+				// 	row.append(label, bar, countLabel);
+				// 	chartWrapper.appendChild(row);
+				// });
 			} else {
 				const errorDiv = document.createElement('div');
 				errorDiv.className = 'text-red-400 text-center py-4';
@@ -1071,6 +1082,7 @@ export default class Profile extends Component {
 			chartWrapper.appendChild(errorDiv);
 			container.appendChild(chartWrapper);
 		});
+		
 	}
 
 	async fetchAndRenderFriends(container: HTMLElement) {

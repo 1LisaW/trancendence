@@ -4,15 +4,16 @@ export default class Chart {
   parent: HTMLElement;
   container: HTMLElement;
 
-  constructor(parent: HTMLElement) {
+  constructor(parent: HTMLElement, wons: number, lose:number) {
     this.parent = parent;
-    parent.innerHTML = '';
+    // parent.innerHTML = '';
     this.container = document.createElement('div');
+    parent.appendChild(this.container);
 
     const data = [
-      {value: 30, color: '#D7FF00', label: 'Label 1'},
-      {value: 20, color: '#C3E600', label: 'Label 2'},
-      {value: 50, color: '#A3BF00', label: 'Label 3'}
+      {value: wons, color: '#155dfc', label: 'Times won'},
+      {value: lose, color: '#e7000b', label: 'Times lose'},
+      // {value: 50, color: '#A3BF00', label: 'Label 3'}
     ];
 
     this.createDonutChart(data);
@@ -20,7 +21,7 @@ export default class Chart {
 
   renderChart = (data: { value: number, color: string, label: string }[]) => {
     const container = this.container;
-    const margin = 50;
+    // const margin = 50;
     // const select = d3.select;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -35,10 +36,10 @@ export default class Chart {
     const aspectRatio = 16 / 9;
 
     // Calculate the size of the chart based on the size of the container
-    const containerWidth = this.container.clientWidth;
-    const containerHeight = this.container.clientHeight;
-    const width = containerWidth - margin * 2;
-    const height = containerHeight - margin * 2;
+    // const containerWidth = this.container.clientWidth;
+    // const containerHeight = this.container.clientHeight;
+    const width = 200//containerWidth - margin * 2;
+    const height = 100//containerHeight - margin * 2;
     const radius = Math.min(width, height) / 2;
 
     const svg = d3.select(this.container)
@@ -182,6 +183,7 @@ export default class Chart {
         // @ts-ignore
         .attr("transform", d => `translate(${arc.centroid(d)})`)
         .attr("dy", "-0.5em")
+        .attr("font-size", 5)
         .attr("text-anchor", "middle")
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -197,6 +199,7 @@ export default class Chart {
         // @ts-ignore
         .attr("transform", d => `translate(${arc.centroid(d)})`)
         .attr("dy", "0.5em")
+        .attr("font-size", 5)
         .attr("text-anchor", "middle")
         .classed("value", true);
     }
