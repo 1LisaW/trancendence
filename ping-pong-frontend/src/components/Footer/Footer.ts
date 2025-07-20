@@ -14,7 +14,7 @@ export default class Footer extends Component {
 		div.className = 'w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between';
 		const span = document.createElement('span');
 		span.className = 'text-sm sm:text-center';
-		span.textContent = '© 2023 DreamTeam. All Rights Reserved.';
+		span.textContent = '© 2025 DreamTeam. All Rights Reserved.';
 		div.appendChild(span);
 		// div.textContent = "Footer";
 		this.container.appendChild(div);
