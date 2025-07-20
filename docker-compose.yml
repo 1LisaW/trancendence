@@ -22,6 +22,8 @@ services:
       dockerfile: ./Dockerfile
     environment:
       NODE_ENV: production
+    env_file:
+      - .env
     hostname: backend
     ports:
       - 8082:8082
@@ -29,10 +31,12 @@ services:
       - auth:auth
       - game-service:game-service
       - chat:chat
+      - blockchain-service:blockchan-service
     depends_on:
       - auth
       - game-service
       - chat
+      - blockchain-service
 
 
   game-service:
@@ -46,6 +50,7 @@ services:
     hostname: game-service
     ports:
       - 8081:8081
+
   ai-service:
     container_name: ai-service
     image: ai-service
@@ -135,6 +140,21 @@ services:
       - auth
       - score
 
+  blockchain-service:
+    container_name: blockchain-service
+    image: blockchain-service
+    build:
+      context: ./blockchain-service
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+      AVALANCHE_RPC_URL: ${AVALANCHE_RPC_URL}
+      PRIVATE_KEY: ${PRIVATE_KEY}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
+    hostname: blockchain-service
+    ports:
+      - 8088:8088
+
 volumes:
   db:
     name: db_simple
@@ -142,6 +162,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: C:\Projects\_mariadb_volume
+      device: /home/smargine/sgoinfre/docker-volumes/mariadb
+      #device: C:\Projects\_mariadb_volume
      #device: /home/tklimova/sgoinfre/_mariadb_volume
      #device: /Users/simonaaimar/Desktop/NEW_transcendence/mariadb
